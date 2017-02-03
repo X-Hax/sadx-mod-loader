@@ -1,12 +1,13 @@
 ﻿using IniSerializer;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 
 namespace SADXModManager
 {
@@ -31,31 +32,39 @@ namespace SADXModManager
 		bool installed;
 		bool suppressEvent;
 
+		BackgroundWorker updateChecker;
+
 		private void MainForm_Load(object sender, EventArgs e)
 		{
 			if (File.Exists("sadxmlver.txt"))
 			{
-				System.Net.WebClient wc = new System.Net.WebClient();
-				string msg = null;
-				try
+				using (var wc = new WebClient())
 				{
-					msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
-				}
-				catch { MessageBox.Show(this, "Unable to retrieve update information.", "SADX Mod Manager"); goto noupdate; }
-				if (msg.Length > 0)
-					using (UpdateMessageDialog dlg = new UpdateMessageDialog(msg.Replace("\n", "\r\n")))
-						if (dlg.ShowDialog(this) == DialogResult.Yes)
+					try
+					{
+						string msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
+
+						if (msg.Length > 0)
 						{
-							System.Diagnostics.Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
-							Close();
-							return;
+							using (var dlg = new UpdateMessageDialog(msg.Replace("\n", "\r\n")))
+							{
+								if (dlg.ShowDialog(this) == DialogResult.Yes)
+								{
+									System.Diagnostics.Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
+									Close();
+									return;
+								}
+							}
 						}
+					}
+					catch
+					{
+						MessageBox.Show(this, "Unable to retrieve update information.", "SADX Mod Manager");
+					}
+				}
 			}
-		noupdate:
-			if (File.Exists(loaderinipath))
-				loaderini = IniFile.Deserialize<LoaderInfo>(loaderinipath);
-			else
-				loaderini = new LoaderInfo();
+
+			loaderini = File.Exists(loaderinipath) ? IniFile.Deserialize<LoaderInfo>(loaderinipath) : new LoaderInfo();
 
 			try { mainCodes = CodeList.Load(codexmlpath); }
 			catch { mainCodes = new CodeList() { Codes = new List<Code>() }; }
@@ -65,55 +74,72 @@ namespace SADXModManager
 			for (int i = 0; i < Screen.AllScreens.Length; i++)
 				screenNumComboBox.Items.Add((i + 1).ToString() + " " + Screen.AllScreens[i].DeviceName + " (" + Screen.AllScreens[i].Bounds.Location.X + "," + Screen.AllScreens[i].Bounds.Y + ") " + Screen.AllScreens[i].Bounds.Width + "x" + Screen.AllScreens[i].Bounds.Height + " " + Screen.AllScreens[i].BitsPerPixel + "bpp" + (Screen.AllScreens[i].Primary ? " Primary" : ""));
 
-			consoleCheckBox.Checked = loaderini.DebugConsole;
-			screenCheckBox.Checked = loaderini.DebugScreen;
-			fileCheckBox.Checked = loaderini.DebugFile;
-			disableCDCheckCheckBox.Checked = loaderini.DisableCDCheck;
+			consoleCheckBox.Checked             = loaderini.DebugConsole;
+			screenCheckBox.Checked              = loaderini.DebugScreen;
+			fileCheckBox.Checked                = loaderini.DebugFile;
+			disableCDCheckCheckBox.Checked      = loaderini.DisableCDCheck;
 			useCustomResolutionCheckBox.Checked = verticalResolution.Enabled = forceAspectRatioCheckBox.Enabled = nativeResolutionButton.Enabled = loaderini.UseCustomResolution;
-			checkVsync.Checked = loaderini.EnableVsync;
-			horizontalResolution.Enabled = loaderini.UseCustomResolution && !loaderini.ForceAspectRatio;
-			horizontalResolution.Value = Math.Max(horizontalResolution.Minimum, Math.Min(horizontalResolution.Maximum, loaderini.HorizontalResolution));
-			verticalResolution.Value = Math.Max(verticalResolution.Minimum, Math.Min(verticalResolution.Maximum, loaderini.VerticalResolution));
+			checkVsync.Checked                  = loaderini.EnableVsync;
+			horizontalResolution.Enabled        = loaderini.UseCustomResolution && !loaderini.ForceAspectRatio;
+			horizontalResolution.Value          = Math.Max(horizontalResolution.Minimum, Math.Min(horizontalResolution.Maximum, loaderini.HorizontalResolution));
+			verticalResolution.Value            = Math.Max(verticalResolution.Minimum, Math.Min(verticalResolution.Maximum, loaderini.VerticalResolution));
+
 			suppressEvent = true;
 			forceAspectRatioCheckBox.Checked = loaderini.ForceAspectRatio;
 			checkScaleHud.Checked = loaderini.ScaleHud;
 			suppressEvent = false;
+
 			windowedFullscreenCheckBox.Checked = loaderini.WindowedFullscreen;
-			forceMipmappingCheckBox.Checked = loaderini.AutoMipmap;
+			forceMipmappingCheckBox.Checked    = loaderini.AutoMipmap;
 			forceTextureFilterCheckBox.Checked = loaderini.TextureFilter;
-			pauseWhenInactiveCheckBox.Checked = loaderini.PauseWhenInactive;
-			stretchFullscreenCheckBox.Checked = loaderini.StretchFullscreen;
-			int scrn = loaderini.ScreenNum;
-			if (scrn > Screen.AllScreens.Length)
-				scrn = 1;
-			screenNumComboBox.SelectedIndex = scrn;
+			pauseWhenInactiveCheckBox.Checked  = loaderini.PauseWhenInactive;
+			stretchFullscreenCheckBox.Checked  = loaderini.StretchFullscreen;
+
+			int screenNum = Math.Min(Screen.AllScreens.Length, loaderini.ScreenNum);
+
+			screenNumComboBox.SelectedIndex  = screenNum;
 			customWindowSizeCheckBox.Checked = windowHeight.Enabled = maintainWindowAspectRatioCheckBox.Enabled = loaderini.CustomWindowSize;
-			windowWidth.Enabled = loaderini.CustomWindowSize && !loaderini.MaintainWindowAspectRatio;
-			System.Drawing.Rectangle rect = Screen.PrimaryScreen.Bounds;
+			windowWidth.Enabled              = loaderini.CustomWindowSize && !loaderini.MaintainWindowAspectRatio;
+			System.Drawing.Rectangle rect    = Screen.PrimaryScreen.Bounds;
+
 			foreach (Screen screen in Screen.AllScreens)
 				rect = System.Drawing.Rectangle.Union(rect, screen.Bounds);
-			windowWidth.Maximum = rect.Width;
-			windowWidth.Value = Math.Max(windowWidth.Minimum, Math.Min(rect.Width, loaderini.WindowWidth));
+
+			windowWidth.Maximum  = rect.Width;
+			windowWidth.Value    = Math.Max(windowWidth.Minimum, Math.Min(rect.Width, loaderini.WindowWidth));
 			windowHeight.Maximum = rect.Height;
-			windowHeight.Value = Math.Max(windowHeight.Minimum, Math.Min(rect.Height, loaderini.WindowHeight));
+			windowHeight.Value   = Math.Max(windowHeight.Minimum, Math.Min(rect.Height, loaderini.WindowHeight));
+
 			suppressEvent = true;
 			maintainWindowAspectRatioCheckBox.Checked = loaderini.MaintainWindowAspectRatio;
 			suppressEvent = false;
+
 			if (!File.Exists(datadllpath))
 			{
-				MessageBox.Show(this, "CHRMODELS.dll could not be found.\n\nCannot determine state of installation.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				MessageBox.Show(this, "CHRMODELS.dll could not be found.\n\nCannot determine state of installation.",
+					Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
 				installButton.Hide();
 			}
 			else if (File.Exists(datadllorigpath))
 			{
 				installed = true;
 				installButton.Text = "Uninstall loader";
-				MD5 md5 = MD5.Create();
-				byte[] hash1 = md5.ComputeHash(File.ReadAllBytes(loaderdllpath));
-				byte[] hash2 = md5.ComputeHash(File.ReadAllBytes(datadllpath));
-				if (!hash1.SequenceEqual(hash2))
-					if (MessageBox.Show(this, "Installed loader DLL differs from copy in mods folder.\n\nDo you want to overwrite the installed copy?", Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-						File.Copy(loaderdllpath, datadllpath, true);
+				using (MD5 md5 = MD5.Create())
+				{
+					byte[] hash1 = md5.ComputeHash(File.ReadAllBytes(loaderdllpath));
+					byte[] hash2 = md5.ComputeHash(File.ReadAllBytes(datadllpath));
+
+					if (hash1.SequenceEqual(hash2))
+					{
+						return;
+					}
+				}
+
+				DialogResult result = MessageBox.Show(this, "Installed loader DLL differs from copy in mods folder."
+					+ "\n\nDo you want to overwrite the installed copy?", Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+				if (result == DialogResult.Yes)
+					File.Copy(loaderdllpath, datadllpath, true);
 			}
 		}
 
@@ -123,9 +149,14 @@ namespace SADXModManager
 			mods = new Dictionary<string, ModInfo>();
 			codes = new List<Code>(mainCodes.Codes);
 			string modDir = Path.Combine(Environment.CurrentDirectory, "mods");
-			foreach (string filename in GetModFiles(new DirectoryInfo(modDir)))
+
+			foreach (string filename in ModInfo.GetModFiles(new DirectoryInfo(modDir)))
+			{
 				mods.Add(Path.GetDirectoryName(filename).Substring(modDir.Length + 1), IniFile.Deserialize<ModInfo>(filename));
+			}
+
 			modListView.BeginUpdate();
+
 			foreach (string mod in new List<string>(loaderini.Mods))
 			{
 				if (mods.ContainsKey(mod))
@@ -143,37 +174,179 @@ namespace SADXModManager
 					loaderini.Mods.Remove(mod);
 				}
 			}
+
 			foreach (KeyValuePair<string, ModInfo> inf in mods)
+			{
 				if (!loaderini.Mods.Contains(inf.Key))
 					modListView.Items.Add(new ListViewItem(new[] { inf.Value.Name, inf.Value.Author, inf.Value.Version }) { Tag = inf.Key });
+			}
+
 			modListView.EndUpdate();
+
 			loaderini.EnabledCodes = new List<string>(loaderini.EnabledCodes.Where(a => codes.Any(c => c.Name == a)));
 			foreach (Code item in codes.Where(a => a.Required && !loaderini.EnabledCodes.Contains(a.Name)))
 				loaderini.EnabledCodes.Add(item.Name);
+
 			codesCheckedListBox.BeginUpdate();
 			codesCheckedListBox.Items.Clear();
+
 			foreach (Code item in codes)
 				codesCheckedListBox.Items.Add(item.Name, loaderini.EnabledCodes.Contains(item.Name));
+
 			codesCheckedListBox.EndUpdate();
+
+			CheckModUpdates();
 		}
 
-		private static IEnumerable<string> GetModFiles(DirectoryInfo directoryInfo)
+		private void CheckModUpdates()
 		{
-			string modini = Path.Combine(directoryInfo.FullName, "mod.ini");
-			if (File.Exists(modini))
+			if (updateChecker == null)
 			{
-				yield return modini;
-				yield break;
+				updateChecker = new BackgroundWorker();
+				updateChecker.DoWork += UpdateChecker_DoWork;
+				updateChecker.RunWorkerCompleted += UpdateChecker_RunWorkerCompleted;
 			}
 
-			foreach (DirectoryInfo item in directoryInfo.GetDirectories())
+			// TODO: Make configurable
+			// Only automatically checks for updates for enabled mods.
+			updateChecker.RunWorkerAsync(mods.Where(x => loaderini.Mods.Contains(x.Key)).ToList());
+		}
+
+		private void UpdateChecker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			var updates = e.Result as List<ModDownload>;
+			if (updates == null || updates.Count == 0)
 			{
-				if (!item.Name.Equals("system", StringComparison.OrdinalIgnoreCase))
+				return;
+			}
+
+			using (var dialog = new ModUpdatesDialog(updates))
+			{
+				if (dialog.ShowDialog(this) != DialogResult.OK)
 				{
-					foreach (string filename in GetModFiles(item))
-						yield return filename;
+					return;
+				}
+
+				updates = dialog.SelectedMods;
+			}
+
+			if (updates.Count == 0)
+			{
+				return;
+			}
+
+			string updatePath = Path.Combine("mods", ".updates");
+			if (!Directory.Exists(updatePath))
+			{
+				Directory.CreateDirectory(updatePath);
+			}
+
+			using (var client = new UpdaterWebClient())
+			{
+				foreach (ModDownload update in updates)
+				{
+					DialogResult result;
+					do
+					{
+						try
+						{
+							result = DialogResult.Cancel;
+							update.Download(client, updatePath);
+						}
+						catch (Exception ex)
+						{
+							result = MessageBox.Show(this, $"Failed to update mod {update.Info.Name}:\r\n" + ex.Message
+								+ "\r\n\r\nPress Retry to try again, or Cancel to skip this mod.",
+								"Update Failed", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+						}
+					} while (result == DialogResult.Retry);
 				}
 			}
+
+			Directory.Delete(updatePath, true);
+		}
+
+		private static void UpdateChecker_DoWork(object sender, DoWorkEventArgs e)
+		{
+			var enabledMods = e.Argument as List<KeyValuePair<string, ModInfo>>;
+			if (enabledMods == null || enabledMods.Count == 0)
+			{
+				return;
+			}
+
+			var result = new List<ModDownload>();
+
+			using (var client = new UpdaterWebClient())
+			{
+				foreach (KeyValuePair<string, ModInfo> info in enabledMods)
+				{
+					ModInfo mod = info.Value;
+					if (string.IsNullOrEmpty(mod.GitHubRepo))
+					{
+						continue;
+					}
+
+					// TODO: figure out a better way to aggregate all update check errors
+					string text;
+					try
+					{
+						text = client.DownloadString("https://api.github.com/repos/" + mod.GitHubRepo + "/releases/latest");
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine($"Error checking releases for {mod.GitHubRepo}: " + ex.Message);
+						continue;
+					}
+
+					var release = JsonConvert.DeserializeObject<GitHubRelease>(text);
+
+					if (release == null)
+					{
+						continue;
+					}
+
+					bool isNewer = false;
+					string date = release.Assets[0].Uploaded;
+
+					var versionPath = Path.Combine("mods", info.Key, "mod.version");
+					if (!File.Exists(versionPath))
+					{
+						isNewer = true;
+					}
+					else
+					{
+						string localVersion = File.ReadAllText(versionPath).Trim();
+						if (localVersion.Length == 0)
+						{
+							isNewer = true;
+						}
+						else
+						{
+							if (date != localVersion)
+							{
+								isNewer = true;
+							}
+						}
+					}
+
+					if (!isNewer)
+					{
+						continue;
+					}
+
+					var d = new ModDownload(mod, ModDownloadType.Archive,
+						release.Assets[0].DownloadUrl, Path.Combine("mods", info.Key), release.Body, release.Assets[0].Size)
+					{
+						Name    = release.Name,
+						Version = release.TagName,
+						Date    = date,
+					};
+
+					result.Add(d);
+				}
+			}
+
+			e.Result = result;
 		}
 
 		private void modListView_SelectedIndexChanged(object sender, EventArgs e)
@@ -246,42 +419,52 @@ namespace SADXModManager
 		private void Save()
 		{
 			loaderini.Mods.Clear();
+
 			foreach (ListViewItem item in modListView.CheckedItems)
+			{
 				loaderini.Mods.Add((string)item.Tag);
-			loaderini.DebugConsole = consoleCheckBox.Checked;
-			loaderini.DebugScreen = screenCheckBox.Checked;
-			loaderini.DebugFile = fileCheckBox.Checked;
-			loaderini.DisableCDCheck = disableCDCheckCheckBox.Checked;
-			loaderini.UseCustomResolution = useCustomResolutionCheckBox.Checked;
-			loaderini.HorizontalResolution = (int)horizontalResolution.Value;
-			loaderini.VerticalResolution = (int)verticalResolution.Value;
-			loaderini.ForceAspectRatio = forceAspectRatioCheckBox.Checked;
-			loaderini.ScaleHud = checkScaleHud.Checked;
-			loaderini.EnableVsync = checkVsync.Checked;
-			loaderini.WindowedFullscreen = windowedFullscreenCheckBox.Checked;
-			loaderini.AutoMipmap = forceMipmappingCheckBox.Checked;
-			loaderini.TextureFilter = forceTextureFilterCheckBox.Checked;
-			loaderini.PauseWhenInactive = pauseWhenInactiveCheckBox.Checked;
-			loaderini.StretchFullscreen = stretchFullscreenCheckBox.Checked;
-			loaderini.ScreenNum = screenNumComboBox.SelectedIndex;
-			loaderini.CustomWindowSize = customWindowSizeCheckBox.Checked;
-			loaderini.WindowWidth = (int)windowWidth.Value;
-			loaderini.WindowHeight = (int)windowHeight.Value;
+			}
+
+			loaderini.DebugConsole              = consoleCheckBox.Checked;
+			loaderini.DebugScreen               = screenCheckBox.Checked;
+			loaderini.DebugFile                 = fileCheckBox.Checked;
+			loaderini.DisableCDCheck            = disableCDCheckCheckBox.Checked;
+			loaderini.UseCustomResolution       = useCustomResolutionCheckBox.Checked;
+			loaderini.HorizontalResolution      = (int)horizontalResolution.Value;
+			loaderini.VerticalResolution        = (int)verticalResolution.Value;
+			loaderini.ForceAspectRatio          = forceAspectRatioCheckBox.Checked;
+			loaderini.ScaleHud                  = checkScaleHud.Checked;
+			loaderini.EnableVsync               = checkVsync.Checked;
+			loaderini.WindowedFullscreen        = windowedFullscreenCheckBox.Checked;
+			loaderini.AutoMipmap                = forceMipmappingCheckBox.Checked;
+			loaderini.TextureFilter             = forceTextureFilterCheckBox.Checked;
+			loaderini.PauseWhenInactive         = pauseWhenInactiveCheckBox.Checked;
+			loaderini.StretchFullscreen         = stretchFullscreenCheckBox.Checked;
+			loaderini.ScreenNum                 = screenNumComboBox.SelectedIndex;
+			loaderini.CustomWindowSize          = customWindowSizeCheckBox.Checked;
+			loaderini.WindowWidth               = (int)windowWidth.Value;
+			loaderini.WindowHeight              = (int)windowHeight.Value;
 			loaderini.MaintainWindowAspectRatio = maintainWindowAspectRatioCheckBox.Checked;
+
 			IniFile.Serialize(loaderini, loaderinipath);
-			List<Code> codes = new List<Code>();
-			List<Code> patches = new List<Code>();
-			foreach (Code item in codesCheckedListBox.CheckedIndices.OfType<int>().Select(a => this.codes[a]))
+
+			List<Code> selectedCodes = new List<Code>();
+			List<Code> selectedPatches = new List<Code>();
+
+			foreach (Code item in codesCheckedListBox.CheckedIndices.OfType<int>().Select(a => codes[a]))
+			{
 				if (item.Patch)
-					patches.Add(item);
+					selectedPatches.Add(item);
 				else
-					codes.Add(item);
+					selectedCodes.Add(item);
+			}
+
 			using (FileStream fs = File.Create(patchdatpath))
 			using (BinaryWriter bw = new BinaryWriter(fs, System.Text.Encoding.ASCII))
 			{
 				bw.Write(new[] { 'c', 'o', 'd', 'e', 'v', '5' });
-				bw.Write(patches.Count);
-				foreach (Code item in patches)
+				bw.Write(selectedPatches.Count);
+				foreach (Code item in selectedPatches)
 				{
 					if (item.IsReg)
 						bw.Write((byte)CodeType.newregs);
@@ -293,8 +476,8 @@ namespace SADXModManager
 			using (BinaryWriter bw = new BinaryWriter(fs, System.Text.Encoding.ASCII))
 			{
 				bw.Write(new[] { 'c', 'o', 'd', 'e', 'v', '5' });
-				bw.Write(codes.Count);
-				foreach (Code item in codes)
+				bw.Write(selectedCodes.Count);
+				foreach (Code item in selectedCodes)
 				{
 					if (item.IsReg)
 						bw.Write((byte)CodeType.newregs);
@@ -537,241 +720,5 @@ namespace SADXModManager
 				codesCheckedListBox.Items.Add(item.Name, loaderini.EnabledCodes.Contains(item.Name));
 			codesCheckedListBox.EndUpdate();
 		}
-	}
-
-	class LoaderInfo
-	{
-		public bool DebugConsole { get; set; }
-		public bool DebugScreen { get; set; }
-		public bool DebugFile { get; set; }
-		public bool? ShowConsole { get { return null; } set { if (value.HasValue) DebugConsole = value.Value; } }
-		public bool DisableCDCheck { get; set; }
-		public bool UseCustomResolution { get; set; }
-		[DefaultValue(640)]
-		public int HorizontalResolution { get; set; }
-		[DefaultValue(480)]
-		public int VerticalResolution { get; set; }
-		public bool ForceAspectRatio { get; set; }
-		[DefaultValue(false)]
-		public bool ScaleHud { get; set; }
-		public bool WindowedFullscreen { get; set; }
-		[DefaultValue(true)]
-		public bool EnableVsync { get; set; }
-		[DefaultValue(true)]
-		public bool AutoMipmap { get; set; }
-		[DefaultValue(true)]
-		public bool TextureFilter { get; set; }
-		[DefaultValue(true)]
-		public bool PauseWhenInactive { get; set; }
-		[DefaultValue(true)]
-		public bool StretchFullscreen { get; set; }
-		[DefaultValue(1)]
-		public int ScreenNum { get; set; }
-		public bool CustomWindowSize { get; set; }
-		[DefaultValue(640)]
-		public int WindowWidth { get; set; }
-		[DefaultValue(480)]
-		public int WindowHeight { get; set; }
-		public bool MaintainWindowAspectRatio { get; set; }
-		[IniName("Mod")]
-		[IniCollection(IniCollectionMode.NoSquareBrackets, StartIndex = 1)]
-		public List<string> Mods { get; set; }
-		[IniName("Code")]
-		[IniCollection(IniCollectionMode.NoSquareBrackets, StartIndex = 1)]
-		public List<string> EnabledCodes { get; set; }
-
-		public LoaderInfo()
-		{
-			Mods = new List<string>();
-			EnabledCodes = new List<string>();
-		}
-	}
-
-	class ModInfo
-	{
-		public string Name { get; set; }
-		public string Author { get; set; }
-		public string Version { get; set; }
-		public string Description { get; set; }
-		public string EXEFile { get; set; }
-		public string DLLFile { get; set; }
-		public bool RedirectMainSave { get; set; }
-		public bool RedirectChaoSave { get; set; }
-		public string Codes { get; set; }
-	}
-
-	[XmlRoot(Namespace = "http://www.sonicretro.org")]
-	public class CodeList
-	{
-		static readonly XmlSerializer serializer = new XmlSerializer(typeof(CodeList));
-
-		public static CodeList Load(string filename)
-		{
-			using (FileStream fs = File.OpenRead(filename))
-				return (CodeList)serializer.Deserialize(fs);
-		}
-
-		public void Save(string filename)
-		{
-			using (FileStream fs = File.Create(filename))
-				serializer.Serialize(fs, this);
-		}
-
-		[XmlElement("Code")]
-		public List<Code> Codes { get; set; }
-	}
-
-	public class Code
-	{
-		[XmlAttribute("name")]
-		public string Name { get; set; }
-		[XmlAttribute("required")]
-		public bool Required { get; set; }
-		[XmlAttribute("patch")]
-		public bool Patch { get; set; }
-		[XmlElement("CodeLine")]
-		public List<CodeLine> Lines { get; set; }
-
-		[XmlIgnore]
-		public bool IsReg { get { return Lines.Any((line) => line.IsReg); } }
-	}
-
-	public class CodeLine
-	{
-		public CodeType Type { get; set; }
-		[XmlElement(IsNullable = false)]
-		public string Address { get; set; }
-		public bool Pointer { get; set; }
-		[XmlIgnore]
-		public bool PointerSpecified { get { return Pointer; } set { } }
-		[XmlIgnore]
-		public List<int> Offsets { get; set; }
-		[XmlArray("Offsets")]
-		[XmlArrayItem("Offset")]
-		public string[] OffsetStrings
-		{
-			get { return Offsets == null ? null : Offsets.Select((a) => a.ToString("X")).ToArray(); }
-			set { Offsets = value.Select((a) => int.Parse(a, System.Globalization.NumberStyles.HexNumber)).ToList(); }
-		}
-		[XmlIgnore]
-		public bool OffsetStringsSpecified { get { return Offsets != null && Offsets.Count > 0; } set { } }
-		[XmlElement(IsNullable = false)]
-		public string Value { get; set; }
-		public ValueType ValueType { get; set; }
-		public uint? RepeatCount { get; set; }
-		[XmlIgnore]
-		public bool RepeatCountSpecified { get { return RepeatCount.HasValue; } set { } }
-		[XmlArray]
-		public List<CodeLine> TrueLines { get; set; }
-		[XmlIgnore]
-		public bool TrueLinesSpecified { get { return TrueLines.Count > 0 && IsIf; } set { } }
-		[XmlArray]
-		public List<CodeLine> FalseLines { get; set; }
-		[XmlIgnore]
-		public bool FalseLinesSpecified { get { return FalseLines.Count > 0 && IsIf; } set { } }
-
-		[XmlIgnore]
-		public bool IsIf
-		{
-			get
-			{
-				return (Type >= CodeType.ifeq8 && Type <= CodeType.ifkbkey)
-					|| (Type >= CodeType.ifeqreg8 && Type <= CodeType.ifmaskreg32);
-			}
-		}
-
-		[XmlIgnore]
-		public bool IsReg
-		{
-			get
-			{
-				if (IsIf)
-				{
-					if (TrueLines.Any((line) => line.IsReg))
-						return true;
-					if (FalseLines.Any((line) => line.IsReg))
-						return true;
-				}
-				if (Address.StartsWith("r"))
-					return true;
-				if (Type >= CodeType.readreg8 && Type <= CodeType.ifmaskreg32)
-					return true;
-				return false;
-			}
-		}
-	}
-
-	public enum CodeType
-	{
-		write8, write16, write32, writefloat,
-		add8, add16, add32, addfloat,
-		sub8, sub16, sub32, subfloat,
-		mulu8, mulu16, mulu32, mulfloat,
-		muls8, muls16, muls32,
-		divu8, divu16, divu32, divfloat,
-		divs8, divs16, divs32,
-		modu8, modu16, modu32,
-		mods8, mods16, mods32,
-		shl8, shl16, shl32,
-		shru8, shru16, shru32,
-		shrs8, shrs16, shrs32,
-		rol8, rol16, rol32,
-		ror8, ror16, ror32,
-		and8, and16, and32,
-		or8, or16, or32,
-		xor8, xor16, xor32,
-		writenop,
-		ifeq8, ifeq16, ifeq32, ifeqfloat,
-		ifne8, ifne16, ifne32, ifnefloat,
-		ifltu8, ifltu16, ifltu32, ifltfloat,
-		iflts8, iflts16, iflts32,
-		ifltequ8, ifltequ16, ifltequ32, iflteqfloat,
-		iflteqs8, iflteqs16, iflteqs32,
-		ifgtu8, ifgtu16, ifgtu32, ifgtfloat,
-		ifgts8, ifgts16, ifgts32,
-		ifgtequ8, ifgtequ16, ifgtequ32, ifgteqfloat,
-		ifgteqs8, ifgteqs16, ifgteqs32,
-		ifmask8, ifmask16, ifmask32,
-		ifkbkey,
-		readreg8, readreg16, readreg32,
-		writereg8, writereg16, writereg32,
-		addreg8, addreg16, addreg32, addregfloat,
-		subreg8, subreg16, subreg32, subregfloat,
-		mulregu8, mulregu16, mulregu32, mulregfloat,
-		mulregs8, mulregs16, mulregs32,
-		divregu8, divregu16, divregu32, divregfloat,
-		divregs8, divregs16, divregs32,
-		modregu8, modregu16, modregu32,
-		modregs8, modregs16, modregs32,
-		shlreg8, shlreg16, shlreg32,
-		shrregu8, shrregu16, shrregu32,
-		shrregs8, shrregs16, shrregs32,
-		rolreg8, rolreg16, rolreg32,
-		rorreg8, rorreg16, rorreg32,
-		andreg8, andreg16, andreg32,
-		orreg8, orreg16, orreg32,
-		xorreg8, xorreg16, xorreg32,
-		writenopreg,
-		ifeqreg8, ifeqreg16, ifeqreg32, ifeqregfloat,
-		ifnereg8, ifnereg16, ifnereg32, ifneregfloat,
-		ifltregu8, ifltregu16, ifltregu32, ifltregfloat,
-		ifltregs8, ifltregs16, ifltregs32,
-		iflteqregu8, iflteqregu16, iflteqregu32, iflteqregfloat,
-		iflteqregs8, iflteqregs16, iflteqregs32,
-		ifgtregu8, ifgtregu16, ifgtregu32, ifgtregfloat,
-		ifgtregs8, ifgtregs16, ifgtregs32,
-		ifgteqregu8, ifgteqregu16, ifgteqregu32, ifgteqregfloat,
-		ifgteqregs8, ifgteqregs16, ifgteqregs32,
-		ifmaskreg8, ifmaskreg16, ifmaskreg32,
-		s8tos32, s16tos32, s32tofloat, u32tofloat, floattos32, floattou32,
-		@else,
-		endif,
-		newregs
-	}
-
-	public enum ValueType
-	{
-		@decimal,
-		hex
 	}
 }
