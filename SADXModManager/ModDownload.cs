@@ -24,9 +24,12 @@ namespace SADXModManager
 		public long Size { get; private set; }
 		public int FilesToDownload { get; private set; }
 
+		public string HomePage;
 		public string Name;
 		public string Version;
-		public string Date;
+		public string Published;
+		public string Updated;
+		public string ReleaseUrl;
 
 		public ModDownload(ModInfo info, ModDownloadType type, string url, string folder, string changes, long size)
 		{
@@ -143,7 +146,7 @@ namespace SADXModManager
 					throw new ArgumentOutOfRangeException();
 			}
 
-			File.WriteAllText(Path.Combine(Folder, "mod.version"), Date);
+			File.WriteAllText(Path.Combine(Folder, "mod.version"), Updated);
 		}
 	}
 }

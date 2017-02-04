@@ -85,6 +85,12 @@
     <Compile Include="ModDownload.cs" />
     <Compile Include="ModInfo.cs" />
     <Compile Include="ModManifest.cs" />
+    <Compile Include="Controls\ModUpdateDetails.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ModUpdateDetails.Designer.cs">
+      <DependentUpon>ModUpdateDetails.cs</DependentUpon>
+    </Compile>
     <Compile Include="ModUpdatesDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -113,6 +119,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ModUpdateDetails.resx">
+      <DependentUpon>ModUpdateDetails.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ModUpdatesDialog.resx">
       <DependentUpon>ModUpdatesDialog.cs</DependentUpon>

@@ -33,10 +33,19 @@
 			this.buttonLater = new System.Windows.Forms.Button();
 			this.listModUpdates = new System.Windows.Forms.ListView();
 			this.columnName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.columnVersion = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.columnNewVersion = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.columnDate = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.columnSize = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+			this.tabControl1 = new System.Windows.Forms.TabControl();
+			this.tabPageChanges = new System.Windows.Forms.TabPage();
+			this.textChangeLog = new System.Windows.Forms.RichTextBox();
+			this.tabPageDetails = new System.Windows.Forms.TabPage();
+			this.modUpdateDetails = new SADXModManager.Controls.ModUpdateDetails();
+			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
+			this.splitContainer1.Panel1.SuspendLayout();
+			this.splitContainer1.Panel2.SuspendLayout();
+			this.splitContainer1.SuspendLayout();
+			this.tabControl1.SuspendLayout();
+			this.tabPageChanges.SuspendLayout();
+			this.tabPageDetails.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// label1
@@ -74,48 +83,99 @@
 			// 
 			// listModUpdates
 			// 
-			this.listModUpdates.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
 			this.listModUpdates.CheckBoxes = true;
 			this.listModUpdates.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnName,
-            this.columnVersion,
-            this.columnNewVersion,
-            this.columnDate,
-            this.columnSize});
+            this.columnName});
+			this.listModUpdates.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.listModUpdates.FullRowSelect = true;
 			this.listModUpdates.HideSelection = false;
-			this.listModUpdates.Location = new System.Drawing.Point(12, 25);
+			this.listModUpdates.Location = new System.Drawing.Point(0, 0);
 			this.listModUpdates.Name = "listModUpdates";
-			this.listModUpdates.Size = new System.Drawing.Size(600, 215);
+			this.listModUpdates.Size = new System.Drawing.Size(224, 215);
 			this.listModUpdates.TabIndex = 1;
 			this.listModUpdates.UseCompatibleStateImageBehavior = false;
 			this.listModUpdates.View = System.Windows.Forms.View.Details;
 			this.listModUpdates.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.listModUpdates_ItemChecked);
+			this.listModUpdates.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.listModUpdates_ItemSelectionChanged);
 			// 
 			// columnName
 			// 
 			this.columnName.Text = "Name";
-			this.columnName.Width = 226;
+			this.columnName.Width = 192;
 			// 
-			// columnVersion
+			// splitContainer1
 			// 
-			this.columnVersion.Text = "Version";
+			this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+			this.splitContainer1.Location = new System.Drawing.Point(12, 25);
+			this.splitContainer1.Name = "splitContainer1";
 			// 
-			// columnNewVersion
+			// splitContainer1.Panel1
 			// 
-			this.columnNewVersion.Text = "New Version";
-			this.columnNewVersion.Width = 76;
+			this.splitContainer1.Panel1.Controls.Add(this.listModUpdates);
 			// 
-			// columnDate
+			// splitContainer1.Panel2
 			// 
-			this.columnDate.Text = "Release Date";
-			this.columnDate.Width = 153;
+			this.splitContainer1.Panel2.Controls.Add(this.tabControl1);
+			this.splitContainer1.Size = new System.Drawing.Size(600, 215);
+			this.splitContainer1.SplitterDistance = 224;
+			this.splitContainer1.TabIndex = 4;
 			// 
-			// columnSize
+			// tabControl1
 			// 
-			this.columnSize.Text = "Size";
+			this.tabControl1.Controls.Add(this.tabPageChanges);
+			this.tabControl1.Controls.Add(this.tabPageDetails);
+			this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.tabControl1.Location = new System.Drawing.Point(0, 0);
+			this.tabControl1.Name = "tabControl1";
+			this.tabControl1.SelectedIndex = 0;
+			this.tabControl1.Size = new System.Drawing.Size(372, 215);
+			this.tabControl1.TabIndex = 1;
+			// 
+			// tabPageChanges
+			// 
+			this.tabPageChanges.Controls.Add(this.textChangeLog);
+			this.tabPageChanges.Location = new System.Drawing.Point(4, 22);
+			this.tabPageChanges.Name = "tabPageChanges";
+			this.tabPageChanges.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageChanges.Size = new System.Drawing.Size(364, 189);
+			this.tabPageChanges.TabIndex = 0;
+			this.tabPageChanges.Text = "Changes";
+			this.tabPageChanges.UseVisualStyleBackColor = true;
+			// 
+			// textChangeLog
+			// 
+			this.textChangeLog.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.textChangeLog.Location = new System.Drawing.Point(3, 3);
+			this.textChangeLog.Name = "textChangeLog";
+			this.textChangeLog.ReadOnly = true;
+			this.textChangeLog.Size = new System.Drawing.Size(358, 183);
+			this.textChangeLog.TabIndex = 0;
+			this.textChangeLog.Text = "";
+			// 
+			// tabPageDetails
+			// 
+			this.tabPageDetails.AutoScroll = true;
+			this.tabPageDetails.Controls.Add(this.modUpdateDetails);
+			this.tabPageDetails.Location = new System.Drawing.Point(4, 22);
+			this.tabPageDetails.Name = "tabPageDetails";
+			this.tabPageDetails.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageDetails.Size = new System.Drawing.Size(364, 189);
+			this.tabPageDetails.TabIndex = 1;
+			this.tabPageDetails.Text = "Details";
+			this.tabPageDetails.UseVisualStyleBackColor = true;
+			// 
+			// modUpdateDetails
+			// 
+			this.modUpdateDetails.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.modUpdateDetails.Location = new System.Drawing.Point(3, 0);
+			this.modUpdateDetails.Margin = new System.Windows.Forms.Padding(0);
+			this.modUpdateDetails.Name = "modUpdateDetails";
+			this.modUpdateDetails.Size = new System.Drawing.Size(361, 150);
+			this.modUpdateDetails.TabIndex = 0;
 			// 
 			// ModUpdatesDialog
 			// 
@@ -124,7 +184,7 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.CancelButton = this.buttonLater;
 			this.ClientSize = new System.Drawing.Size(624, 281);
-			this.Controls.Add(this.listModUpdates);
+			this.Controls.Add(this.splitContainer1);
 			this.Controls.Add(this.buttonLater);
 			this.Controls.Add(this.buttonInstall);
 			this.Controls.Add(this.label1);
@@ -134,6 +194,13 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Mod Updates Available";
 			this.Load += new System.EventHandler(this.ModUpdatesDialog_Load);
+			this.splitContainer1.Panel1.ResumeLayout(false);
+			this.splitContainer1.Panel2.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
+			this.splitContainer1.ResumeLayout(false);
+			this.tabControl1.ResumeLayout(false);
+			this.tabPageChanges.ResumeLayout(false);
+			this.tabPageDetails.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -146,9 +213,11 @@
 		private System.Windows.Forms.Button buttonLater;
 		private System.Windows.Forms.ListView listModUpdates;
 		private System.Windows.Forms.ColumnHeader columnName;
-		private System.Windows.Forms.ColumnHeader columnVersion;
-		private System.Windows.Forms.ColumnHeader columnNewVersion;
-		private System.Windows.Forms.ColumnHeader columnDate;
-		private System.Windows.Forms.ColumnHeader columnSize;
+		private System.Windows.Forms.SplitContainer splitContainer1;
+		private System.Windows.Forms.RichTextBox textChangeLog;
+		private System.Windows.Forms.TabControl tabControl1;
+		private System.Windows.Forms.TabPage tabPageChanges;
+		private System.Windows.Forms.TabPage tabPageDetails;
+		private Controls.ModUpdateDetails modUpdateDetails;
 	}
 }

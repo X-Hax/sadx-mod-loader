@@ -7,7 +7,6 @@ namespace SADXModManager
 {
 	public partial class ModUpdatesDialog : Form
 	{
-		// TODO: changelogs somehow
 		private readonly List<ModDownload> mods;
 
 		public List<ModDownload> SelectedMods { get; } = new List<ModDownload>();
@@ -25,14 +24,13 @@ namespace SADXModManager
 			{
 				download.CheckFiles();
 
-				listModUpdates.Items.Add(new ListViewItem(new[]
-				{
-					download.Info.Name, download.Info.Version, download.Version, download.Date, download.Size.ToString()
-				})
+				listModUpdates.Items.Add(new ListViewItem(new[] { download.Info.Name })
 				{
 					Checked = true, Tag = download
 				});
 			}
+
+			listModUpdates.Items[0].Selected = true;
 			listModUpdates.EndUpdate();
 		}
 
@@ -50,6 +48,26 @@ namespace SADXModManager
 		private void listModUpdates_ItemChecked(object sender, ItemCheckedEventArgs e)
 		{
 			buttonInstall.Enabled = listModUpdates.Items.Cast<ListViewItem>().Any(x => x.Checked);
+		}
+
+		private void SetModDetails(ModDownload entry)
+		{
+			textChangeLog.Text = entry?.Changes.Trim();
+			modUpdateDetails.SetData(entry);
+		}
+
+		private void listModUpdates_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
+		{
+			var items = listModUpdates.SelectedItems;
+			if (items.Count > 1 || items.Count == 0)
+			{
+				SetModDetails(null);
+			}
+			else
+			{
+				var entry = items[0].Tag as ModDownload;
+				SetModDetails(entry);
+			}
 		}
 	}
 }

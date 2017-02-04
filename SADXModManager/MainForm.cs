@@ -335,11 +335,14 @@ namespace SADXModManager
 					}
 
 					var d = new ModDownload(mod, ModDownloadType.Archive,
-						release.Assets[0].DownloadUrl, Path.Combine("mods", info.Key), release.Body, release.Assets[0].Size)
+						release.Assets[0].DownloadUrl, Path.Combine("mods", info.Key), release.Body.Replace("\n", "\r\n"), release.Assets[0].Size)
 					{
-						Name    = release.Name,
-						Version = release.TagName,
-						Date    = date,
+						HomePage   = "https://github.com/" + mod.GitHubRepo,
+						Name       = release.Name,
+						Version    = release.TagName,
+						Published  = release.Published,
+						Updated    = date,
+						ReleaseUrl = release.HtmlUrl,
 					};
 
 					result.Add(d);
