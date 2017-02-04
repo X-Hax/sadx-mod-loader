@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 
 namespace SADXModManager
 {
@@ -54,6 +56,10 @@ namespace SADXModManager
 			}
 		}
 
+		public event EventHandler Extracting;
+		public event EventHandler ParsingManifest;
+		public event EventHandler ApplyingManifest;
+
 		public void Download(WebClient client, string updatePath)
 		{
 			switch (Type)
@@ -65,7 +71,24 @@ namespace SADXModManager
 					var info = new FileInfo(filePath);
 					if (!info.Exists || info.Length != Size)
 					{
-						client.DownloadFile(Url, filePath);
+						AsyncCompletedEventHandler downloadComplete = (sender, args) =>
+						{
+							lock (args.UserState)
+							{
+								Monitor.Pulse(args.UserState);
+							}
+						};
+
+						client.DownloadFileCompleted += downloadComplete;
+
+						var sync = new object();
+						lock (sync)
+						{
+							client.DownloadFileAsync(uri, filePath, sync);
+							Monitor.Wait(sync);
+						}
+
+						client.DownloadFileCompleted -= downloadComplete;
 					}
 
 					var dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
@@ -74,6 +97,7 @@ namespace SADXModManager
 						Directory.CreateDirectory(dataDir);
 					}
 
+					OnExtracting();
 					// HACK: hard-coded garbage
 					using (Process process = Process.Start(@"C:\Program Files\7-Zip\7z.exe", $"x -O\"{dataDir}\" -y \"{filePath}\""))
 					{
@@ -95,7 +119,10 @@ namespace SADXModManager
 					var newManPath = Path.Combine(workDir, "mod.manifest");
 					var oldManPath = Path.Combine(Folder, "mod.manifest");
 
+					OnParsingManifest();
 					List<ModManifest> newManifest = ModManifest.FromFile(newManPath);
+
+					OnApplyingManifest();
 
 					if (File.Exists(oldManPath))
 					{
@@ -147,6 +174,21 @@ namespace SADXModManager
 			}
 
 			File.WriteAllText(Path.Combine(Folder, "mod.version"), Updated);
+		}
+
+		protected virtual void OnExtracting()
+		{
+			Extracting?.Invoke(this, EventArgs.Empty);
+		}
+
+		protected virtual void OnParsingManifest()
+		{
+			ParsingManifest?.Invoke(this, EventArgs.Empty);
+		}
+
+		protected virtual void OnApplyingManifest()
+		{
+			ApplyingManifest?.Invoke(this, EventArgs.Empty);
 		}
 	}
 }

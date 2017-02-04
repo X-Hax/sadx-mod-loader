@@ -73,6 +73,12 @@
     <Compile Include="Forms\ConfigEditDialog.Designer.cs">
       <DependentUpon>ConfigEditDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\ProgressDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ProgressDialog.Designer.cs">
+      <DependentUpon>ProgressDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="GitHub.cs" />
     <Compile Include="IniFile.cs" />
     <Compile Include="LoaderInfo.cs" />
@@ -116,6 +122,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\ConfigEditDialog.resx">
       <DependentUpon>ConfigEditDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\ProgressDialog.resx">
+      <DependentUpon>ProgressDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

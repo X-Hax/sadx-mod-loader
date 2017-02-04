@@ -1,14 +1,16 @@
 ﻿using IniSerializer;
 using Newtonsoft.Json;
+using SADXModManager.Forms;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using SADXModManager.Forms;
 
 namespace SADXModManager
 {
@@ -51,7 +53,7 @@ namespace SADXModManager
 							{
 								if (dlg.ShowDialog(this) == DialogResult.Yes)
 								{
-									System.Diagnostics.Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
+									Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
 									Close();
 									return;
 								}
@@ -114,6 +116,8 @@ namespace SADXModManager
 			suppressEvent = true;
 			maintainWindowAspectRatioCheckBox.Checked = loaderini.MaintainWindowAspectRatio;
 			suppressEvent = false;
+
+			CheckModUpdates();
 
 			if (!File.Exists(datadllpath))
 			{
@@ -195,15 +199,13 @@ namespace SADXModManager
 				codesCheckedListBox.Items.Add(item.Name, loaderini.EnabledCodes.Contains(item.Name));
 
 			codesCheckedListBox.EndUpdate();
-
-			CheckModUpdates();
 		}
 
 		private void CheckModUpdates()
 		{
 			if (updateChecker == null)
 			{
-				updateChecker = new BackgroundWorker();
+				updateChecker = new BackgroundWorker { WorkerSupportsCancellation = true };
 				updateChecker.DoWork += UpdateChecker_DoWork;
 				updateChecker.RunWorkerCompleted += UpdateChecker_RunWorkerCompleted;
 			}
@@ -215,6 +217,11 @@ namespace SADXModManager
 
 		private void UpdateChecker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
+			if (e.Cancelled)
+			{
+				return;
+			}
+
 			var updates = e.Result as List<ModDownload>;
 			if (updates == null || updates.Count == 0)
 			{
@@ -243,32 +250,71 @@ namespace SADXModManager
 			}
 
 			using (var client = new UpdaterWebClient())
+			using (var progress = new ProgressDialog("Update Progress", updates.Select(x => (int)x.Size).ToArray()))
 			{
+				DownloadProgressChangedEventHandler progressChanged = (o, args) =>
+				{
+					progress.SetProgress((int)args.BytesReceived);
+					progress.SetStep($"Downloading: {args.BytesReceived} / {args.TotalBytesToReceive}");
+				};
+
+				client.DownloadProgressChanged += progressChanged;
+				progress.Show(this);
+
 				foreach (ModDownload update in updates)
 				{
 					DialogResult result;
+
+					progress.SetTaskAndStep($"Updating mod: {update.Info.Name}", "Starting download...");
+
+					update.Extracting       += (o, args) => { progress.SetStep("Extracting..."); };
+					update.ParsingManifest  += (o, args) => { progress.SetStep("Parsing manifest..."); };
+					update.ApplyingManifest += (o, args) => { progress.SetStep("Applying manifest..."); };
+
 					do
 					{
 						try
 						{
 							result = DialogResult.Cancel;
-							update.Download(client, updatePath);
+
+							// poor man's await Task.Run (not available in .net 4.0)
+							using (var task = new Task(() => update.Download(client, updatePath)))
+							{
+								task.Start();
+
+								while (!task.IsCompleted)
+								{
+									Application.DoEvents();
+								}
+
+								task.Wait();
+							}
 						}
 						catch (Exception ex)
 						{
-							result = MessageBox.Show(this, $"Failed to update mod {update.Info.Name}:\r\n" + ex.Message
+							result = MessageBox.Show(progress, $"Failed to update mod {update.Info.Name}:\r\n" + ex.Message
 								+ "\r\n\r\nPress Retry to try again, or Cancel to skip this mod.",
 								"Update Failed", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
 						}
 					} while (result == DialogResult.Retry);
+
+					progress.NextTask();
 				}
 			}
 
 			Directory.Delete(updatePath, true);
+			LoadModList();
 		}
 
 		private static void UpdateChecker_DoWork(object sender, DoWorkEventArgs e)
 		{
+			var worker = sender as BackgroundWorker;
+
+			if (worker == null)
+			{
+				throw new Exception("what");
+			}
+
 			var enabledMods = e.Argument as List<KeyValuePair<string, ModInfo>>;
 			if (enabledMods == null || enabledMods.Count == 0)
 			{
@@ -281,13 +327,18 @@ namespace SADXModManager
 			{
 				foreach (KeyValuePair<string, ModInfo> info in enabledMods)
 				{
+					if (worker.CancellationPending)
+					{
+						e.Cancel = true;
+						break;
+					}
+
 					ModInfo mod = info.Value;
 					if (string.IsNullOrEmpty(mod.GitHubRepo))
 					{
 						continue;
 					}
 
-					// TODO: figure out a better way to aggregate all update check errors
 					string text;
 					try
 					{
@@ -295,6 +346,7 @@ namespace SADXModManager
 					}
 					catch (Exception ex)
 					{
+						// TODO: figure out a better way to aggregate all update check errors
 						Console.WriteLine($"Error checking releases for {mod.GitHubRepo}: " + ex.Message);
 						continue;
 					}
@@ -321,12 +373,9 @@ namespace SADXModManager
 						{
 							isNewer = true;
 						}
-						else
+						else if (date != localVersion)
 						{
-							if (date != localVersion)
-							{
-								isNewer = true;
-							}
+							isNewer = true;
 						}
 					}
 
@@ -559,9 +608,31 @@ namespace SADXModManager
 
 		private void saveAndPlayButton_Click(object sender, EventArgs e)
 		{
+			if (updateChecker?.IsBusy == true)
+			{
+				var result = MessageBox.Show(this, "Mods are still being checked for updates. Continue anyway?",
+					"Busy", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+				if (result == DialogResult.No)
+				{
+					return;
+				}
+
+				Enabled = false;
+
+				updateChecker.CancelAsync();
+				while (updateChecker.IsBusy)
+				{
+					Application.DoEvents();
+				}
+
+				Enabled = true;
+			}
+
 			Save();
-			System.Diagnostics.Process.Start(loaderini.Mods.Select((item) => mods[item].EXEFile)
-				.FirstOrDefault((item) => !string.IsNullOrEmpty(item)) ?? "sonic.exe").WaitForInputIdle(10000);
+			Process process = Process.Start(loaderini.Mods.Select((item) => mods[item].EXEFile)
+				                                .FirstOrDefault((item) => !string.IsNullOrEmpty(item)) ?? "sonic.exe");
+			process?.WaitForInputIdle(10000);
 			Close();
 		}
 
@@ -641,7 +712,7 @@ namespace SADXModManager
 
 		private void buttonModsFolder_Click(object sender, EventArgs e)
 		{
-			System.Diagnostics.Process.Start(@"mods");
+			Process.Start(@"mods");
 		}
 
 		private void buttonNewMod_Click(object sender, EventArgs e)
