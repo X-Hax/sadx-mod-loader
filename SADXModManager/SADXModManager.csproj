@@ -60,17 +60,17 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ButtonControl.cs">
+    <Compile Include="Controls\ButtonControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="ButtonControl.designer.cs">
+    <Compile Include="Controls\ButtonControl.designer.cs">
       <DependentUpon>ButtonControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Codes.cs" />
-    <Compile Include="ConfigEditDialog.cs">
+    <Compile Include="Forms\ConfigEditDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ConfigEditDialog.Designer.cs">
+    <Compile Include="Forms\ConfigEditDialog.Designer.cs">
       <DependentUpon>ConfigEditDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="GitHub.cs" />
@@ -91,30 +91,30 @@
     <Compile Include="Controls\ModUpdateDetails.Designer.cs">
       <DependentUpon>ModUpdateDetails.cs</DependentUpon>
     </Compile>
-    <Compile Include="ModUpdatesDialog.cs">
+    <Compile Include="Forms\ModUpdatesDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ModUpdatesDialog.Designer.cs">
+    <Compile Include="Forms\ModUpdatesDialog.Designer.cs">
       <DependentUpon>ModUpdatesDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="NewModDialog.cs">
+    <Compile Include="Forms\NewModDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NewModDialog.Designer.cs">
+    <Compile Include="Forms\NewModDialog.Designer.cs">
       <DependentUpon>NewModDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UpdateMessageDialog.cs">
+    <Compile Include="Forms\UpdateMessageDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UpdateMessageDialog.Designer.cs">
+    <Compile Include="Forms\UpdateMessageDialog.Designer.cs">
       <DependentUpon>UpdateMessageDialog.cs</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="ButtonControl.resx">
+    <EmbeddedResource Include="Controls\ButtonControl.resx">
       <DependentUpon>ButtonControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="ConfigEditDialog.resx">
+    <EmbeddedResource Include="Forms\ConfigEditDialog.resx">
       <DependentUpon>ConfigEditDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
@@ -123,10 +123,10 @@
     <EmbeddedResource Include="Controls\ModUpdateDetails.resx">
       <DependentUpon>ModUpdateDetails.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="ModUpdatesDialog.resx">
+    <EmbeddedResource Include="Forms\ModUpdatesDialog.resx">
       <DependentUpon>ModUpdatesDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="NewModDialog.resx">
+    <EmbeddedResource Include="Forms\NewModDialog.resx">
       <DependentUpon>NewModDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -139,7 +139,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="UpdateMessageDialog.resx">
+    <EmbeddedResource Include="Forms\UpdateMessageDialog.resx">
       <DependentUpon>UpdateMessageDialog.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />

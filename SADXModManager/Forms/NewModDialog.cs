@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows.Forms;
 using IniSerializer;
 
-namespace SADXModManager
+namespace SADXModManager.Forms
 {
 	public partial class NewModDialog : Form
 	{

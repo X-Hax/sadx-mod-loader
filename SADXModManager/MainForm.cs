@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Windows.Forms;
+using SADXModManager.Forms;
 
 namespace SADXModManager
 {

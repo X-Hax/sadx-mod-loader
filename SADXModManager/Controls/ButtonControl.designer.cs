@@ -1,4 +1,4 @@
-﻿namespace SADXModManager
+﻿namespace SADXModManager.Controls
 {
     partial class ButtonControl
     {

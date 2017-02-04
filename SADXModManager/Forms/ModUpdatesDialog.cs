@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace SADXModManager
+namespace SADXModManager.Forms
 {
 	public partial class ModUpdatesDialog : Form
 	{
