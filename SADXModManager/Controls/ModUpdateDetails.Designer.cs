@@ -38,11 +38,11 @@
 			this.labelFileCount = new System.Windows.Forms.Label();
 			this.groupReleaseDetails = new System.Windows.Forms.GroupBox();
 			this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
-			this.label4 = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
+			this.label5 = new System.Windows.Forms.Label();
+			this.label4 = new System.Windows.Forms.Label();
 			this.labelReleaseName = new System.Windows.Forms.Label();
 			this.labelReleaseTag = new System.Windows.Forms.Label();
-			this.label5 = new System.Windows.Forms.Label();
 			this.linkRelease = new System.Windows.Forms.LinkLabel();
 			this.label7 = new System.Windows.Forms.Label();
 			this.labelReleasePublished = new System.Windows.Forms.Label();
@@ -163,14 +163,14 @@
 			this.tableLayoutPanel2.ColumnCount = 2;
 			this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this.tableLayoutPanel2.Controls.Add(this.label6, 0, 2);
-			this.tableLayoutPanel2.Controls.Add(this.label5, 0, 0);
-			this.tableLayoutPanel2.Controls.Add(this.label4, 0, 1);
-			this.tableLayoutPanel2.Controls.Add(this.labelReleaseName, 1, 1);
-			this.tableLayoutPanel2.Controls.Add(this.labelReleaseTag, 1, 2);
-			this.tableLayoutPanel2.Controls.Add(this.linkRelease, 1, 0);
-			this.tableLayoutPanel2.Controls.Add(this.label7, 0, 3);
-			this.tableLayoutPanel2.Controls.Add(this.labelReleasePublished, 1, 3);
+			this.tableLayoutPanel2.Controls.Add(this.label7, 0, 0);
+			this.tableLayoutPanel2.Controls.Add(this.labelReleasePublished, 1, 0);
+			this.tableLayoutPanel2.Controls.Add(this.label6, 0, 3);
+			this.tableLayoutPanel2.Controls.Add(this.label5, 0, 1);
+			this.tableLayoutPanel2.Controls.Add(this.label4, 0, 2);
+			this.tableLayoutPanel2.Controls.Add(this.labelReleaseName, 1, 2);
+			this.tableLayoutPanel2.Controls.Add(this.linkRelease, 1, 1);
+			this.tableLayoutPanel2.Controls.Add(this.labelReleaseTag, 1, 3);
 			this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayoutPanel2.Location = new System.Drawing.Point(3, 16);
 			this.tableLayoutPanel2.Name = "tableLayoutPanel2";
@@ -182,30 +182,40 @@
 			this.tableLayoutPanel2.Size = new System.Drawing.Size(308, 55);
 			this.tableLayoutPanel2.TabIndex = 4;
 			// 
-			// label4
-			// 
-			this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(21, 13);
-			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(38, 13);
-			this.label4.TabIndex = 0;
-			this.label4.Text = "Name:";
-			// 
 			// label6
 			// 
 			this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(30, 26);
+			this.label6.Location = new System.Drawing.Point(30, 39);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(29, 13);
 			this.label6.TabIndex = 1;
 			this.label6.Text = "Tag:";
 			// 
+			// label5
+			// 
+			this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(24, 13);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(35, 13);
+			this.label5.TabIndex = 5;
+			this.label5.Text = "Page:";
+			// 
+			// label4
+			// 
+			this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(21, 26);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(38, 13);
+			this.label4.TabIndex = 0;
+			this.label4.Text = "Name:";
+			// 
 			// labelReleaseName
 			// 
 			this.labelReleaseName.AutoSize = true;
-			this.labelReleaseName.Location = new System.Drawing.Point(65, 13);
+			this.labelReleaseName.Location = new System.Drawing.Point(65, 26);
 			this.labelReleaseName.Name = "labelReleaseName";
 			this.labelReleaseName.Size = new System.Drawing.Size(96, 13);
 			this.labelReleaseName.TabIndex = 3;
@@ -214,26 +224,16 @@
 			// labelReleaseTag
 			// 
 			this.labelReleaseTag.AutoSize = true;
-			this.labelReleaseTag.Location = new System.Drawing.Point(65, 26);
+			this.labelReleaseTag.Location = new System.Drawing.Point(65, 39);
 			this.labelReleaseTag.Name = "labelReleaseTag";
 			this.labelReleaseTag.Size = new System.Drawing.Size(87, 13);
 			this.labelReleaseTag.TabIndex = 4;
 			this.labelReleaseTag.Text = "labelReleaseTag";
 			// 
-			// label5
-			// 
-			this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(24, 0);
-			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(35, 13);
-			this.label5.TabIndex = 5;
-			this.label5.Text = "Page:";
-			// 
 			// linkRelease
 			// 
 			this.linkRelease.AutoSize = true;
-			this.linkRelease.Location = new System.Drawing.Point(65, 0);
+			this.linkRelease.Location = new System.Drawing.Point(65, 13);
 			this.linkRelease.Name = "linkRelease";
 			this.linkRelease.Size = new System.Drawing.Size(62, 13);
 			this.linkRelease.TabIndex = 6;
@@ -245,7 +245,7 @@
 			// 
 			this.label7.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(3, 39);
+			this.label7.Location = new System.Drawing.Point(3, 0);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(56, 13);
 			this.label7.TabIndex = 7;
@@ -254,7 +254,7 @@
 			// labelReleasePublished
 			// 
 			this.labelReleasePublished.AutoSize = true;
-			this.labelReleasePublished.Location = new System.Drawing.Point(65, 39);
+			this.labelReleasePublished.Location = new System.Drawing.Point(65, 0);
 			this.labelReleasePublished.Name = "labelReleasePublished";
 			this.labelReleasePublished.Size = new System.Drawing.Size(114, 13);
 			this.labelReleasePublished.TabIndex = 8;

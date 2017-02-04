@@ -21,10 +21,10 @@ namespace SADXModManager.Controls
 				labelFileCount.Text         = null;
 
 				// Release details
+				labelReleasePublished.Text = null;
 				linkRelease.Text           = null;
 				labelReleaseName.Text      = null;
 				labelReleaseTag.Text       = null;
-				labelReleasePublished.Text = null;
 			}
 			else
 			{
@@ -34,10 +34,10 @@ namespace SADXModManager.Controls
 				labelFileCount.Text         = entry.FilesToDownload.ToString();
 
 				// Release details
+				labelReleasePublished.Text = entry.Published;
 				linkRelease.Text           = entry.ReleaseUrl;
 				labelReleaseName.Text      = entry.Name;
 				labelReleaseTag.Text       = entry.Version;
-				labelReleasePublished.Text = entry.Published;
 			}
 
 			linkRelease.Enabled = !string.IsNullOrEmpty(linkRelease.Text);
