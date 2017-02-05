@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SADXModManager
@@ -249,57 +248,9 @@ namespace SADXModManager
 				Directory.CreateDirectory(updatePath);
 			}
 
-			using (var client = new UpdaterWebClient())
-			using (var progress = new ProgressDialog("Update Progress", updates.Select(x => (int)x.Size).ToArray()))
+			using (var progress = new DownloadDialog(updates, updatePath))
 			{
-				DownloadProgressChangedEventHandler progressChanged = (o, args) =>
-				{
-					progress.SetProgress((int)args.BytesReceived);
-					progress.SetStep($"Downloading: {args.BytesReceived} / {args.TotalBytesToReceive}");
-				};
-
-				client.DownloadProgressChanged += progressChanged;
-				progress.Show(this);
-
-				foreach (ModDownload update in updates)
-				{
-					DialogResult result;
-
-					progress.SetTaskAndStep($"Updating mod: {update.Info.Name}", "Starting download...");
-
-					update.Extracting       += (o, args) => { progress.SetStep("Extracting..."); };
-					update.ParsingManifest  += (o, args) => { progress.SetStep("Parsing manifest..."); };
-					update.ApplyingManifest += (o, args) => { progress.SetStep("Applying manifest..."); };
-
-					do
-					{
-						try
-						{
-							result = DialogResult.Cancel;
-
-							// poor man's await Task.Run (not available in .net 4.0)
-							using (var task = new Task(() => update.Download(client, updatePath)))
-							{
-								task.Start();
-
-								while (!task.IsCompleted)
-								{
-									Application.DoEvents();
-								}
-
-								task.Wait();
-							}
-						}
-						catch (Exception ex)
-						{
-							result = MessageBox.Show(progress, $"Failed to update mod {update.Info.Name}:\r\n" + ex.Message
-								+ "\r\n\r\nPress Retry to try again, or Cancel to skip this mod.",
-								"Update Failed", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
-						}
-					} while (result == DialogResult.Retry);
-
-					progress.NextTask();
-				}
+				progress.ShowDialog(this);
 			}
 
 			Directory.Delete(updatePath, true);
