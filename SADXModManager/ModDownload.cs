@@ -88,7 +88,7 @@ namespace SADXModManager
 			{
 				case ModDownloadType.Archive:
 					var uri = new Uri(Url);
-					var filePath = Path.Combine(updatePath, uri.Segments.Last());
+					string filePath = Path.Combine(updatePath, uri.Segments.Last());
 
 					var info = new FileInfo(filePath);
 					if (!info.Exists || info.Length != Size)
@@ -113,7 +113,7 @@ namespace SADXModManager
 						client.DownloadFileCompleted -= downloadComplete;
 					}
 
-					var dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
+					string dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
 					if (!Directory.Exists(dataDir))
 					{
 						Directory.CreateDirectory(dataDir);
@@ -124,14 +124,14 @@ namespace SADXModManager
 					{
 						if (SevenZipArchive.IsSevenZipFile(fileStream))
 						{
-							using (var archive = SevenZipArchive.Open(fileStream))
+							using (SevenZipArchive archive = SevenZipArchive.Open(fileStream))
 							{
 								Extract(archive.ExtractAllEntries(), dataDir);
 							}
 						}
 						else
 						{
-							using (var reader = ReaderFactory.Open(fileStream))
+							using (IReader reader = ReaderFactory.Open(fileStream))
 							{
 								Extract(reader, dataDir);
 							}
@@ -145,8 +145,8 @@ namespace SADXModManager
 						throw new DirectoryNotFoundException("Unable to locate mod.ini in " + dataDir);
 					}
 
-					var newManPath = Path.Combine(workDir, "mod.manifest");
-					var oldManPath = Path.Combine(Folder, "mod.manifest");
+					string newManPath = Path.Combine(workDir, "mod.manifest");
+					string oldManPath = Path.Combine(Folder, "mod.manifest");
 
 					OnParsingManifest();
 					List<ModManifest> newManifest = ModManifest.FromFile(newManPath);
@@ -173,17 +173,17 @@ namespace SADXModManager
 
 					foreach (ModManifest file in newManifest)
 					{
-						var dir = Path.GetDirectoryName(file.Path);
+						string dir = Path.GetDirectoryName(file.Path);
 						if (!string.IsNullOrEmpty(dir))
 						{
-							var newDir = Path.Combine(Folder, dir);
+							string newDir = Path.Combine(Folder, dir);
 							if (!Directory.Exists(newDir))
 							{
 								Directory.CreateDirectory(newDir);
 							}
 						}
 
-						var dest = Path.Combine(Folder, file.Path);
+						string dest = Path.Combine(Folder, file.Path);
 
 						if (File.Exists(dest))
 						{
