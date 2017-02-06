@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using SharpCompress.Archives.SevenZip;
+using SharpCompress.Readers;
 
 namespace SADXModManager
 {
@@ -60,6 +61,27 @@ namespace SADXModManager
 		public event EventHandler ParsingManifest;
 		public event EventHandler ApplyingManifest;
 
+		private static void Extract(IReader reader, string outDir)
+		{
+			var options = new ExtractionOptions
+			{
+				ExtractFullPath    = true,
+				Overwrite          = true,
+				PreserveAttributes = true,
+				PreserveFileTime   = true
+			};
+
+			while (reader.MoveToNextEntry())
+			{
+				if (reader.Entry.IsDirectory)
+				{
+					continue;
+				}
+
+				reader.WriteEntryToDirectory(outDir, options);
+			}
+		}
+
 		public void Download(WebClient client, string updatePath)
 		{
 			switch (Type)
@@ -98,15 +120,22 @@ namespace SADXModManager
 					}
 
 					OnExtracting();
-					// HACK: hard-coded garbage
-					using (Process process = Process.Start(@"C:\Program Files\7-Zip\7z.exe", $"x -O\"{dataDir}\" -y \"{filePath}\""))
+					using (Stream fileStream = File.OpenRead(filePath))
 					{
-						if (process == null)
+						if (SevenZipArchive.IsSevenZipFile(fileStream))
 						{
-							throw new Exception("Failed to start 7z.exe");
+							using (var archive = SevenZipArchive.Open(fileStream))
+							{
+								Extract(archive.ExtractAllEntries(), dataDir);
+							}
 						}
-
-						process.WaitForExit();
+						else
+						{
+							using (var reader = ReaderFactory.Open(fileStream))
+							{
+								Extract(reader, dataDir);
+							}
+						}
 					}
 
 					string workDir = Path.GetDirectoryName(ModInfo.GetModFiles(new DirectoryInfo(dataDir)).FirstOrDefault());
