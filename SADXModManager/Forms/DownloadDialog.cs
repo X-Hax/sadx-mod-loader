@@ -45,10 +45,10 @@ namespace SADXModManager.Forms
 
 					do
 					{
+						result = DialogResult.Cancel;
+
 						try
 						{
-							result = DialogResult.Cancel;
-
 							// poor man's await Task.Run (not available in .net 4.0)
 							using (var task = new Task(() => update.Download(client, updatePath)))
 							{
@@ -62,11 +62,15 @@ namespace SADXModManager.Forms
 								task.Wait();
 							}
 						}
-						catch (Exception ex)
+						catch (AggregateException ae)
 						{
-							result = MessageBox.Show(this, $"Failed to update mod {update.Info.Name}:\r\n" + ex.Message
-								+ "\r\n\r\nPress Retry to try again, or Cancel to skip this mod.",
-								"Update Failed", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+							ae.Handle(ex =>
+							{
+								result = MessageBox.Show(this, $"Failed to update mod {update.Info.Name}:\r\n" + ex.Message
+									+ "\r\n\r\nPress Retry to try again, or Cancel to skip this mod.",
+									"Update Failed", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+								return true;
+							});
 						}
 					} while (result == DialogResult.Retry);
 

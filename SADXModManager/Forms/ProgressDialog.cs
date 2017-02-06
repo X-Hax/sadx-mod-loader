@@ -11,12 +11,12 @@ namespace SADXModManager.Forms
 		/// <summary>
 		/// Gets or sets the current task displayed on the window. (Upper label)
 		/// </summary>
-		public string Task => labelTask.Text;
+		public string CurrentTask => labelTask.Text;
 
 		/// <summary>
 		/// Gets or sets the current step displayed on the window. (Lower label)
 		/// </summary>
-		public string Step => labelStep.Text;
+		public string CurrentStep => labelStep.Text;
 
 		/// <summary>
 		/// Gets or sets the title of the window.
