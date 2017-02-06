@@ -28,11 +28,13 @@ namespace SADXModManager
 
 			foreach (DirectoryInfo item in directoryInfo.GetDirectories())
 			{
-				if (!item.Name.Equals("system", StringComparison.OrdinalIgnoreCase))
+				if (item.Name.Equals("system", StringComparison.OrdinalIgnoreCase) || item.Name[0] == '.')
 				{
-					foreach (string filename in GetModFiles(item))
-						yield return filename;
+					continue;
 				}
+
+				foreach (string filename in GetModFiles(item))
+					yield return filename;
 			}
 		}
 	}

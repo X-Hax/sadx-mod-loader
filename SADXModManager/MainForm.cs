@@ -242,18 +242,46 @@ namespace SADXModManager
 				return;
 			}
 
+			DialogResult result;
 			string updatePath = Path.Combine("mods", ".updates");
-			if (!Directory.Exists(updatePath))
+
+			do
 			{
-				Directory.CreateDirectory(updatePath);
-			}
+				try
+				{
+					result = DialogResult.Cancel;
+					if (!Directory.Exists(updatePath))
+					{
+						Directory.CreateDirectory(updatePath);
+					}
+				}
+				catch (Exception ex)
+				{
+					result = MessageBox.Show(this, "Failed to create temporary update directory:\n" + ex.Message
+						+ "\n\nWould you like to retry?", "Directory Creation Failed", MessageBoxButtons.RetryCancel);
+				}
+			} while (result == DialogResult.Retry);
 
 			using (var progress = new DownloadDialog(updates, updatePath))
 			{
 				progress.ShowDialog(this);
 			}
 
-			Directory.Delete(updatePath, true);
+			do
+			{
+				try
+				{
+					result = DialogResult.Cancel;
+					Directory.Delete(updatePath, true);
+				}
+				catch (Exception ex)
+				{
+					result = MessageBox.Show(this, "Failed to remove temporary update directory:\n" + ex.Message
+						+ "\n\nWould you like to retry? You can remove the directory manually later.",
+						"Directory Deletion Failed", MessageBoxButtons.RetryCancel);
+				}
+			} while (result == DialogResult.Retry);
+
 			LoadModList();
 		}
 
