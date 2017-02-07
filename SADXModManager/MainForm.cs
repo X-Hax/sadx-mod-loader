@@ -209,9 +209,7 @@ namespace SADXModManager
 				updateChecker.RunWorkerCompleted += UpdateChecker_RunWorkerCompleted;
 			}
 
-			// TODO: Make configurable
-			// Only automatically checks for updates for enabled mods.
-			updateChecker.RunWorkerAsync(mods.Where(x => loaderini.Mods.Contains(x.Key)).ToList());
+			updateChecker.RunWorkerAsync(mods.ToList());
 		}
 
 		private void UpdateChecker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

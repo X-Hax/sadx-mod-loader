@@ -149,6 +149,12 @@ namespace SADXModManager
 					string oldManPath = Path.Combine(Folder, "mod.manifest");
 
 					OnParsingManifest();
+
+					if (!File.Exists(newManPath))
+					{
+						throw new FileNotFoundException("This mod is missing a manifest!");
+					}
+
 					List<ModManifest> newManifest = ModManifest.FromFile(newManPath);
 
 					OnApplyingManifest();
