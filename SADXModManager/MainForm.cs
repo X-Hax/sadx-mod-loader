@@ -74,7 +74,11 @@ namespace SADXModManager
 			LoadModList();
 
 			for (int i = 0; i < Screen.AllScreens.Length; i++)
-				screenNumComboBox.Items.Add((i + 1).ToString() + " " + Screen.AllScreens[i].DeviceName + " (" + Screen.AllScreens[i].Bounds.Location.X + "," + Screen.AllScreens[i].Bounds.Y + ") " + Screen.AllScreens[i].Bounds.Width + "x" + Screen.AllScreens[i].Bounds.Height + " " + Screen.AllScreens[i].BitsPerPixel + "bpp" + (Screen.AllScreens[i].Primary ? " Primary" : ""));
+			{
+				Screen s = Screen.AllScreens[i];
+				screenNumComboBox.Items.Add($"{i + 1} {s.DeviceName} ({s.Bounds.Location.X},{s.Bounds.Y})"
+					+ $" {s.Bounds.Width}x{s.Bounds.Height} {s.BitsPerPixel} bpp {(s.Primary ? "Primary" : "")}");
+			}
 
 			consoleCheckBox.Checked             = loaderini.DebugConsole;
 			screenCheckBox.Checked              = loaderini.DebugScreen;
@@ -174,7 +178,8 @@ namespace SADXModManager
 				}
 				else
 				{
-					MessageBox.Show(this, "Mod \"" + mod + "\" could not be found.\n\nThis mod will be removed from the list.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+					MessageBox.Show(this, "Mod \"" + mod + "\" could not be found.\n\nThis mod will be removed from the list.",
+						Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
 					loaderini.Mods.Remove(mod);
 				}
 			}
