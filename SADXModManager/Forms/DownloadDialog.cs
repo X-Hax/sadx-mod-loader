@@ -28,7 +28,7 @@ namespace SADXModManager.Forms
 				DownloadProgressChangedEventHandler progressChanged = (o, args) =>
 				{
 					SetProgress((int)args.BytesReceived / 1024);
-					SetStep($"Downloading: {args.BytesReceived} / {args.TotalBytesToReceive}");
+					SetStep($"Downloading: { args.BytesReceived } / { args.TotalBytesToReceive }");
 				};
 
 				client.DownloadProgressChanged += progressChanged;
@@ -37,7 +37,7 @@ namespace SADXModManager.Forms
 				{
 					DialogResult result;
 
-					SetTaskAndStep($"Updating mod: {update.Info.Name}", "Starting download...");
+					SetTaskAndStep($"Updating mod: { update.Info.Name }", "Starting download...");
 
 					update.Extracting       += (o, args) => { SetStep("Extracting..."); };
 					update.ParsingManifest  += (o, args) => { SetStep("Parsing manifest..."); };
@@ -66,7 +66,7 @@ namespace SADXModManager.Forms
 						{
 							ae.Handle(ex =>
 							{
-								result = MessageBox.Show(this, $"Failed to update mod {update.Info.Name}:\r\n" + ex.Message
+								result = MessageBox.Show(this, $"Failed to update mod { update.Info.Name }:\r\n{ ex.Message }"
 									+ "\r\n\r\nPress Retry to try again, or Cancel to skip this mod.",
 									"Update Failed", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
 								return true;

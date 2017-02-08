@@ -76,8 +76,8 @@ namespace SADXModManager
 			for (int i = 0; i < Screen.AllScreens.Length; i++)
 			{
 				Screen s = Screen.AllScreens[i];
-				screenNumComboBox.Items.Add($"{i + 1} {s.DeviceName} ({s.Bounds.Location.X},{s.Bounds.Y})"
-					+ $" {s.Bounds.Width}x{s.Bounds.Height} {s.BitsPerPixel} bpp {(s.Primary ? "Primary" : "")}");
+				screenNumComboBox.Items.Add($"{ i + 1 } { s.DeviceName } ({ s.Bounds.Location.X },{ s.Bounds.Y })"
+					+ $" { s.Bounds.Width }x{ s.Bounds.Height } { s.BitsPerPixel } bpp { (s.Primary ? "Primary" : "") }");
 			}
 
 			consoleCheckBox.Checked             = loaderini.DebugConsole;
@@ -321,6 +321,12 @@ namespace SADXModManager
 						continue;
 					}
 
+					if (string.IsNullOrEmpty(mod.GitHubAsset))
+					{
+						// TODO: error
+						continue;
+					}
+
 					string text;
 					try
 					{
@@ -329,7 +335,7 @@ namespace SADXModManager
 					catch (Exception ex)
 					{
 						// TODO: figure out a better way to aggregate all update check errors
-						Console.WriteLine($"Error checking releases for {mod.GitHubRepo}: " + ex.Message);
+						Console.WriteLine($"Error checking releases for { mod.GitHubRepo }: { ex.Message }");
 						continue;
 					}
 
@@ -337,11 +343,21 @@ namespace SADXModManager
 
 					if (release == null)
 					{
+						// TODO: error
+						Console.WriteLine("Failed to deserialize!");
+						continue;
+					}
+
+					GitHubAsset asset = release.Assets.FirstOrDefault(x => string.Compare(x.Name, mod.GitHubAsset, StringComparison.OrdinalIgnoreCase) == 0);
+
+					if (asset == null)
+					{
+						// TODO: error
 						continue;
 					}
 
 					bool isNewer = false;
-					string date = release.Assets[0].Uploaded;
+					string date = asset.Uploaded;
 
 					var versionPath = Path.Combine("mods", info.Key, "mod.version");
 					if (!File.Exists(versionPath))
@@ -367,7 +383,7 @@ namespace SADXModManager
 					}
 
 					var d = new ModDownload(mod, ModDownloadType.Archive,
-						release.Assets[0].DownloadUrl, Path.Combine("mods", info.Key), release.Body.Replace("\n", "\r\n"), release.Assets[0].Size)
+						asset.DownloadUrl, Path.Combine("mods", info.Key), release.Body.Replace("\n", "\r\n"), asset.Size)
 					{
 						HomePage   = "https://github.com/" + mod.GitHubRepo,
 						Name       = release.Name,
