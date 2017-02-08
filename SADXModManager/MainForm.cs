@@ -224,8 +224,21 @@ namespace SADXModManager
 				return;
 			}
 
-			var updates = e.Result as List<ModDownload>;
-			if (updates == null || updates.Count == 0)
+			var data = e.Result as Tuple<List<ModDownload>, List<string>>;
+			if (data == null)
+			{
+				return;
+			}
+
+			List<string> errors = data.Item2;
+			if (errors.Count != 0)
+			{
+				MessageBox.Show(this, "The following errors occurred while checking for updates:\n\n" + string.Join("\n", errors),
+					"Update Errors", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+			}
+
+			List<ModDownload> updates = data.Item1;
+			if (updates.Count == 0)
 			{
 				return;
 			}
@@ -303,7 +316,8 @@ namespace SADXModManager
 				return;
 			}
 
-			var result = new List<ModDownload>();
+			var updates = new List<ModDownload>();
+			var errors = new List<string>();
 
 			using (var client = new UpdaterWebClient())
 			{
@@ -323,7 +337,7 @@ namespace SADXModManager
 
 					if (string.IsNullOrEmpty(mod.GitHubAsset))
 					{
-						// TODO: error
+						errors.Add($"[{ mod.Name }] GitHubRepo specified, but GitHubAsset is missing.");
 						continue;
 					}
 
@@ -334,8 +348,7 @@ namespace SADXModManager
 					}
 					catch (Exception ex)
 					{
-						// TODO: figure out a better way to aggregate all update check errors
-						Console.WriteLine($"Error checking releases for { mod.GitHubRepo }: { ex.Message }");
+						errors.Add($"[{ mod.Name }] Error checking for updates at https://github.com/{ mod.GitHubRepo }: { ex.Message }");
 						continue;
 					}
 
@@ -343,8 +356,7 @@ namespace SADXModManager
 
 					if (release == null)
 					{
-						// TODO: error
-						Console.WriteLine("Failed to deserialize!");
+						errors.Add($"[{ mod.Name }] Deserialization failed.");
 						continue;
 					}
 
@@ -352,7 +364,7 @@ namespace SADXModManager
 
 					if (asset == null)
 					{
-						// TODO: error
+						errors.Add($"[{ mod.Name }] No assets matching \"{ mod.GitHubAsset }\" could be found. ({ release.Assets.Length } assets available)");
 						continue;
 					}
 
@@ -393,11 +405,11 @@ namespace SADXModManager
 						ReleaseUrl = release.HtmlUrl,
 					};
 
-					result.Add(d);
+					updates.Add(d);
 				}
 			}
 
-			e.Result = result;
+			e.Result = new Tuple<List<ModDownload>, List<string>>(updates, errors);
 		}
 
 		private void modListView_SelectedIndexChanged(object sender, EventArgs e)
