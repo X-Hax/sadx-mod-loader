@@ -16,7 +16,7 @@ namespace SADXModManager
 			string[] fields = line.Split('\t');
 			if (fields.Length != 3)
 			{
-				throw new ArgumentException($"Manifest line has too few fields. 3 are required. Provided: { fields.Length }", nameof(line));
+				throw new ArgumentException($"Manifest line must have 3 fields. Provided: { fields.Length }", nameof(line));
 			}
 
 			Path     = fields[0];

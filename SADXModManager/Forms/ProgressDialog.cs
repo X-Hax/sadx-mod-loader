@@ -40,7 +40,7 @@ namespace SADXModManager.Forms
 			}
 		}
 
-		// HACK: Work around to avoid animation which is not configurable and FAR too slow.
+		// HACK: This is a work around for slow progress bar animation.
 		private int progressValue
 		{
 			get
