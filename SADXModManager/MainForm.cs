@@ -310,18 +310,19 @@ namespace SADXModManager
 				throw new Exception("what");
 			}
 
-			var enabledMods = e.Argument as List<KeyValuePair<string, ModInfo>>;
-			if (enabledMods == null || enabledMods.Count == 0)
+			var updatableMods = e.Argument as List<KeyValuePair<string, ModInfo>>;
+			if (updatableMods == null || updatableMods.Count == 0)
 			{
 				return;
 			}
 
+			var cache = new Dictionary<string, List<GitHubRelease>>();
 			var updates = new List<ModDownload>();
 			var errors = new List<string>();
 
 			using (var client = new UpdaterWebClient())
 			{
-				foreach (KeyValuePair<string, ModInfo> info in enabledMods)
+				foreach (KeyValuePair<string, ModInfo> info in updatableMods)
 				{
 					if (worker.CancellationPending)
 					{
@@ -341,68 +342,87 @@ namespace SADXModManager
 						continue;
 					}
 
-					string text;
-					try
+					List<GitHubRelease> releases;
+					var url = "https://api.github.com/repos/" + mod.GitHubRepo + "/releases";
+					if (!cache.ContainsKey(url))
 					{
-						text = client.DownloadString("https://api.github.com/repos/" + mod.GitHubRepo + "/releases/latest");
-					}
-					catch (Exception ex)
-					{
-						errors.Add($"[{ mod.Name }] Error checking for updates at https://github.com/{ mod.GitHubRepo }: { ex.Message }");
-						continue;
-					}
+						try
+						{
+							var text = client.DownloadString(url);
+							releases = JsonConvert.DeserializeObject<List<GitHubRelease>>(text)
+								.Where(x => !x.Draft && !x.PreRelease).ToList();
 
-					var release = JsonConvert.DeserializeObject<GitHubRelease>(text);
+							if (releases.Count > 0)
+							{
+								cache[url] = releases;
+							}
+						}
+						catch (Exception ex)
+						{
+							errors.Add($"[{ mod.Name }] Error checking for updates at { url }: { ex.Message }");
+							continue;
+						}
 
-					if (release == null)
-					{
-						errors.Add($"[{ mod.Name }] Deserialization failed.");
-						continue;
-					}
-
-					GitHubAsset asset = release.Assets.FirstOrDefault(x => string.Compare(x.Name, mod.GitHubAsset, StringComparison.OrdinalIgnoreCase) == 0);
-
-					if (asset == null)
-					{
-						errors.Add($"[{ mod.Name }] No assets matching \"{ mod.GitHubAsset }\" could be found. ({ release.Assets.Length } assets available)");
-						continue;
-					}
-
-					bool isNewer = false;
-					string date = asset.Uploaded;
-
-					var versionPath = Path.Combine("mods", info.Key, "mod.version");
-					if (!File.Exists(versionPath))
-					{
-						isNewer = true;
 					}
 					else
 					{
-						string localVersion = File.ReadAllText(versionPath).Trim();
-						if (localVersion.Length == 0)
-						{
-							isNewer = true;
-						}
-						else if (date != localVersion)
-						{
-							isNewer = true;
-						}
+						releases = cache[url];
 					}
 
-					if (!isNewer)
+					// No releases available.
+					if (releases == null || releases.Count == 0)
+					{
+						continue;
+					}
+
+					var versionPath = Path.Combine("mods", info.Key, "mod.version");
+					string localVersion = File.Exists(versionPath) ? File.ReadAllText(versionPath).Trim() : null;
+
+					GitHubRelease latestRelease = null;
+					GitHubAsset latestAsset = null;
+
+					foreach (GitHubRelease release in releases)
+					{
+						GitHubAsset asset = release.Assets
+							.FirstOrDefault(x => string.Compare(x.Name, mod.GitHubAsset, StringComparison.OrdinalIgnoreCase) == 0);
+
+						if (asset == null)
+						{
+							continue;
+						}
+
+						latestRelease = release;
+
+						// No updates available.
+						if (asset.Uploaded == localVersion)
+						{
+							break;
+						}
+
+						latestAsset = asset;
+						break;
+					}
+
+					if (latestRelease == null)
+					{
+						errors.Add($"[{ mod.Name }] No releases with matching asset \"{ mod.GitHubAsset }\" could be found in { releases.Count } release(s).");
+						continue;
+					}
+
+					if (latestAsset == null)
 					{
 						continue;
 					}
 
 					var d = new ModDownload(mod, ModDownloadType.Archive,
-						asset.DownloadUrl, Path.Combine("mods", info.Key), release.Body.Replace("\n", "\r\n"), asset.Size)
+						latestAsset.DownloadUrl, Path.Combine("mods", info.Key), latestRelease.Body.Replace("\n", "\r\n"), latestAsset.Size)
 					{
 						HomePage   = "https://github.com/" + mod.GitHubRepo,
-						Name       = release.Name,
-						Version    = release.TagName,
-						Published  = release.Published,
-						Updated    = date,
-						ReleaseUrl = release.HtmlUrl,
+						Name       = latestRelease.Name,
+						Version    = latestRelease.TagName,
+						Published  = latestRelease.Published,
+						Updated    = latestAsset.Uploaded,
+						ReleaseUrl = latestRelease.HtmlUrl,
 					};
 
 					updates.Add(d);
