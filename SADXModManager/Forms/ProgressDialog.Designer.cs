@@ -66,6 +66,7 @@
 			// 
 			// checkAutoClose
 			// 
+			this.checkAutoClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.checkAutoClose.AutoSize = true;
 			this.checkAutoClose.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.checkAutoClose.Location = new System.Drawing.Point(12, 72);
@@ -78,6 +79,7 @@
 			// 
 			// buttonOK
 			// 
+			this.buttonOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
 			this.buttonOK.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.buttonOK.Location = new System.Drawing.Point(281, 68);
