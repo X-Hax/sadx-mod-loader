@@ -164,7 +164,7 @@ namespace SADXModManager
 						List<ModManifest> oldManifest = ModManifest.FromFile(oldManPath);
 						IEnumerable<ModManifest> unique = oldManifest.Except(newManifest, new ModManifestCompare());
 
-						foreach (string removed in unique.Select(x => Path.Combine(Folder, x.Path)))
+						foreach (string removed in unique.Select(x => Path.Combine(Folder, x.FilePath)))
 						{
 							if (File.Exists(removed))
 							{
@@ -179,7 +179,7 @@ namespace SADXModManager
 
 					foreach (ModManifest file in newManifest)
 					{
-						string dir = Path.GetDirectoryName(file.Path);
+						string dir = Path.GetDirectoryName(file.FilePath);
 						if (!string.IsNullOrEmpty(dir))
 						{
 							string newDir = Path.Combine(Folder, dir);
@@ -189,14 +189,14 @@ namespace SADXModManager
 							}
 						}
 
-						string dest = Path.Combine(Folder, file.Path);
+						string dest = Path.Combine(Folder, file.FilePath);
 
 						if (File.Exists(dest))
 						{
 							File.Delete(dest);
 						}
 
-						File.Move(Path.Combine(workDir, file.Path), dest);
+						File.Move(Path.Combine(workDir, file.FilePath), dest);
 					}
 
 					File.Copy(newManPath, oldManPath, true);

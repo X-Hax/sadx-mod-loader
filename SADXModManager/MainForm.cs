@@ -740,11 +740,6 @@ namespace SADXModManager
 			LoadModList();
 		}
 
-		private void buttonModsFolder_Click(object sender, EventArgs e)
-		{
-			Process.Start(@"mods");
-		}
-
 		private void buttonNewMod_Click(object sender, EventArgs e)
 		{
 			using (var ModDialog = new NewModDialog())
@@ -824,6 +819,91 @@ namespace SADXModManager
 			foreach (Code item in codes)
 				codesCheckedListBox.Items.Add(item.Name, loaderini.EnabledCodes.Contains(item.Name));
 			codesCheckedListBox.EndUpdate();
+		}
+
+		private void modListView_MouseClick(object sender, MouseEventArgs e)
+		{
+			if (e.Button != MouseButtons.Right)
+			{
+				return;
+			}
+
+			if (modListView.FocusedItem.Bounds.Contains(e.Location))
+			{
+				modContextMenu.Show(Cursor.Position);
+			}
+		}
+
+		private void openFolderToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			foreach (ListViewItem item in modListView.SelectedItems)
+			{
+				Process.Start(Path.Combine("mods", (string)item.Tag));
+			}
+		}
+
+		private void verifyIntegrityToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			DialogResult result = MessageBox.Show(this,
+				"This will verify the integrity of all selected mods which have a manifest. It could take a while to complete."
+				+ "\n\nAre you sure you wish to continue?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+			if (result != DialogResult.Yes)
+			{
+				return;
+			}
+		}
+
+		private void forceUpdateToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			DialogResult result = MessageBox.Show(this, "This will forcefully re-download the latest version of all selected mods."
+				+ "\n\nAre you sure you wish to continue?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+			if (result != DialogResult.Yes)
+			{
+				return;
+			}
+		}
+
+		private void uninstallToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			DialogResult result = MessageBox.Show(this, "This will uninstall all selected mods."
+				+ "\n\nAre you sure you wish to continue?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+			if (result != DialogResult.Yes)
+			{
+				return;
+			}
+		}
+
+		private void cleanToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			DialogResult result = MessageBox.Show(this, "THIS WILL REMOVE YOUR MOD USER DATA (SAVE FILES, CONFIG FILES) FOR ALL SELECTED MODS."
+				+ "\n\nAre you sure you wish to continue?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+			if (result != DialogResult.Yes)
+			{
+				return;
+			}
+		}
+
+		private void generateManifestToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			DialogResult result = MessageBox.Show(this, "This can cause MOD USER DATA (SAVE FILES, CONFIG FILES) TO BE LOST upon next update!"
+				+ " To prevent this, you should never run this on mods you did not develop."
+				+ "\n\nAre you sure you wish to continue?",
+				"Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+			if (result != DialogResult.Yes)
+			{
+				return;
+			}
+
+			foreach (ListViewItem item in modListView.SelectedItems)
+			{
+				List<ModManifest> manifest = ModManifest.Generate(Path.Combine("mods", (string)item.Tag));
+				ModManifest.ToFile(manifest, Path.Combine("mods", (string)item.Tag, "mod.manifest"));
+			}
 		}
 	}
 }
