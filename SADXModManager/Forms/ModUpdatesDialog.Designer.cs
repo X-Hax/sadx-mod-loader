@@ -60,11 +60,12 @@
 			// buttonInstall
 			// 
 			this.buttonInstall.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonInstall.DialogResult = System.Windows.Forms.DialogResult.OK;
 			this.buttonInstall.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.buttonInstall.Location = new System.Drawing.Point(537, 246);
+			this.buttonInstall.Location = new System.Drawing.Point(456, 246);
 			this.buttonInstall.Name = "buttonInstall";
 			this.buttonInstall.Size = new System.Drawing.Size(75, 23);
-			this.buttonInstall.TabIndex = 3;
+			this.buttonInstall.TabIndex = 2;
 			this.buttonInstall.Text = "&Install now";
 			this.buttonInstall.UseVisualStyleBackColor = true;
 			this.buttonInstall.Click += new System.EventHandler(this.buttonInstall_Click);
@@ -74,10 +75,10 @@
 			this.buttonLater.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.buttonLater.DialogResult = System.Windows.Forms.DialogResult.Cancel;
 			this.buttonLater.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.buttonLater.Location = new System.Drawing.Point(456, 246);
+			this.buttonLater.Location = new System.Drawing.Point(537, 246);
 			this.buttonLater.Name = "buttonLater";
 			this.buttonLater.Size = new System.Drawing.Size(75, 23);
-			this.buttonLater.TabIndex = 2;
+			this.buttonLater.TabIndex = 3;
 			this.buttonLater.Text = "Install &later";
 			this.buttonLater.UseVisualStyleBackColor = true;
 			// 
@@ -92,7 +93,7 @@
 			this.listModUpdates.Location = new System.Drawing.Point(0, 0);
 			this.listModUpdates.Name = "listModUpdates";
 			this.listModUpdates.Size = new System.Drawing.Size(224, 215);
-			this.listModUpdates.TabIndex = 1;
+			this.listModUpdates.TabIndex = 0;
 			this.listModUpdates.UseCompatibleStateImageBehavior = false;
 			this.listModUpdates.View = System.Windows.Forms.View.Details;
 			this.listModUpdates.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.listModUpdates_ItemChecked);
@@ -121,7 +122,7 @@
 			this.splitContainer1.Panel2.Controls.Add(this.tabControl1);
 			this.splitContainer1.Size = new System.Drawing.Size(600, 215);
 			this.splitContainer1.SplitterDistance = 224;
-			this.splitContainer1.TabIndex = 4;
+			this.splitContainer1.TabIndex = 1;
 			// 
 			// tabControl1
 			// 
@@ -132,7 +133,7 @@
 			this.tabControl1.Name = "tabControl1";
 			this.tabControl1.SelectedIndex = 0;
 			this.tabControl1.Size = new System.Drawing.Size(372, 215);
-			this.tabControl1.TabIndex = 1;
+			this.tabControl1.TabIndex = 0;
 			// 
 			// tabPageChanges
 			// 
@@ -171,6 +172,7 @@
 			// 
 			this.modUpdateDetails.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.modUpdateDetails.Enabled = false;
 			this.modUpdateDetails.Location = new System.Drawing.Point(3, 0);
 			this.modUpdateDetails.Margin = new System.Windows.Forms.Padding(0);
 			this.modUpdateDetails.Name = "modUpdateDetails";

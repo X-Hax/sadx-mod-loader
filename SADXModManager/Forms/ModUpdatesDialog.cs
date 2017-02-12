@@ -40,9 +40,6 @@ namespace SADXModManager.Forms
 			{
 				SelectedMods.Add((ModDownload)item.Tag);
 			}
-
-			DialogResult = DialogResult.OK;
-			Close();
 		}
 
 		private void listModUpdates_ItemChecked(object sender, ItemCheckedEventArgs e)

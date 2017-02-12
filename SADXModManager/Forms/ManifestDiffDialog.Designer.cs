@@ -66,6 +66,7 @@
 			// buttonOK
 			// 
 			this.buttonOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
 			this.buttonOK.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.buttonOK.Location = new System.Drawing.Point(296, 246);
 			this.buttonOK.Name = "buttonOK";
@@ -73,7 +74,6 @@
 			this.buttonOK.TabIndex = 2;
 			this.buttonOK.Text = "&OK";
 			this.buttonOK.UseVisualStyleBackColor = true;
-			this.buttonOK.Click += new System.EventHandler(this.buttonOK_Click);
 			// 
 			// buttonCancel
 			// 

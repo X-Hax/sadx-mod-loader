@@ -23,10 +23,12 @@ namespace SADXModManager.Forms
 			{
 				listDiff.Items.Add(new ListViewItem(new[]
 				{
-					entry.Manifest.FilePath, entry.State.ToString()
+					entry.Manifest.FilePath,
+					entry.State.ToString()
 				})
 				{
-					Tag = entry, Checked = entry.State != ModManifestState.Removed
+					Tag = entry,
+					Checked = entry.State != ModManifestState.Removed
 				});
 			}
 
@@ -41,12 +43,6 @@ namespace SADXModManager.Forms
 			result.AddRange(diff.Where(x => x.State == ModManifestState.Unmodified).Select(x => x.Manifest));
 
 			return result;
-		}
-
-		private void buttonOK_Click(object sender, EventArgs e)
-		{
-			DialogResult = DialogResult.OK;
-			Close();
 		}
 	}
 }
