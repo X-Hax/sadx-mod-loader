@@ -901,8 +901,33 @@ namespace SADXModManager
 
 			foreach (ListViewItem item in modListView.SelectedItems)
 			{
-				List<ModManifest> manifest = ModManifest.Generate(Path.Combine("mods", (string)item.Tag));
-				ModManifest.ToFile(manifest, Path.Combine("mods", (string)item.Tag, "mod.manifest"));
+				var modPath = Path.Combine("mods", (string)item.Tag);
+				var manifestPath = Path.Combine(modPath, "mod.manifest");
+
+				List<ModManifest> manifest = ModManifest.Generate(modPath);
+
+				if (File.Exists(manifestPath))
+				{
+					List<ModManifest> existing = ModManifest.FromFile(manifestPath);
+					List<ModManifestDiff> diff = ModManifest.Diff(manifest, existing);
+
+					if (diff.Count(x => x.State != ModManifestState.Unmodified) <= 0)
+					{
+						continue;
+					}
+
+					using (var dialog = new ManifestDiffDialog(diff))
+					{
+						if (dialog.ShowDialog(this) == DialogResult.Cancel)
+						{
+							continue;
+						}
+
+						manifest = dialog.MakeNewManifest();
+					}
+				}
+
+				ModManifest.ToFile(manifest, manifestPath);
 			}
 		}
 	}

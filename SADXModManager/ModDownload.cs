@@ -162,7 +162,7 @@ namespace SADXModManager
 					if (File.Exists(oldManPath))
 					{
 						List<ModManifest> oldManifest = ModManifest.FromFile(oldManPath);
-						IEnumerable<ModManifest> unique = oldManifest.Except(newManifest, new ModManifestCompare());
+						IEnumerable<ModManifest> unique = oldManifest.Except(newManifest);
 
 						foreach (string removed in unique.Select(x => Path.Combine(Folder, x.FilePath)))
 						{
