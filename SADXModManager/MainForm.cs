@@ -874,6 +874,66 @@ namespace SADXModManager
 			{
 				return;
 			}
+
+			result = MessageBox.Show(this, "Would you like to keep mod user data where possible? (Save files, config files, etc)",
+				"User Data", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+
+			if (result == DialogResult.Cancel)
+			{
+				return;
+			}
+
+			foreach (ListViewItem item in modListView.SelectedItems)
+			{
+				var dir = (string)item.Tag;
+				var modDir = Path.Combine("mods", dir);
+				var manpath = Path.Combine(modDir, "mod.manifest");
+
+				try
+				{
+					if (result == DialogResult.Yes && File.Exists(manpath))
+					{
+						List<ModManifest> manifest = ModManifest.FromFile(manpath);
+						foreach (var entry in manifest)
+						{
+							var path = Path.Combine(modDir, entry.FilePath);
+							if (File.Exists(path))
+							{
+								File.Delete(path);
+							}
+						}
+
+						File.Delete(manpath);
+						var version = Path.Combine(modDir, "mod.version");
+						if (File.Exists(version))
+						{
+							File.Delete(version);
+						}
+					}
+					else
+					{
+						if (result == DialogResult.Yes)
+						{
+							var retain = MessageBox.Show(this, $"The mod \"{ mods[dir].Name }\" (\"mods\\{ dir }\") does not have a manifest, so mod user data cannot be retained."
+								+ " Do you want to uninstall it anyway?", "Cannot Retain User Data", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+							if (retain == DialogResult.No)
+							{
+								continue;
+							}
+						}
+
+						Directory.Delete(modDir, true);
+					}
+				}
+				catch (Exception ex)
+				{
+					MessageBox.Show(this, $"Failed to uninstall mod \"{ mods[dir].Name }\" from \"{ dir }\": { ex.Message }", "Failed",
+						MessageBoxButtons.OK, MessageBoxIcon.Error);
+				}
+			}
+
+			LoadModList();
 		}
 
 		private void cleanToolStripMenuItem_Click(object sender, EventArgs e)
