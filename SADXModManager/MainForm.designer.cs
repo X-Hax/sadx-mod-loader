@@ -85,8 +85,8 @@
 			this.uninstallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
 			this.advancedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.generateManifestToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.cleanToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.generateManifestToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			groupBox2 = new System.Windows.Forms.GroupBox();
 			label3 = new System.Windows.Forms.Label();
 			label1 = new System.Windows.Forms.Label();
@@ -392,9 +392,9 @@
 			// 
 			this.saveButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.saveButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.saveButton.Location = new System.Drawing.Point(92, 323);
+			this.saveButton.Location = new System.Drawing.Point(87, 323);
 			this.saveButton.Name = "saveButton";
-			this.saveButton.Size = new System.Drawing.Size(75, 23);
+			this.saveButton.Size = new System.Drawing.Size(75, 22);
 			this.saveButton.TabIndex = 102;
 			this.saveButton.Text = "&Save";
 			this.saveButton.UseVisualStyleBackColor = true;
@@ -406,7 +406,7 @@
 			this.saveAndPlayButton.AutoSize = true;
 			this.saveAndPlayButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.saveAndPlayButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.saveAndPlayButton.Location = new System.Drawing.Point(12, 324);
+			this.saveAndPlayButton.Location = new System.Drawing.Point(3, 323);
 			this.saveAndPlayButton.Name = "saveAndPlayButton";
 			this.saveAndPlayButton.Size = new System.Drawing.Size(78, 22);
 			this.saveAndPlayButton.TabIndex = 101;
@@ -420,7 +420,7 @@
 			this.installButton.AutoSize = true;
 			this.installButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.installButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.installButton.Location = new System.Drawing.Point(173, 324);
+			this.installButton.Location = new System.Drawing.Point(168, 323);
 			this.installButton.Name = "installButton";
 			this.installButton.Size = new System.Drawing.Size(80, 22);
 			this.installButton.TabIndex = 103;
@@ -434,7 +434,7 @@
 			this.configEditorButton.AutoSize = true;
 			this.configEditorButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.configEditorButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.configEditorButton.Location = new System.Drawing.Point(291, 324);
+			this.configEditorButton.Location = new System.Drawing.Point(295, 323);
 			this.configEditorButton.Name = "configEditorButton";
 			this.configEditorButton.Size = new System.Drawing.Size(81, 22);
 			this.configEditorButton.TabIndex = 104;
@@ -722,50 +722,50 @@
             this.toolStripMenuItem3,
             this.advancedToolStripMenuItem});
 			this.modContextMenu.Name = "modContextMenu";
-			this.modContextMenu.Size = new System.Drawing.Size(153, 154);
+			this.modContextMenu.Size = new System.Drawing.Size(151, 132);
 			// 
 			// openFolderToolStripMenuItem
 			// 
 			this.openFolderToolStripMenuItem.Name = "openFolderToolStripMenuItem";
-			this.openFolderToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.openFolderToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
 			this.openFolderToolStripMenuItem.Text = "Open folder";
 			this.openFolderToolStripMenuItem.Click += new System.EventHandler(this.openFolderToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem1
 			// 
 			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(149, 6);
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(147, 6);
 			// 
 			// verifyIntegrityToolStripMenuItem
 			// 
 			this.verifyIntegrityToolStripMenuItem.Name = "verifyIntegrityToolStripMenuItem";
-			this.verifyIntegrityToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.verifyIntegrityToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
 			this.verifyIntegrityToolStripMenuItem.Text = "Verify integrity";
 			this.verifyIntegrityToolStripMenuItem.Click += new System.EventHandler(this.verifyIntegrityToolStripMenuItem_Click);
 			// 
 			// forceUpdateToolStripMenuItem
 			// 
 			this.forceUpdateToolStripMenuItem.Name = "forceUpdateToolStripMenuItem";
-			this.forceUpdateToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.forceUpdateToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
 			this.forceUpdateToolStripMenuItem.Text = "Force update";
 			this.forceUpdateToolStripMenuItem.Click += new System.EventHandler(this.forceUpdateToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem2
 			// 
 			this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-			this.toolStripMenuItem2.Size = new System.Drawing.Size(149, 6);
+			this.toolStripMenuItem2.Size = new System.Drawing.Size(147, 6);
 			// 
 			// uninstallToolStripMenuItem
 			// 
 			this.uninstallToolStripMenuItem.Name = "uninstallToolStripMenuItem";
-			this.uninstallToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.uninstallToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
 			this.uninstallToolStripMenuItem.Text = "Uninstall";
 			this.uninstallToolStripMenuItem.Click += new System.EventHandler(this.uninstallToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem3
 			// 
 			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-			this.toolStripMenuItem3.Size = new System.Drawing.Size(149, 6);
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(147, 6);
 			// 
 			// advancedToolStripMenuItem
 			// 
@@ -773,15 +773,8 @@
             this.cleanToolStripMenuItem,
             this.generateManifestToolStripMenuItem});
 			this.advancedToolStripMenuItem.Name = "advancedToolStripMenuItem";
-			this.advancedToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.advancedToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
 			this.advancedToolStripMenuItem.Text = "Advanced";
-			// 
-			// generateManifestToolStripMenuItem
-			// 
-			this.generateManifestToolStripMenuItem.Name = "generateManifestToolStripMenuItem";
-			this.generateManifestToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-			this.generateManifestToolStripMenuItem.Text = "Generate manifest";
-			this.generateManifestToolStripMenuItem.Click += new System.EventHandler(this.generateManifestToolStripMenuItem_Click);
 			// 
 			// cleanToolStripMenuItem
 			// 
@@ -789,6 +782,13 @@
 			this.cleanToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
 			this.cleanToolStripMenuItem.Text = "Clean";
 			this.cleanToolStripMenuItem.Click += new System.EventHandler(this.cleanToolStripMenuItem_Click);
+			// 
+			// generateManifestToolStripMenuItem
+			// 
+			this.generateManifestToolStripMenuItem.Name = "generateManifestToolStripMenuItem";
+			this.generateManifestToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
+			this.generateManifestToolStripMenuItem.Text = "Generate manifest";
+			this.generateManifestToolStripMenuItem.Click += new System.EventHandler(this.generateManifestToolStripMenuItem_Click);
 			// 
 			// MainForm
 			// 
