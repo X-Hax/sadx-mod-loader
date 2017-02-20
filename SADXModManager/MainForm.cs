@@ -1,7 +1,4 @@
-﻿using IniSerializer;
-using Newtonsoft.Json;
-using SADXModManager.Forms;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -9,7 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using IniSerializer;
+using Newtonsoft.Json;
+using SADXModManager.Forms;
 
 namespace SADXModManager
 {
@@ -414,8 +415,10 @@ namespace SADXModManager
 						continue;
 					}
 
+					var body = Regex.Replace(latestRelease.Body, "(?<!\r)\n", "\r\n");
+
 					var d = new ModDownload(mod, ModDownloadType.Archive,
-						latestAsset.DownloadUrl, Path.Combine("mods", info.Key), latestRelease.Body.Replace("\n", "\r\n"), latestAsset.Size)
+						latestAsset.DownloadUrl, Path.Combine("mods", info.Key), body, latestAsset.Size)
 					{
 						HomePage   = "https://github.com/" + mod.GitHubRepo,
 						Name       = latestRelease.Name,
