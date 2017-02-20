@@ -108,7 +108,9 @@ namespace SADXModManager
 		public static List<ModManifestDiff> Diff(List<ModManifest> newManifest, List<ModManifest> oldManifest)
 		{
 			var result = new List<ModManifestDiff>();
-			var old = new List<ModManifest>(oldManifest);
+
+			List<ModManifest> old = oldManifest != null && oldManifest.Count > 0
+				? new List<ModManifest>(oldManifest) : new List<ModManifest>();
 
 			foreach (ModManifest entry in newManifest)
 			{

@@ -108,6 +108,7 @@
 			this.Controls.Add(this.buttonOK);
 			this.Controls.Add(this.listDiff);
 			this.MinimizeBox = false;
+			this.MinimumSize = new System.Drawing.Size(480, 320);
 			this.Name = "ManifestDiffDialog";
 			this.ShowIcon = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;

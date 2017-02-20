@@ -845,20 +845,6 @@ namespace SADXModManager
 			}
 		}
 
-		private void verifyIntegrityToolStripMenuItem_Click(object sender, EventArgs e)
-		{
-			DialogResult result = MessageBox.Show(this,
-				"This will verify the integrity of all selected mods which have a manifest. It could take a while to complete."
-				+ "\n\nAre you sure you wish to continue?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-			if (result != DialogResult.Yes)
-			{
-				return;
-			}
-
-			// TODO
-		}
-
 		private void forceUpdateToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			DialogResult result = MessageBox.Show(this, "This will forcefully re-download the latest version of all selected mods."
@@ -869,7 +855,32 @@ namespace SADXModManager
 				return;
 			}
 
-			// TODO
+			var forcedUpdates = new List<KeyValuePair<string, ModInfo>>();
+
+			foreach (ListViewItem item in modListView.SelectedItems)
+			{
+				var dir = (string)item.Tag;
+				var modDir = Path.Combine("mods", dir);
+				var verPath = Path.Combine(modDir, "mod.version");
+
+				if (File.Exists(verPath))
+				{
+					File.Delete(verPath);
+					continue;
+				}
+
+				if (!File.Exists(Path.Combine(modDir, "mod.manifest")))
+				{
+					continue;
+				}
+
+				forcedUpdates.Add(new KeyValuePair<string, ModInfo>(modDir, mods[dir]));
+			}
+
+			if (forcedUpdates.Count > 0)
+			{
+				updateChecker?.RunWorkerAsync(forcedUpdates);
+			}
 		}
 
 		private void uninstallToolStripMenuItem_Click(object sender, EventArgs e)
@@ -942,20 +953,7 @@ namespace SADXModManager
 
 			LoadModList();
 		}
-
-		private void cleanToolStripMenuItem_Click(object sender, EventArgs e)
-		{
-			DialogResult result = MessageBox.Show(this, "THIS WILL REMOVE YOUR MOD USER DATA (SAVE FILES, CONFIG FILES) FOR ALL SELECTED MODS."
-				+ "\n\nAre you sure you wish to continue?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-			if (result != DialogResult.Yes)
-			{
-				return;
-			}
-
-			// TODO
-		}
-
+		
 		private void generateManifestToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			DialogResult result = MessageBox.Show(this, "This can cause MOD USER DATA (SAVE FILES, CONFIG FILES) TO BE LOST upon next update!"
@@ -974,30 +972,31 @@ namespace SADXModManager
 				var manifestPath = Path.Combine(modPath, "mod.manifest");
 
 				List<ModManifest> manifest = ModManifest.Generate(modPath);
+				List<ModManifestDiff> diff = ModManifest.Diff(manifest, File.Exists(manifestPath) ? ModManifest.FromFile(manifestPath) : null);
 
-				if (File.Exists(manifestPath))
+				if (diff.Count(x => x.State != ModManifestState.Unmodified) <= 0)
 				{
-					List<ModManifest> existing = ModManifest.FromFile(manifestPath);
-					List<ModManifestDiff> diff = ModManifest.Diff(manifest, existing);
+					continue;
+				}
 
-					if (diff.Count(x => x.State != ModManifestState.Unmodified) <= 0)
+				using (var dialog = new ManifestDiffDialog(diff))
+				{
+					if (dialog.ShowDialog(this) == DialogResult.Cancel)
 					{
 						continue;
 					}
 
-					using (var dialog = new ManifestDiffDialog(diff))
-					{
-						if (dialog.ShowDialog(this) == DialogResult.Cancel)
-						{
-							continue;
-						}
-
-						manifest = dialog.MakeNewManifest();
-					}
+					manifest = dialog.MakeNewManifest();
 				}
 
 				ModManifest.ToFile(manifest, manifestPath);
 			}
+		}
+		
+		private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			updateChecker?.RunWorkerAsync(modListView.SelectedItems.Cast<ListViewItem>()
+				.Select(x => (string)x.Tag).Select(x => new KeyValuePair<string, ModInfo>(x, mods[x])).ToList());
 		}
 	}
 }
