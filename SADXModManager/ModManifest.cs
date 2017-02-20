@@ -76,6 +76,11 @@ namespace SADXModManager
 					continue;
 				}
 
+				if (string.Compare(name, "mod.version", StringComparison.InvariantCultureIgnoreCase) == 0)
+				{
+					continue;
+				}
+
 				var relativePath = f.Substring(modPath.Length + 1);
 				var file = new FileInfo(f);
 
@@ -91,7 +96,7 @@ namespace SADXModManager
 
 				 result.Add(new ModManifest
 				 {
-					 FilePath = relativePath, // TODO: relative path
+					 FilePath = relativePath,
 					 FileSize = file.Length,
 					 Checksum = string.Concat(hash.Select(x => x.ToString("x2")))
 				 });

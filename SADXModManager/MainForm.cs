@@ -855,6 +855,8 @@ namespace SADXModManager
 			{
 				return;
 			}
+
+			// TODO
 		}
 
 		private void forceUpdateToolStripMenuItem_Click(object sender, EventArgs e)
@@ -866,6 +868,8 @@ namespace SADXModManager
 			{
 				return;
 			}
+
+			// TODO
 		}
 
 		private void uninstallToolStripMenuItem_Click(object sender, EventArgs e)
@@ -948,6 +952,8 @@ namespace SADXModManager
 			{
 				return;
 			}
+
+			// TODO
 		}
 
 		private void generateManifestToolStripMenuItem_Click(object sender, EventArgs e)
