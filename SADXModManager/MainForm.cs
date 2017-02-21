@@ -385,7 +385,7 @@ namespace SADXModManager
 					foreach (GitHubRelease release in releases)
 					{
 						GitHubAsset asset = release.Assets
-							.FirstOrDefault(x => string.Compare(x.Name, mod.GitHubAsset, StringComparison.OrdinalIgnoreCase) == 0);
+							.FirstOrDefault(x => x.Name.Equals(mod.GitHubAsset, StringComparison.OrdinalIgnoreCase));
 
 						if (asset == null)
 						{

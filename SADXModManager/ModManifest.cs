@@ -71,12 +71,18 @@ namespace SADXModManager
 			foreach (var f in Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories))
 			{
 				var name = Path.GetFileName(f);
-				if (string.Compare(name, "mod.manifest", StringComparison.InvariantCultureIgnoreCase) == 0)
+
+				if (string.IsNullOrEmpty(name))
 				{
 					continue;
 				}
 
-				if (string.Compare(name, "mod.version", StringComparison.InvariantCultureIgnoreCase) == 0)
+				if (name.Equals("mod.manifest", StringComparison.InvariantCultureIgnoreCase))
+				{
+					continue;
+				}
+
+				if (name.Equals("mod.version", StringComparison.InvariantCultureIgnoreCase))
 				{
 					continue;
 				}
