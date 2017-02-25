@@ -68,39 +68,8 @@ namespace SADXModManager
 		{
 			loaderini = File.Exists(loaderinipath) ? IniFile.Deserialize<LoaderInfo>(loaderinipath) : new LoaderInfo();
 
-			if (Elapsed(loaderini.UpdateUnit, loaderini.UpdateFrequency, DateTime.FromFileTimeUtc(loaderini.UpdateTime)))
-			{
-				checkedForUpdates = true;
-				loaderini.UpdateTime = DateTime.UtcNow.ToFileTimeUtc();
-
-				if (File.Exists("sadxmlver.txt"))
-				{
-					using (var wc = new WebClient())
-					{
-						try
-						{
-							string msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
-
-							if (msg.Length > 0)
-							{
-								using (var dlg = new UpdateMessageDialog(msg.Replace("\n", "\r\n")))
-								{
-									if (dlg.ShowDialog(this) == DialogResult.Yes)
-									{
-										Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
-										Close();
-										return;
-									}
-								}
-							}
-						}
-						catch
-						{
-							MessageBox.Show(this, "Unable to retrieve update information.", "SADX Mod Manager");
-						}
-					}
-				}
-			}
+			if (CheckForUpdates())
+				return;
 
 			try { mainCodes = CodeList.Load(codexmlpath); }
 			catch { mainCodes = new CodeList() { Codes = new List<Code>() }; }
@@ -158,7 +127,7 @@ namespace SADXModManager
 			maintainWindowAspectRatioCheckBox.Checked = loaderini.MaintainWindowAspectRatio;
 			suppressEvent = false;
 
-			CheckModUpdates();
+			CheckForModUpdates();
 
 			// If we've checked for updates, save the modified
 			// last update times without requiring the user to
@@ -251,7 +220,50 @@ namespace SADXModManager
 			codesCheckedListBox.EndUpdate();
 		}
 
-		private void CheckModUpdates()
+		private bool CheckForUpdates(bool force = false)
+		{
+			if (!force && !Elapsed(loaderini.UpdateUnit, loaderini.UpdateFrequency, DateTime.FromFileTimeUtc(loaderini.UpdateTime)))
+			{
+				return false;
+			}
+
+			checkedForUpdates = true;
+			loaderini.UpdateTime = DateTime.UtcNow.ToFileTimeUtc();
+
+			if (!File.Exists("sadxmlver.txt"))
+			{
+				return false;
+			}
+
+			using (var wc = new WebClient())
+			{
+				try
+				{
+					string msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
+
+					if (msg.Length > 0)
+					{
+						using (var dlg = new UpdateMessageDialog(msg.Replace("\n", "\r\n")))
+						{
+							if (dlg.ShowDialog(this) == DialogResult.Yes)
+							{
+								Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
+								Close();
+								return true;
+							}
+						}
+					}
+				}
+				catch
+				{
+					MessageBox.Show(this, "Unable to retrieve update information.", "SADX Mod Manager");
+				}
+			}
+
+			return false;
+		}
+
+		private void CheckForModUpdates(bool force = false)
 		{
 			if (updateChecker == null)
 			{
@@ -260,7 +272,7 @@ namespace SADXModManager
 				updateChecker.RunWorkerCompleted += UpdateChecker_RunWorkerCompleted;
 			}
 
-			if (!Elapsed(loaderini.UpdateUnit, loaderini.UpdateFrequency, DateTime.FromFileTimeUtc(loaderini.ModUpdateTime)))
+			if (!force && !Elapsed(loaderini.UpdateUnit, loaderini.UpdateFrequency, DateTime.FromFileTimeUtc(loaderini.ModUpdateTime)))
 			{
 				return;
 			}
@@ -268,10 +280,13 @@ namespace SADXModManager
 			checkedForUpdates = true;
 			loaderini.ModUpdateTime = DateTime.UtcNow.ToFileTimeUtc();
 			updateChecker.RunWorkerAsync(mods.ToList());
+			buttonCheckForUpdates.Enabled = false;
 		}
 
 		private void UpdateChecker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
+			buttonCheckForUpdates.Enabled = true;
+
 			if (e.Cancelled)
 			{
 				return;
@@ -1058,6 +1073,18 @@ namespace SADXModManager
 		private void comboUpdateFrequency_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			numericUpdateFrequency.Enabled = comboUpdateFrequency.SelectedIndex > 0;
+		}
+
+		private void buttonCheckForUpdates_Click(object sender, EventArgs e)
+		{
+			buttonCheckForUpdates.Enabled = false;
+
+			if (CheckForUpdates(true))
+			{
+				return;
+			}
+
+			CheckForModUpdates(true);
 		}
 	}
 }

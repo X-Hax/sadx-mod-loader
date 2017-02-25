@@ -94,6 +94,7 @@
 			this.checkUpdateModsStartup = new System.Windows.Forms.CheckBox();
 			this.label4 = new System.Windows.Forms.Label();
 			this.groupBox5 = new System.Windows.Forms.GroupBox();
+			this.buttonCheckForUpdates = new System.Windows.Forms.Button();
 			label3 = new System.Windows.Forms.Label();
 			label1 = new System.Windows.Forms.Label();
 			label2 = new System.Windows.Forms.Label();
@@ -807,6 +808,7 @@
 			// 
 			this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBox4.Controls.Add(this.buttonCheckForUpdates);
 			this.groupBox4.Controls.Add(this.label4);
 			this.groupBox4.Controls.Add(this.checkUpdateModsStartup);
 			this.groupBox4.Controls.Add(this.numericUpdateFrequency);
@@ -901,6 +903,17 @@
 			this.groupBox5.TabIndex = 1;
 			this.groupBox5.TabStop = false;
 			this.groupBox5.Text = "Quality";
+			// 
+			// buttonCheckForUpdates
+			// 
+			this.buttonCheckForUpdates.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.buttonCheckForUpdates.Location = new System.Drawing.Point(259, 54);
+			this.buttonCheckForUpdates.Name = "buttonCheckForUpdates";
+			this.buttonCheckForUpdates.Size = new System.Drawing.Size(75, 23);
+			this.buttonCheckForUpdates.TabIndex = 5;
+			this.buttonCheckForUpdates.Text = "Check Now";
+			this.buttonCheckForUpdates.UseVisualStyleBackColor = true;
+			this.buttonCheckForUpdates.Click += new System.EventHandler(this.buttonCheckForUpdates_Click);
 			// 
 			// MainForm
 			// 
@@ -1008,5 +1021,6 @@
 		private System.Windows.Forms.ComboBox comboUpdateFrequency;
 		private System.Windows.Forms.CheckBox checkUpdateStartup;
 		private System.Windows.Forms.GroupBox groupBox5;
+		private System.Windows.Forms.Button buttonCheckForUpdates;
 	}
 }
