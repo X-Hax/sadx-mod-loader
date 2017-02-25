@@ -57,6 +57,9 @@ namespace SADXModManager
 		[DefaultValue(1)]
 		public int UpdateFrequency { get; set; }
 
+		[DefaultValue(0)] public long UpdateTime { get; set; }
+		[DefaultValue(0)] public long ModUpdateTime { get; set; }
+
 		[IniName("Mod")]
 		[IniCollection(IniCollectionMode.NoSquareBrackets, StartIndex = 1)]
 		public List<string> Mods { get; set; }

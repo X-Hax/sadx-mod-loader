@@ -836,7 +836,7 @@
 			this.comboUpdateFrequency.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.comboUpdateFrequency.FormattingEnabled = true;
 			this.comboUpdateFrequency.Items.AddRange(new object[] {
-            "Every Time",
+            "Always",
             "Hours",
             "Days",
             "Weeks"});
@@ -897,7 +897,7 @@
 			this.groupBox5.Controls.Add(this.forceTextureFilterCheckBox);
 			this.groupBox5.Location = new System.Drawing.Point(6, 181);
 			this.groupBox5.Name = "groupBox5";
-			this.groupBox5.Size = new System.Drawing.Size(366, 100);
+			this.groupBox5.Size = new System.Drawing.Size(366, 70);
 			this.groupBox5.TabIndex = 1;
 			this.groupBox5.TabStop = false;
 			this.groupBox5.Text = "Quality";

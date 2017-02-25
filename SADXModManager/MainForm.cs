@@ -21,6 +21,8 @@ namespace SADXModManager
 			InitializeComponent();
 		}
 
+		private bool checkedForUpdates;
+
 		const string datadllpath = "system/CHRMODELS.dll";
 		const string datadllorigpath = "system/CHRMODELS_orig.dll";
 		const string loaderinipath = "mods/SADXModLoader.ini";
@@ -37,37 +39,68 @@ namespace SADXModManager
 
 		BackgroundWorker updateChecker;
 
+		private static bool Elapsed(UpdateUnit unit, int amount, DateTime start)
+		{
+			if (unit == UpdateUnit.Always)
+			{
+				return true;
+			}
+
+			TimeSpan span = DateTime.UtcNow - start;
+
+			switch (unit)
+			{
+				case UpdateUnit.Hours:
+					return span.TotalHours >= amount;
+
+				case UpdateUnit.Days:
+					return span.TotalDays >= amount;
+
+				case UpdateUnit.Weeks:
+					return span.TotalDays / 7.0 >= amount;
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(unit), unit, null);
+			}
+		}
+
 		private void MainForm_Load(object sender, EventArgs e)
 		{
-			if (File.Exists("sadxmlver.txt"))
-			{
-				using (var wc = new WebClient())
-				{
-					try
-					{
-						string msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
+			loaderini = File.Exists(loaderinipath) ? IniFile.Deserialize<LoaderInfo>(loaderinipath) : new LoaderInfo();
 
-						if (msg.Length > 0)
+			if (Elapsed(loaderini.UpdateUnit, loaderini.UpdateFrequency, DateTime.FromFileTimeUtc(loaderini.UpdateTime)))
+			{
+				checkedForUpdates = true;
+				loaderini.UpdateTime = DateTime.UtcNow.ToFileTimeUtc();
+
+				if (File.Exists("sadxmlver.txt"))
+				{
+					using (var wc = new WebClient())
+					{
+						try
 						{
-							using (var dlg = new UpdateMessageDialog(msg.Replace("\n", "\r\n")))
+							string msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
+
+							if (msg.Length > 0)
 							{
-								if (dlg.ShowDialog(this) == DialogResult.Yes)
+								using (var dlg = new UpdateMessageDialog(msg.Replace("\n", "\r\n")))
 								{
-									Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
-									Close();
-									return;
+									if (dlg.ShowDialog(this) == DialogResult.Yes)
+									{
+										Process.Start("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z");
+										Close();
+										return;
+									}
 								}
 							}
 						}
-					}
-					catch
-					{
-						MessageBox.Show(this, "Unable to retrieve update information.", "SADX Mod Manager");
+						catch
+						{
+							MessageBox.Show(this, "Unable to retrieve update information.", "SADX Mod Manager");
+						}
 					}
 				}
 			}
-
-			loaderini = File.Exists(loaderinipath) ? IniFile.Deserialize<LoaderInfo>(loaderinipath) : new LoaderInfo();
 
 			try { mainCodes = CodeList.Load(codexmlpath); }
 			catch { mainCodes = new CodeList() { Codes = new List<Code>() }; }
@@ -126,6 +159,14 @@ namespace SADXModManager
 			suppressEvent = false;
 
 			CheckModUpdates();
+
+			// If we've checked for updates, save the modified
+			// last update times without requiring the user to
+			// click the save button.
+			if (checkedForUpdates)
+			{
+				IniFile.Serialize(loaderini, loaderinipath);
+			}
 
 			if (!File.Exists(datadllpath))
 			{
@@ -219,6 +260,13 @@ namespace SADXModManager
 				updateChecker.RunWorkerCompleted += UpdateChecker_RunWorkerCompleted;
 			}
 
+			if (!Elapsed(loaderini.UpdateUnit, loaderini.UpdateFrequency, DateTime.FromFileTimeUtc(loaderini.ModUpdateTime)))
+			{
+				return;
+			}
+
+			checkedForUpdates = true;
+			loaderini.ModUpdateTime = DateTime.UtcNow.ToFileTimeUtc();
 			updateChecker.RunWorkerAsync(mods.ToList());
 		}
 
