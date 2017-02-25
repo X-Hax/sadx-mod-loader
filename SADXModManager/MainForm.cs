@@ -1043,8 +1043,8 @@ namespace SADXModManager
 				var modPath = Path.Combine("mods", (string)item.Tag);
 				var manifestPath = Path.Combine(modPath, "mod.manifest");
 
-				List<ModManifest> manifest = null;
-				List<ModManifestDiff> diff = null;
+				List<ModManifest> manifest;
+				List<ModManifestDiff> diff;
 
 				// TODO: allow cancellation
 				using (var progress = new ManifestDialog(modPath, $"Generating manifest: {(string)item.Tag}", false))
