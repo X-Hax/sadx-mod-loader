@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using IniSerializer;
 using Newtonsoft.Json;
@@ -1042,8 +1043,22 @@ namespace SADXModManager
 				var modPath = Path.Combine("mods", (string)item.Tag);
 				var manifestPath = Path.Combine(modPath, "mod.manifest");
 
-				List<ModManifest> manifest = ModManifest.Generate(modPath);
-				List<ModManifestDiff> diff = ModManifest.Diff(manifest, File.Exists(manifestPath) ? ModManifest.FromFile(manifestPath) : null);
+				List<ModManifest> manifest = null;
+				List<ModManifestDiff> diff = null;
+
+				// TODO: allow cancellation
+				using (var progress = new ManifestDialog(modPath, $"Generating manifest: {(string)item.Tag}", false))
+				{
+					progress.SetTask("Generating file index...");
+					progress.ShowDialog(this);
+					manifest = progress.manifest;
+					diff = progress.diff;
+				}
+
+				if (diff == null)
+				{
+					continue;
+				}
 
 				if (diff.Count(x => x.State != ModManifestState.Unmodified) <= 0)
 				{

@@ -13,12 +13,18 @@ namespace SADXModManager.Forms
 		private readonly string updatePath;
 
 		public DownloadDialog(List<ModDownload> updates, string updatePath)
-			: base("Update Progress", updates.Select(x => (int)x.Size / 1024).ToArray())
+			: base("Update Progress", updates.Select(x => (int)x.Size / 1024).ToArray(), true)
 		{
 			this.updates    = updates;
 			this.updatePath = updatePath;
 
 			Shown += OnShown;
+			CancelEvent += OnCancelEvent;
+		}
+
+		private void OnCancelEvent(object sender, EventArgs eventArgs)
+		{
+			throw new NotImplementedException();
 		}
 
 		private void OnShown(object sender, EventArgs eventArgs)

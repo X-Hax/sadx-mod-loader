@@ -82,6 +82,9 @@
     <Compile Include="Forms\DownloadDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Forms\ManifestDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\ManifestDiffDialog.cs">
       <SubType>Form</SubType>
     </Compile>

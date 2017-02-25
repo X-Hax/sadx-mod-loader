@@ -17,8 +17,8 @@ namespace SADXModManager
 
 	public class ModManifestDiff
 	{
-		public ModManifestState State;
-		public ModManifest Manifest;
+		public readonly ModManifestState State;
+		public readonly ModManifest Manifest;
 
 		public ModManifestDiff(ModManifestState state, ModManifest manifest)
 		{
@@ -27,70 +27,69 @@ namespace SADXModManager
 		}
 	}
 
-	public class ModManifest
+	public class FilesIndexedEventArgs : EventArgs
 	{
-		public string FilePath;
-		public long FileSize;
-		public string Checksum;
-
-		private ModManifest(string line)
+		public FilesIndexedEventArgs(int fileCount)
 		{
-			string[] fields = line.Split('\t');
-			if (fields.Length != 3)
-			{
-				throw new ArgumentException($"Manifest line must have 3 fields. Provided: { fields.Length }", nameof(line));
-			}
-
-			FilePath = fields[0];
-			FileSize = long.Parse(fields[1]);
-			Checksum = fields[2];
+			FileCount = fileCount;
 		}
 
-		private ModManifest() {}
+		public int FileCount { get; }
+	}
 
-		public static List<ModManifest> FromFile(string filePath)
+	public class FileHashEventArgs : EventArgs
+	{
+		public FileHashEventArgs(string fileName, int fileIndex, int fileCount)
 		{
-			string[] lines = File.ReadAllLines(filePath);
-			return lines.Select(line => new ModManifest(line)).ToList();
+			FileName = fileName;
+			FileIndex = fileIndex;
+			FileCount = fileCount;
 		}
 
-		public static void ToFile(IEnumerable<ModManifest> manifest, string path)
-		{
-			File.WriteAllLines(path, manifest.Select(x => x.ToString()));
-		}
+		public string FileName { get; }
+		public int FileIndex { get; }
+		public int FileCount { get; }
+	}
 
-		public static List<ModManifest> Generate(string modPath)
+	public class ModManifestGenerator
+	{
+		public event EventHandler<FilesIndexedEventArgs> FilesIndexed;
+		public event EventHandler<FileHashEventArgs> FileHashStart;
+		public event EventHandler<FileHashEventArgs> FileHashEnd;
+		public event EventHandler FileHashingComplete;
+
+		public List<ModManifest> Generate(string modPath)
 		{
 			if (!Directory.Exists(modPath))
 			{
 				throw new DirectoryNotFoundException();
 			}
 
+			int i = 0;
 			var result = new List<ModManifest>();
+			List<string> fileIndex = Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories)
+				.Where(x => !string.IsNullOrEmpty(x)
+				            && !x.Equals("mod.manifest", StringComparison.InvariantCultureIgnoreCase)
+				            && !x.Equals("mod.version", StringComparison.InvariantCultureIgnoreCase))
+				.ToList();
 
-			foreach (var f in Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories))
+			if (fileIndex.Count < 1)
 			{
-				var name = Path.GetFileName(f);
+				OnFileHashingComplete();
+				return result;
+			}
 
-				if (string.IsNullOrEmpty(name))
-				{
-					continue;
-				}
+			OnFilesIndexed(new FilesIndexedEventArgs(fileIndex.Count));
 
-				if (name.Equals("mod.manifest", StringComparison.InvariantCultureIgnoreCase))
-				{
-					continue;
-				}
-
-				if (name.Equals("mod.version", StringComparison.InvariantCultureIgnoreCase))
-				{
-					continue;
-				}
-
+			foreach (var f in fileIndex)
+			{
 				var relativePath = f.Substring(modPath.Length + 1);
 				var file = new FileInfo(f);
 
 				byte[] hash;
+
+				++i;
+				OnFileHashStart(new FileHashEventArgs(relativePath, i, fileIndex.Count));
 
 				using (var sha = new SHA256Cng())
 				{
@@ -100,18 +99,21 @@ namespace SADXModManager
 					}
 				}
 
-				 result.Add(new ModManifest
-				 {
-					 FilePath = relativePath,
-					 FileSize = file.Length,
-					 Checksum = string.Concat(hash.Select(x => x.ToString("x2")))
-				 });
+				OnFileHashEnd(new FileHashEventArgs(relativePath, i, fileIndex.Count));
+
+				result.Add(new ModManifest
+				{
+					FilePath = relativePath,
+					FileSize = file.Length,
+					Checksum = string.Concat(hash.Select(x => x.ToString("x2")))
+				});
 			}
 
+			OnFileHashingComplete();
 			return result;
 		}
 
-		public static List<ModManifestDiff> Diff(List<ModManifest> newManifest, List<ModManifest> oldManifest)
+		public List<ModManifestDiff> Diff(List<ModManifest> newManifest, List<ModManifest> oldManifest)
 		{
 			var result = new List<ModManifestDiff>();
 
@@ -162,6 +164,59 @@ namespace SADXModManager
 			}
 
 			return result;
+		}
+
+		protected virtual void OnFilesIndexed(FilesIndexedEventArgs e)
+		{
+			FilesIndexed?.Invoke(this, e);
+		}
+
+		protected virtual void OnFileHashingComplete()
+		{
+			FileHashingComplete?.Invoke(this, EventArgs.Empty);
+		}
+
+		protected virtual void OnFileHashStart(FileHashEventArgs e)
+		{
+			FileHashStart?.Invoke(this, e);
+		}
+
+		protected virtual void OnFileHashEnd(FileHashEventArgs e)
+		{
+			FileHashEnd?.Invoke(this, e);
+		}
+	}
+
+	public class ModManifest
+	{
+		public string FilePath;
+		public long FileSize;
+		public string Checksum;
+
+		public ModManifest(string line)
+		{
+			string[] fields = line.Split('\t');
+			if (fields.Length != 3)
+			{
+				throw new ArgumentException($"Manifest line must have 3 fields. Provided: { fields.Length }", nameof(line));
+			}
+
+			FilePath = fields[0];
+			FileSize = long.Parse(fields[1]);
+			Checksum = fields[2];
+		}
+
+		public ModManifest() {}
+
+		public static List<ModManifest> FromFile(string filePath)
+		{
+			string[] lines = File.ReadAllLines(filePath);
+			return lines.Select(line => new ModManifest(line)).ToList();
+		}
+
+		public static void ToFile(IEnumerable<ModManifest> manifest, string path)
+		{
+			File.WriteAllLines(path, manifest.Select(x => x.ToString()));
 		}
 
 		public override string ToString()

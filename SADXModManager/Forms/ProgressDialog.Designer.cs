@@ -31,8 +31,7 @@
 			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.labelTask = new System.Windows.Forms.Label();
 			this.labelStep = new System.Windows.Forms.Label();
-			this.checkAutoClose = new System.Windows.Forms.CheckBox();
-			this.buttonOK = new System.Windows.Forms.Button();
+			this.buttonCancel = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// progressBar
@@ -64,41 +63,25 @@
 			this.labelStep.TabIndex = 2;
 			this.labelStep.Text = "labelStep";
 			// 
-			// checkAutoClose
+			// buttonCancel
 			// 
-			this.checkAutoClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.checkAutoClose.AutoSize = true;
-			this.checkAutoClose.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.checkAutoClose.Location = new System.Drawing.Point(12, 72);
-			this.checkAutoClose.Name = "checkAutoClose";
-			this.checkAutoClose.Size = new System.Drawing.Size(133, 18);
-			this.checkAutoClose.TabIndex = 4;
-			this.checkAutoClose.Text = "&Close when complete";
-			this.checkAutoClose.UseVisualStyleBackColor = true;
-			this.checkAutoClose.CheckedChanged += new System.EventHandler(this.checkAutoClose_CheckedChanged);
-			// 
-			// buttonOK
-			// 
-			this.buttonOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-			this.buttonOK.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.buttonOK.Location = new System.Drawing.Point(281, 68);
-			this.buttonOK.Name = "buttonOK";
-			this.buttonOK.Size = new System.Drawing.Size(75, 23);
-			this.buttonOK.TabIndex = 5;
-			this.buttonOK.Text = "&OK";
-			this.buttonOK.UseVisualStyleBackColor = true;
-			this.buttonOK.Click += new System.EventHandler(this.buttonOK_Click);
+			this.buttonCancel.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.buttonCancel.Location = new System.Drawing.Point(281, 68);
+			this.buttonCancel.Name = "buttonCancel";
+			this.buttonCancel.Size = new System.Drawing.Size(75, 23);
+			this.buttonCancel.TabIndex = 4;
+			this.buttonCancel.Text = "&Cancel";
+			this.buttonCancel.UseVisualStyleBackColor = true;
+			this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
 			// 
 			// ProgressDialog
 			// 
-			this.AcceptButton = this.buttonOK;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.CancelButton = this.buttonCancel;
 			this.ClientSize = new System.Drawing.Size(368, 103);
 			this.ControlBox = false;
-			this.Controls.Add(this.buttonOK);
-			this.Controls.Add(this.checkAutoClose);
+			this.Controls.Add(this.buttonCancel);
 			this.Controls.Add(this.labelStep);
 			this.Controls.Add(this.labelTask);
 			this.Controls.Add(this.progressBar);
@@ -120,7 +103,6 @@
 		private System.Windows.Forms.ProgressBar progressBar;
 		private System.Windows.Forms.Label labelTask;
 		private System.Windows.Forms.Label labelStep;
-		private System.Windows.Forms.CheckBox checkAutoClose;
-		private System.Windows.Forms.Button buttonOK;
+		private System.Windows.Forms.Button buttonCancel;
 	}
 }

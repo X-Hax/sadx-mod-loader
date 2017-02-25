@@ -6,6 +6,7 @@ namespace SADXModManager.Forms
 {
 	public partial class ProgressDialog : Form
 	{
+		public event EventHandler CancelEvent;
 		#region Accessors
 
 		/// <summary>
@@ -22,23 +23,6 @@ namespace SADXModManager.Forms
 		/// Gets or sets the title of the window.
 		/// </summary>
 		public string Title => Text;
-
-		/// <summary>
-		/// Gets or sets the enabled state of the close options.
-		/// If true, the auto-close checkbox and OK button will be disabled.
-		/// </summary>
-		public bool EnableCloseOptions
-		{
-			get
-			{
-				return checkAutoClose.Checked;
-			}
-			set
-			{
-				checkAutoClose.Enabled = value;
-				SetOkEnabledState();
-			}
-		}
 
 		// HACK: This is a work around for slow progress bar animation.
 		private int progressValue
@@ -65,12 +49,36 @@ namespace SADXModManager.Forms
 		/// Initializes a ProgressDialog which displays the current task, the step in that task, and a progress bar.
 		/// </summary>
 		/// <param name="title">The title of the window</param>
-		/// <param name="max">The number of steps required</param>
-		/// <param name="enableCloseOptions">Defines whether or not the close-on-completion checkbox and OK button are usable.</param>
-		/// <param name="autoClose">The default close-on-completion option.</param>
-		public ProgressDialog(string title, int[] taskSteps, bool enableCloseOptions = false, bool autoClose = true)
+		/// <param name="taskSteps">Array of steps required for each task.</param>
+		/// <param name="allowCancel">Enables or disables the cancel button.</param>
+		public ProgressDialog(string title, int[] taskSteps, bool allowCancel)
+			: this(title, allowCancel)
+		{
+			SetTaskSteps(taskSteps);
+		}
+
+		/// <summary>
+		/// Initializes a ProgressDialog which displays the current task, the step in that task, and a progress bar.
+		/// </summary>
+		/// <param name="title">The title of the window</param>
+		/// <param name="allowCancel">Enables or disables the cancel button.</param>
+		public ProgressDialog(string title, bool allowCancel)
 		{
 			InitializeComponent();
+
+			Text = title;
+			labelTask.Text = "";
+			labelStep.Text = "";
+			buttonCancel.Enabled = allowCancel;
+		}
+
+		public void SetTaskSteps(int[] taskSteps)
+		{
+			if (InvokeRequired)
+			{
+				Invoke((Action<int[]>)SetTaskSteps, taskSteps);
+				return;
+			}
 
 			if (taskSteps == null)
 			{
@@ -83,17 +91,17 @@ namespace SADXModManager.Forms
 			}
 
 			this.taskSteps = taskSteps;
-
-			Text                   = title;
-			EnableCloseOptions     = enableCloseOptions;
-			checkAutoClose.Checked = autoClose;
-			labelTask.Text         = "";
-			labelStep.Text         = "";
-			progressBar.Maximum    = taskSteps.Sum();
+			progressBar.Maximum = taskSteps.Sum();
 		}
 
 		public void NextTask()
 		{
+			if (InvokeRequired)
+			{
+				Invoke((Action)NextTask);
+				return;
+			}
+
 			if (taskIndex + 1 < taskSteps.Length)
 			{
 				++taskIndex;
@@ -109,7 +117,7 @@ namespace SADXModManager.Forms
 			}
 
 			progressBar.Value = progressBar.Maximum;
-			Finish();
+			Close();
 		}
 
 		/// <summary>
@@ -127,12 +135,12 @@ namespace SADXModManager.Forms
 			// Not using progressBar.Step() because dirty hacks
 			progressValue = progressValue + amount;
 
-			if (!EnableCloseOptions || progressBar.Value != progressBar.Maximum)
+			if (progressBar.Value != progressBar.Maximum)
 			{
 				return;
 			}
 
-			Finish();
+			Close();
 		}
 
 		public void SetProgress(int value)
@@ -144,23 +152,6 @@ namespace SADXModManager.Forms
 			}
 
 			progressValue = value;
-		}
-
-		private void Finish()
-		{
-			if (!EnableCloseOptions)
-			{
-				return;
-			}
-
-			if (checkAutoClose.Checked)
-			{
-				Close();
-			}
-			else
-			{
-				buttonOK.Enabled = true;
-			}
 		}
 
 		/// <summary>
@@ -214,27 +205,27 @@ namespace SADXModManager.Forms
 			}
 		}
 
-		private void SetOkEnabledState()
-		{
-			if (progressBar.Value < progressBar.Maximum)
-			{
-				buttonOK.Enabled = !checkAutoClose.Checked;
-			}
-		}
-
-		private void checkAutoClose_CheckedChanged(object sender, EventArgs e)
-		{
-			SetOkEnabledState();
-		}
-
 		private void ProgressDialog_Load(object sender, EventArgs e)
 		{
 			CenterToParent();
-			buttonOK.Select();
+			buttonCancel.Select();
 		}
-		private void buttonOK_Click(object sender, EventArgs e)
+
+		private void buttonCancel_Click(object sender, EventArgs e)
 		{
+			if (MessageBox.Show(this, "Are you sure you want to cancel?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+			{
+				return;
+			}
+
+			OnCancelEvent();
+			DialogResult = DialogResult.Cancel;
 			Close();
+		}
+
+		protected virtual void OnCancelEvent()
+		{
+			CancelEvent?.Invoke(this, EventArgs.Empty);
 		}
 	}
 }

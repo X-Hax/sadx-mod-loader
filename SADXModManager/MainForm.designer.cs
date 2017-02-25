@@ -34,6 +34,8 @@
 			System.Windows.Forms.Label label2;
 			System.Windows.Forms.GroupBox groupBox2;
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+			this.pauseWhenInactiveCheckBox = new System.Windows.Forms.CheckBox();
+			this.disableCDCheckCheckBox = new System.Windows.Forms.CheckBox();
 			this.screenNumComboBox = new System.Windows.Forms.ComboBox();
 			this.stretchFullscreenCheckBox = new System.Windows.Forms.CheckBox();
 			this.nativeResolutionButton = new System.Windows.Forms.Button();
@@ -60,15 +62,28 @@
 			this.tabPage2 = new System.Windows.Forms.TabPage();
 			this.codesCheckedListBox = new System.Windows.Forms.CheckedListBox();
 			this.tabPage3 = new System.Windows.Forms.TabPage();
-			this.groupBox3 = new System.Windows.Forms.GroupBox();
+			this.groupBox5 = new System.Windows.Forms.GroupBox();
 			this.checkScaleHud = new System.Windows.Forms.CheckBox();
+			this.forceMipmappingCheckBox = new System.Windows.Forms.CheckBox();
+			this.forceTextureFilterCheckBox = new System.Windows.Forms.CheckBox();
+			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.checkVsync = new System.Windows.Forms.CheckBox();
 			this.maintainWindowAspectRatioCheckBox = new System.Windows.Forms.CheckBox();
 			this.windowWidth = new System.Windows.Forms.NumericUpDown();
 			this.windowHeight = new System.Windows.Forms.NumericUpDown();
 			this.customWindowSizeCheckBox = new System.Windows.Forms.CheckBox();
-			this.forceTextureFilterCheckBox = new System.Windows.Forms.CheckBox();
-			this.forceMipmappingCheckBox = new System.Windows.Forms.CheckBox();
+			this.tabPage4 = new System.Windows.Forms.TabPage();
+			this.groupBox4 = new System.Windows.Forms.GroupBox();
+			this.buttonCheckForUpdates = new System.Windows.Forms.Button();
+			this.label4 = new System.Windows.Forms.Label();
+			this.checkUpdateModsStartup = new System.Windows.Forms.CheckBox();
+			this.numericUpdateFrequency = new System.Windows.Forms.NumericUpDown();
+			this.comboUpdateFrequency = new System.Windows.Forms.ComboBox();
+			this.checkUpdateStartup = new System.Windows.Forms.CheckBox();
+			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.consoleCheckBox = new System.Windows.Forms.CheckBox();
+			this.screenCheckBox = new System.Windows.Forms.CheckBox();
+			this.fileCheckBox = new System.Windows.Forms.CheckBox();
 			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
 			this.modContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.openFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -80,41 +95,26 @@
 			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
 			this.advancedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.generateManifestToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.tabPage4 = new System.Windows.Forms.TabPage();
-			this.groupBox1 = new System.Windows.Forms.GroupBox();
-			this.consoleCheckBox = new System.Windows.Forms.CheckBox();
-			this.screenCheckBox = new System.Windows.Forms.CheckBox();
-			this.fileCheckBox = new System.Windows.Forms.CheckBox();
-			this.pauseWhenInactiveCheckBox = new System.Windows.Forms.CheckBox();
-			this.disableCDCheckCheckBox = new System.Windows.Forms.CheckBox();
-			this.groupBox4 = new System.Windows.Forms.GroupBox();
-			this.checkUpdateStartup = new System.Windows.Forms.CheckBox();
-			this.comboUpdateFrequency = new System.Windows.Forms.ComboBox();
-			this.numericUpdateFrequency = new System.Windows.Forms.NumericUpDown();
-			this.checkUpdateModsStartup = new System.Windows.Forms.CheckBox();
-			this.label4 = new System.Windows.Forms.Label();
-			this.groupBox5 = new System.Windows.Forms.GroupBox();
-			this.buttonCheckForUpdates = new System.Windows.Forms.Button();
 			label3 = new System.Windows.Forms.Label();
 			label1 = new System.Windows.Forms.Label();
 			label2 = new System.Windows.Forms.Label();
 			groupBox2 = new System.Windows.Forms.GroupBox();
+			groupBox2.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.verticalResolution)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.horizontalResolution)).BeginInit();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1.SuspendLayout();
 			this.tabPage2.SuspendLayout();
 			this.tabPage3.SuspendLayout();
+			this.groupBox5.SuspendLayout();
 			this.groupBox3.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.windowWidth)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.windowHeight)).BeginInit();
-			this.modContextMenu.SuspendLayout();
 			this.tabPage4.SuspendLayout();
-			this.groupBox1.SuspendLayout();
-			groupBox2.SuspendLayout();
 			this.groupBox4.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.numericUpdateFrequency)).BeginInit();
-			this.groupBox5.SuspendLayout();
+			this.groupBox1.SuspendLayout();
+			this.modContextMenu.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// label3
@@ -143,6 +143,43 @@
 			label2.Size = new System.Drawing.Size(12, 13);
 			label2.TabIndex = 13;
 			label2.Text = "x";
+			// 
+			// groupBox2
+			// 
+			groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			groupBox2.Controls.Add(this.pauseWhenInactiveCheckBox);
+			groupBox2.Controls.Add(this.disableCDCheckCheckBox);
+			groupBox2.Location = new System.Drawing.Point(6, 6);
+			groupBox2.Name = "groupBox2";
+			groupBox2.Size = new System.Drawing.Size(366, 42);
+			groupBox2.TabIndex = 0;
+			groupBox2.TabStop = false;
+			groupBox2.Text = "Misc.";
+			// 
+			// pauseWhenInactiveCheckBox
+			// 
+			this.pauseWhenInactiveCheckBox.AutoSize = true;
+			this.pauseWhenInactiveCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.pauseWhenInactiveCheckBox.Location = new System.Drawing.Point(125, 19);
+			this.pauseWhenInactiveCheckBox.Name = "pauseWhenInactiveCheckBox";
+			this.pauseWhenInactiveCheckBox.Size = new System.Drawing.Size(135, 18);
+			this.pauseWhenInactiveCheckBox.TabIndex = 1;
+			this.pauseWhenInactiveCheckBox.Text = "Pause When Inactive";
+			this.toolTip1.SetToolTip(this.pauseWhenInactiveCheckBox, "Uncheck to allow the game to run in the background.");
+			this.pauseWhenInactiveCheckBox.UseVisualStyleBackColor = true;
+			// 
+			// disableCDCheckCheckBox
+			// 
+			this.disableCDCheckCheckBox.AutoSize = true;
+			this.disableCDCheckCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.disableCDCheckCheckBox.Location = new System.Drawing.Point(6, 19);
+			this.disableCDCheckCheckBox.Name = "disableCDCheckCheckBox";
+			this.disableCDCheckCheckBox.Size = new System.Drawing.Size(119, 18);
+			this.disableCDCheckCheckBox.TabIndex = 0;
+			this.disableCDCheckCheckBox.Text = "Disable CD Check";
+			this.toolTip1.SetToolTip(this.disableCDCheckCheckBox, "Allows you to run the game without the disc.");
+			this.disableCDCheckCheckBox.UseVisualStyleBackColor = true;
 			// 
 			// screenNumComboBox
 			// 
@@ -488,6 +525,55 @@
 			this.tabPage3.Text = "Graphics";
 			this.tabPage3.UseVisualStyleBackColor = true;
 			// 
+			// groupBox5
+			// 
+			this.groupBox5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBox5.Controls.Add(this.checkScaleHud);
+			this.groupBox5.Controls.Add(this.forceMipmappingCheckBox);
+			this.groupBox5.Controls.Add(this.forceTextureFilterCheckBox);
+			this.groupBox5.Location = new System.Drawing.Point(6, 181);
+			this.groupBox5.Name = "groupBox5";
+			this.groupBox5.Size = new System.Drawing.Size(366, 70);
+			this.groupBox5.TabIndex = 1;
+			this.groupBox5.TabStop = false;
+			this.groupBox5.Text = "Quality";
+			// 
+			// checkScaleHud
+			// 
+			this.checkScaleHud.AutoSize = true;
+			this.checkScaleHud.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.checkScaleHud.Location = new System.Drawing.Point(6, 43);
+			this.checkScaleHud.Name = "checkScaleHud";
+			this.checkScaleHud.Size = new System.Drawing.Size(154, 18);
+			this.checkScaleHud.TabIndex = 2;
+			this.checkScaleHud.Text = "Scale HUD (experimental)";
+			this.checkScaleHud.UseVisualStyleBackColor = true;
+			// 
+			// forceMipmappingCheckBox
+			// 
+			this.forceMipmappingCheckBox.AutoSize = true;
+			this.forceMipmappingCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.forceMipmappingCheckBox.Location = new System.Drawing.Point(149, 19);
+			this.forceMipmappingCheckBox.Name = "forceMipmappingCheckBox";
+			this.forceMipmappingCheckBox.Size = new System.Drawing.Size(119, 18);
+			this.forceMipmappingCheckBox.TabIndex = 1;
+			this.forceMipmappingCheckBox.Text = "Force Mipmapping";
+			this.toolTip1.SetToolTip(this.forceMipmappingCheckBox, "Generates mipmaps for all textures that don\'t have them.");
+			this.forceMipmappingCheckBox.UseVisualStyleBackColor = true;
+			// 
+			// forceTextureFilterCheckBox
+			// 
+			this.forceTextureFilterCheckBox.AutoSize = true;
+			this.forceTextureFilterCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.forceTextureFilterCheckBox.Location = new System.Drawing.Point(6, 19);
+			this.forceTextureFilterCheckBox.Name = "forceTextureFilterCheckBox";
+			this.forceTextureFilterCheckBox.Size = new System.Drawing.Size(137, 18);
+			this.forceTextureFilterCheckBox.TabIndex = 0;
+			this.forceTextureFilterCheckBox.Text = "Force Texture Filtering";
+			this.toolTip1.SetToolTip(this.forceTextureFilterCheckBox, "Smooths scaled UI textures by changing the filter method from Point to Linear.");
+			this.forceTextureFilterCheckBox.UseVisualStyleBackColor = true;
+			// 
 			// groupBox3
 			// 
 			this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -514,17 +600,6 @@
 			this.groupBox3.TabIndex = 0;
 			this.groupBox3.TabStop = false;
 			this.groupBox3.Text = "Display";
-			// 
-			// checkScaleHud
-			// 
-			this.checkScaleHud.AutoSize = true;
-			this.checkScaleHud.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.checkScaleHud.Location = new System.Drawing.Point(6, 43);
-			this.checkScaleHud.Name = "checkScaleHud";
-			this.checkScaleHud.Size = new System.Drawing.Size(154, 18);
-			this.checkScaleHud.TabIndex = 2;
-			this.checkScaleHud.Text = "Scale HUD (experimental)";
-			this.checkScaleHud.UseVisualStyleBackColor = true;
 			// 
 			// checkVsync
 			// 
@@ -608,29 +683,165 @@
 			this.customWindowSizeCheckBox.UseVisualStyleBackColor = true;
 			this.customWindowSizeCheckBox.CheckedChanged += new System.EventHandler(this.customWindowSizeCheckBox_CheckedChanged);
 			// 
-			// forceTextureFilterCheckBox
+			// tabPage4
 			// 
-			this.forceTextureFilterCheckBox.AutoSize = true;
-			this.forceTextureFilterCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.forceTextureFilterCheckBox.Location = new System.Drawing.Point(6, 19);
-			this.forceTextureFilterCheckBox.Name = "forceTextureFilterCheckBox";
-			this.forceTextureFilterCheckBox.Size = new System.Drawing.Size(137, 18);
-			this.forceTextureFilterCheckBox.TabIndex = 0;
-			this.forceTextureFilterCheckBox.Text = "Force Texture Filtering";
-			this.toolTip1.SetToolTip(this.forceTextureFilterCheckBox, "Smooths scaled UI textures by changing the filter method from Point to Linear.");
-			this.forceTextureFilterCheckBox.UseVisualStyleBackColor = true;
+			this.tabPage4.Controls.Add(this.groupBox4);
+			this.tabPage4.Controls.Add(this.groupBox1);
+			this.tabPage4.Controls.Add(groupBox2);
+			this.tabPage4.Location = new System.Drawing.Point(4, 22);
+			this.tabPage4.Name = "tabPage4";
+			this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPage4.Size = new System.Drawing.Size(378, 291);
+			this.tabPage4.TabIndex = 3;
+			this.tabPage4.Text = "Options";
+			this.tabPage4.UseVisualStyleBackColor = true;
 			// 
-			// forceMipmappingCheckBox
+			// groupBox4
 			// 
-			this.forceMipmappingCheckBox.AutoSize = true;
-			this.forceMipmappingCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.forceMipmappingCheckBox.Location = new System.Drawing.Point(149, 19);
-			this.forceMipmappingCheckBox.Name = "forceMipmappingCheckBox";
-			this.forceMipmappingCheckBox.Size = new System.Drawing.Size(119, 18);
-			this.forceMipmappingCheckBox.TabIndex = 1;
-			this.forceMipmappingCheckBox.Text = "Force Mipmapping";
-			this.toolTip1.SetToolTip(this.forceMipmappingCheckBox, "Generates mipmaps for all textures that don\'t have them.");
-			this.forceMipmappingCheckBox.UseVisualStyleBackColor = true;
+			this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBox4.Controls.Add(this.buttonCheckForUpdates);
+			this.groupBox4.Controls.Add(this.label4);
+			this.groupBox4.Controls.Add(this.checkUpdateModsStartup);
+			this.groupBox4.Controls.Add(this.numericUpdateFrequency);
+			this.groupBox4.Controls.Add(this.comboUpdateFrequency);
+			this.groupBox4.Controls.Add(this.checkUpdateStartup);
+			this.groupBox4.Location = new System.Drawing.Point(6, 102);
+			this.groupBox4.Name = "groupBox4";
+			this.groupBox4.Size = new System.Drawing.Size(366, 90);
+			this.groupBox4.TabIndex = 2;
+			this.groupBox4.TabStop = false;
+			this.groupBox4.Text = "Updates";
+			// 
+			// buttonCheckForUpdates
+			// 
+			this.buttonCheckForUpdates.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.buttonCheckForUpdates.Location = new System.Drawing.Point(259, 55);
+			this.buttonCheckForUpdates.Name = "buttonCheckForUpdates";
+			this.buttonCheckForUpdates.Size = new System.Drawing.Size(75, 23);
+			this.buttonCheckForUpdates.TabIndex = 5;
+			this.buttonCheckForUpdates.Text = "Check Now";
+			this.buttonCheckForUpdates.UseVisualStyleBackColor = true;
+			this.buttonCheckForUpdates.Click += new System.EventHandler(this.buttonCheckForUpdates_Click);
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(6, 40);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(60, 13);
+			this.label4.TabIndex = 2;
+			this.label4.Text = "Frequency:";
+			// 
+			// checkUpdateModsStartup
+			// 
+			this.checkUpdateModsStartup.AutoSize = true;
+			this.checkUpdateModsStartup.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.checkUpdateModsStartup.Location = new System.Drawing.Point(133, 19);
+			this.checkUpdateModsStartup.Name = "checkUpdateModsStartup";
+			this.checkUpdateModsStartup.Size = new System.Drawing.Size(141, 18);
+			this.checkUpdateModsStartup.TabIndex = 1;
+			this.checkUpdateModsStartup.Text = "Check mods on startup";
+			this.checkUpdateModsStartup.UseVisualStyleBackColor = true;
+			// 
+			// numericUpdateFrequency
+			// 
+			this.numericUpdateFrequency.Location = new System.Drawing.Point(133, 57);
+			this.numericUpdateFrequency.Maximum = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+			this.numericUpdateFrequency.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+			this.numericUpdateFrequency.Name = "numericUpdateFrequency";
+			this.numericUpdateFrequency.Size = new System.Drawing.Size(120, 20);
+			this.numericUpdateFrequency.TabIndex = 4;
+			this.numericUpdateFrequency.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+			// 
+			// comboUpdateFrequency
+			// 
+			this.comboUpdateFrequency.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.comboUpdateFrequency.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.comboUpdateFrequency.FormattingEnabled = true;
+			this.comboUpdateFrequency.Items.AddRange(new object[] {
+            "Always",
+            "Hours",
+            "Days",
+            "Weeks"});
+			this.comboUpdateFrequency.Location = new System.Drawing.Point(6, 56);
+			this.comboUpdateFrequency.Name = "comboUpdateFrequency";
+			this.comboUpdateFrequency.Size = new System.Drawing.Size(121, 21);
+			this.comboUpdateFrequency.TabIndex = 3;
+			this.comboUpdateFrequency.SelectedIndexChanged += new System.EventHandler(this.comboUpdateFrequency_SelectedIndexChanged);
+			// 
+			// checkUpdateStartup
+			// 
+			this.checkUpdateStartup.AutoSize = true;
+			this.checkUpdateStartup.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.checkUpdateStartup.Location = new System.Drawing.Point(6, 19);
+			this.checkUpdateStartup.Name = "checkUpdateStartup";
+			this.checkUpdateStartup.Size = new System.Drawing.Size(113, 18);
+			this.checkUpdateStartup.TabIndex = 0;
+			this.checkUpdateStartup.Text = "Check on startup";
+			this.checkUpdateStartup.UseVisualStyleBackColor = true;
+			// 
+			// groupBox1
+			// 
+			this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBox1.Controls.Add(this.consoleCheckBox);
+			this.groupBox1.Controls.Add(this.screenCheckBox);
+			this.groupBox1.Controls.Add(this.fileCheckBox);
+			this.groupBox1.Location = new System.Drawing.Point(6, 54);
+			this.groupBox1.Name = "groupBox1";
+			this.groupBox1.Size = new System.Drawing.Size(366, 42);
+			this.groupBox1.TabIndex = 1;
+			this.groupBox1.TabStop = false;
+			this.groupBox1.Text = "Debug Messages";
+			// 
+			// consoleCheckBox
+			// 
+			this.consoleCheckBox.AutoSize = true;
+			this.consoleCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.consoleCheckBox.Location = new System.Drawing.Point(6, 19);
+			this.consoleCheckBox.Name = "consoleCheckBox";
+			this.consoleCheckBox.Size = new System.Drawing.Size(70, 18);
+			this.consoleCheckBox.TabIndex = 0;
+			this.consoleCheckBox.Text = "Console";
+			this.toolTip1.SetToolTip(this.consoleCheckBox, "Shows a console and displays debug messages.");
+			this.consoleCheckBox.UseVisualStyleBackColor = true;
+			// 
+			// screenCheckBox
+			// 
+			this.screenCheckBox.AutoSize = true;
+			this.screenCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.screenCheckBox.Location = new System.Drawing.Point(76, 19);
+			this.screenCheckBox.Name = "screenCheckBox";
+			this.screenCheckBox.Size = new System.Drawing.Size(66, 18);
+			this.screenCheckBox.TabIndex = 1;
+			this.screenCheckBox.Text = "Screen";
+			this.toolTip1.SetToolTip(this.screenCheckBox, "Displays debug messages ingame.");
+			this.screenCheckBox.UseVisualStyleBackColor = true;
+			// 
+			// fileCheckBox
+			// 
+			this.fileCheckBox.AutoSize = true;
+			this.fileCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
+			this.fileCheckBox.Location = new System.Drawing.Point(142, 19);
+			this.fileCheckBox.Name = "fileCheckBox";
+			this.fileCheckBox.Size = new System.Drawing.Size(48, 18);
+			this.fileCheckBox.TabIndex = 2;
+			this.fileCheckBox.Text = "File";
+			this.toolTip1.SetToolTip(this.fileCheckBox, "Logs debug messages to mods/SADXModLoader.log");
+			this.fileCheckBox.UseVisualStyleBackColor = true;
 			// 
 			// modContextMenu
 			// 
@@ -695,7 +906,7 @@
             this.generateManifestToolStripMenuItem});
 			this.advancedToolStripMenuItem.Name = "advancedToolStripMenuItem";
 			this.advancedToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-			this.advancedToolStripMenuItem.Text = "Advanced";
+			this.advancedToolStripMenuItem.Text = "Developer";
 			// 
 			// generateManifestToolStripMenuItem
 			// 
@@ -703,217 +914,6 @@
 			this.generateManifestToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
 			this.generateManifestToolStripMenuItem.Text = "Generate manifest";
 			this.generateManifestToolStripMenuItem.Click += new System.EventHandler(this.generateManifestToolStripMenuItem_Click);
-			// 
-			// tabPage4
-			// 
-			this.tabPage4.Controls.Add(this.groupBox4);
-			this.tabPage4.Controls.Add(this.groupBox1);
-			this.tabPage4.Controls.Add(groupBox2);
-			this.tabPage4.Location = new System.Drawing.Point(4, 22);
-			this.tabPage4.Name = "tabPage4";
-			this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage4.Size = new System.Drawing.Size(378, 291);
-			this.tabPage4.TabIndex = 3;
-			this.tabPage4.Text = "Options";
-			this.tabPage4.UseVisualStyleBackColor = true;
-			// 
-			// groupBox1
-			// 
-			this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.groupBox1.Controls.Add(this.consoleCheckBox);
-			this.groupBox1.Controls.Add(this.screenCheckBox);
-			this.groupBox1.Controls.Add(this.fileCheckBox);
-			this.groupBox1.Location = new System.Drawing.Point(6, 54);
-			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(366, 42);
-			this.groupBox1.TabIndex = 1;
-			this.groupBox1.TabStop = false;
-			this.groupBox1.Text = "Debug Messages";
-			// 
-			// consoleCheckBox
-			// 
-			this.consoleCheckBox.AutoSize = true;
-			this.consoleCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.consoleCheckBox.Location = new System.Drawing.Point(6, 19);
-			this.consoleCheckBox.Name = "consoleCheckBox";
-			this.consoleCheckBox.Size = new System.Drawing.Size(70, 18);
-			this.consoleCheckBox.TabIndex = 0;
-			this.consoleCheckBox.Text = "Console";
-			this.toolTip1.SetToolTip(this.consoleCheckBox, "Shows a console and displays debug messages.");
-			this.consoleCheckBox.UseVisualStyleBackColor = true;
-			// 
-			// screenCheckBox
-			// 
-			this.screenCheckBox.AutoSize = true;
-			this.screenCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.screenCheckBox.Location = new System.Drawing.Point(76, 19);
-			this.screenCheckBox.Name = "screenCheckBox";
-			this.screenCheckBox.Size = new System.Drawing.Size(66, 18);
-			this.screenCheckBox.TabIndex = 1;
-			this.screenCheckBox.Text = "Screen";
-			this.toolTip1.SetToolTip(this.screenCheckBox, "Displays debug messages ingame.");
-			this.screenCheckBox.UseVisualStyleBackColor = true;
-			// 
-			// fileCheckBox
-			// 
-			this.fileCheckBox.AutoSize = true;
-			this.fileCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.fileCheckBox.Location = new System.Drawing.Point(142, 19);
-			this.fileCheckBox.Name = "fileCheckBox";
-			this.fileCheckBox.Size = new System.Drawing.Size(48, 18);
-			this.fileCheckBox.TabIndex = 2;
-			this.fileCheckBox.Text = "File";
-			this.toolTip1.SetToolTip(this.fileCheckBox, "Logs debug messages to mods/SADXModLoader.log");
-			this.fileCheckBox.UseVisualStyleBackColor = true;
-			// 
-			// groupBox2
-			// 
-			groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			groupBox2.Controls.Add(this.pauseWhenInactiveCheckBox);
-			groupBox2.Controls.Add(this.disableCDCheckCheckBox);
-			groupBox2.Location = new System.Drawing.Point(6, 6);
-			groupBox2.Name = "groupBox2";
-			groupBox2.Size = new System.Drawing.Size(366, 42);
-			groupBox2.TabIndex = 0;
-			groupBox2.TabStop = false;
-			groupBox2.Text = "Misc.";
-			// 
-			// pauseWhenInactiveCheckBox
-			// 
-			this.pauseWhenInactiveCheckBox.AutoSize = true;
-			this.pauseWhenInactiveCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.pauseWhenInactiveCheckBox.Location = new System.Drawing.Point(125, 19);
-			this.pauseWhenInactiveCheckBox.Name = "pauseWhenInactiveCheckBox";
-			this.pauseWhenInactiveCheckBox.Size = new System.Drawing.Size(135, 18);
-			this.pauseWhenInactiveCheckBox.TabIndex = 1;
-			this.pauseWhenInactiveCheckBox.Text = "Pause When Inactive";
-			this.toolTip1.SetToolTip(this.pauseWhenInactiveCheckBox, "Uncheck to allow the game to run in the background.");
-			this.pauseWhenInactiveCheckBox.UseVisualStyleBackColor = true;
-			// 
-			// disableCDCheckCheckBox
-			// 
-			this.disableCDCheckCheckBox.AutoSize = true;
-			this.disableCDCheckCheckBox.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.disableCDCheckCheckBox.Location = new System.Drawing.Point(6, 19);
-			this.disableCDCheckCheckBox.Name = "disableCDCheckCheckBox";
-			this.disableCDCheckCheckBox.Size = new System.Drawing.Size(119, 18);
-			this.disableCDCheckCheckBox.TabIndex = 0;
-			this.disableCDCheckCheckBox.Text = "Disable CD Check";
-			this.toolTip1.SetToolTip(this.disableCDCheckCheckBox, "Allows you to run the game without the disc.");
-			this.disableCDCheckCheckBox.UseVisualStyleBackColor = true;
-			// 
-			// groupBox4
-			// 
-			this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.groupBox4.Controls.Add(this.buttonCheckForUpdates);
-			this.groupBox4.Controls.Add(this.label4);
-			this.groupBox4.Controls.Add(this.checkUpdateModsStartup);
-			this.groupBox4.Controls.Add(this.numericUpdateFrequency);
-			this.groupBox4.Controls.Add(this.comboUpdateFrequency);
-			this.groupBox4.Controls.Add(this.checkUpdateStartup);
-			this.groupBox4.Location = new System.Drawing.Point(6, 102);
-			this.groupBox4.Name = "groupBox4";
-			this.groupBox4.Size = new System.Drawing.Size(366, 90);
-			this.groupBox4.TabIndex = 2;
-			this.groupBox4.TabStop = false;
-			this.groupBox4.Text = "Updates";
-			// 
-			// checkUpdateStartup
-			// 
-			this.checkUpdateStartup.AutoSize = true;
-			this.checkUpdateStartup.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.checkUpdateStartup.Location = new System.Drawing.Point(6, 19);
-			this.checkUpdateStartup.Name = "checkUpdateStartup";
-			this.checkUpdateStartup.Size = new System.Drawing.Size(113, 18);
-			this.checkUpdateStartup.TabIndex = 0;
-			this.checkUpdateStartup.Text = "Check on startup";
-			this.checkUpdateStartup.UseVisualStyleBackColor = true;
-			// 
-			// comboUpdateFrequency
-			// 
-			this.comboUpdateFrequency.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-			this.comboUpdateFrequency.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.comboUpdateFrequency.FormattingEnabled = true;
-			this.comboUpdateFrequency.Items.AddRange(new object[] {
-            "Always",
-            "Hours",
-            "Days",
-            "Weeks"});
-			this.comboUpdateFrequency.Location = new System.Drawing.Point(6, 56);
-			this.comboUpdateFrequency.Name = "comboUpdateFrequency";
-			this.comboUpdateFrequency.Size = new System.Drawing.Size(121, 21);
-			this.comboUpdateFrequency.TabIndex = 3;
-			this.comboUpdateFrequency.SelectedIndexChanged += new System.EventHandler(this.comboUpdateFrequency_SelectedIndexChanged);
-			// 
-			// numericUpdateFrequency
-			// 
-			this.numericUpdateFrequency.Location = new System.Drawing.Point(133, 57);
-			this.numericUpdateFrequency.Maximum = new decimal(new int[] {
-            1000,
-            0,
-            0,
-            0});
-			this.numericUpdateFrequency.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-			this.numericUpdateFrequency.Name = "numericUpdateFrequency";
-			this.numericUpdateFrequency.Size = new System.Drawing.Size(120, 20);
-			this.numericUpdateFrequency.TabIndex = 4;
-			this.numericUpdateFrequency.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-			// 
-			// checkUpdateModsStartup
-			// 
-			this.checkUpdateModsStartup.AutoSize = true;
-			this.checkUpdateModsStartup.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.checkUpdateModsStartup.Location = new System.Drawing.Point(133, 19);
-			this.checkUpdateModsStartup.Name = "checkUpdateModsStartup";
-			this.checkUpdateModsStartup.Size = new System.Drawing.Size(141, 18);
-			this.checkUpdateModsStartup.TabIndex = 1;
-			this.checkUpdateModsStartup.Text = "Check mods on startup";
-			this.checkUpdateModsStartup.UseVisualStyleBackColor = true;
-			// 
-			// label4
-			// 
-			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(6, 40);
-			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(60, 13);
-			this.label4.TabIndex = 2;
-			this.label4.Text = "Frequency:";
-			// 
-			// groupBox5
-			// 
-			this.groupBox5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.groupBox5.Controls.Add(this.checkScaleHud);
-			this.groupBox5.Controls.Add(this.forceMipmappingCheckBox);
-			this.groupBox5.Controls.Add(this.forceTextureFilterCheckBox);
-			this.groupBox5.Location = new System.Drawing.Point(6, 181);
-			this.groupBox5.Name = "groupBox5";
-			this.groupBox5.Size = new System.Drawing.Size(366, 70);
-			this.groupBox5.TabIndex = 1;
-			this.groupBox5.TabStop = false;
-			this.groupBox5.Text = "Quality";
-			// 
-			// buttonCheckForUpdates
-			// 
-			this.buttonCheckForUpdates.FlatStyle = System.Windows.Forms.FlatStyle.System;
-			this.buttonCheckForUpdates.Location = new System.Drawing.Point(259, 54);
-			this.buttonCheckForUpdates.Name = "buttonCheckForUpdates";
-			this.buttonCheckForUpdates.Size = new System.Drawing.Size(75, 23);
-			this.buttonCheckForUpdates.TabIndex = 5;
-			this.buttonCheckForUpdates.Text = "Check Now";
-			this.buttonCheckForUpdates.UseVisualStyleBackColor = true;
-			this.buttonCheckForUpdates.Click += new System.EventHandler(this.buttonCheckForUpdates_Click);
 			// 
 			// MainForm
 			// 
@@ -932,6 +932,8 @@
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.Text = "SADX Mod Manager";
 			this.Load += new System.EventHandler(this.MainForm_Load);
+			groupBox2.ResumeLayout(false);
+			groupBox2.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.verticalResolution)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.horizontalResolution)).EndInit();
 			this.tabControl1.ResumeLayout(false);
@@ -939,21 +941,19 @@
 			this.tabPage1.PerformLayout();
 			this.tabPage2.ResumeLayout(false);
 			this.tabPage3.ResumeLayout(false);
+			this.groupBox5.ResumeLayout(false);
+			this.groupBox5.PerformLayout();
 			this.groupBox3.ResumeLayout(false);
 			this.groupBox3.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.windowWidth)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.windowHeight)).EndInit();
-			this.modContextMenu.ResumeLayout(false);
 			this.tabPage4.ResumeLayout(false);
-			this.groupBox1.ResumeLayout(false);
-			this.groupBox1.PerformLayout();
-			groupBox2.ResumeLayout(false);
-			groupBox2.PerformLayout();
 			this.groupBox4.ResumeLayout(false);
 			this.groupBox4.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.numericUpdateFrequency)).EndInit();
-			this.groupBox5.ResumeLayout(false);
-			this.groupBox5.PerformLayout();
+			this.groupBox1.ResumeLayout(false);
+			this.groupBox1.PerformLayout();
+			this.modContextMenu.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
