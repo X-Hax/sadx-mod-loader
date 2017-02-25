@@ -238,7 +238,7 @@ static void __cdecl sub_789BD0()
 	{
 		do
 		{
-			if (!TranslateAccelerator(outerWindow, accelTbl, &v0))
+			if (!TranslateAcceleratorA(outerWindow, accelTbl, &v0))
 			{
 				TranslateMessage(&v0);
 				DispatchMessageA(&v0);
@@ -262,7 +262,7 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 	{
 	case WM_CLOSE:
 		// we also need to let SADX do cleanup
-		SendMessage(hWnd, WM_CLOSE, wParam, lParam);
+		SendMessageA(hWnd, WM_CLOSE, wParam, lParam);
 		// what we do here is up to you: we can check if SADX decides to close, and if so, destroy ourselves, or something like that
 		return 0;
 	case WM_ERASEBKGND:
@@ -288,8 +288,8 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 			windowsize *size = &innersizes[windowmode];
 			SetWindowPos(hWnd, nullptr, size->x, size->y, size->width, size->height, 0);
 			windowdata *data = &windowsizes[windowmode];
-			SetWindowLong(outerWindow, GWL_STYLE, data->style);
-			SetWindowLong(outerWindow, GWL_EXSTYLE, data->extendedstyle);
+			SetWindowLongA(outerWindow, GWL_STYLE, data->style);
+			SetWindowLongA(outerWindow, GWL_EXSTYLE, data->extendedstyle);
 			SetWindowPos(outerWindow, nullptr, data->x, data->y, data->width, data->height, SWP_FRAMECHANGED);
 			UpdateWindow(outerWindow);
 			switchingwindowmode = false;
@@ -305,7 +305,7 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 			while (ShowCursor(FALSE) > 0);
 	default:
 		// alternatively we can return SendMe
-		return DefWindowProc(wrapper, uMsg, wParam, lParam);
+		return DefWindowProcA(wrapper, uMsg, wParam, lParam);
 	}
 	/* unreachable */ return 0;
 }
@@ -433,22 +433,22 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 			bgimg = Gdiplus::Bitmap::FromFile(L"mods\\Border.png");
 		}
-		WNDCLASS w;
-		ZeroMemory(&w, sizeof(WNDCLASS));
-		w.lpszClassName = TEXT("WrapperWindow");
+		WNDCLASSA w;
+		ZeroMemory(&w, sizeof(WNDCLASSA));
+		w.lpszClassName = "WrapperWindow";
 		w.lpfnWndProc = WrapperWndProc;
 		w.hInstance = hInstance;
 		w.hIcon = LoadIconA(hInstance, MAKEINTRESOURCEA(101));
 		w.hCursor = LoadCursorA(nullptr, MAKEINTRESOURCEA(0x7F00));
 		w.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-		if (RegisterClass(&w) == 0)
+		if (RegisterClassA(&w) == 0)
 			return;
 
 		windowdata *data = &windowsizes[windowmode];
 
-		outerWindow = CreateWindowEx(data->extendedstyle,
-			L"WrapperWindow",
-			L"SonicAdventureDXPC",
+		outerWindow = CreateWindowExA(data->extendedstyle,
+			"WrapperWindow",
+			GetWindowClassName(),
 			data->style,
 			data->x, data->y, data->width, data->height,
 			nullptr, nullptr, hInstance, nullptr);
@@ -456,7 +456,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 		if (outerWindow == nullptr)
 			return;
 
-		accelTbl = CreateAcceleratorTable(arrayptrandlength(accelerators));
+		accelTbl = CreateAcceleratorTableA(arrayptrandlength(accelerators));
 
 		windowsize *size = &innersizes[windowmode];
 
@@ -1115,7 +1115,7 @@ static void ProcessLevelTexListINI(const IniGroup *group, const wstring &mod_dir
 
 static void ProcessTrialLevelListINI(const IniGroup *group, const wstring &mod_dir)
 {
-	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("pointer")) return;
+	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address")) return;
 	ifstream fstr(mod_dir + L'\\' + group->getWString("filename"));
 	vector<TrialLevelListEntry> lvls;
 	while (fstr.good())
@@ -1133,11 +1133,10 @@ static void ProcessTrialLevelListINI(const IniGroup *group, const wstring &mod_d
 	}
 	fstr.close();
 	auto numents = lvls.size();
-	TrialLevelList *list = new TrialLevelList;
+	TrialLevelList *list = (TrialLevelList*)(group->getIntRadix("address", 16) + 0x400000);
 	list->Levels = new TrialLevelListEntry[numents];
 	arrcpy(list->Levels, lvls.data(), numents);
 	list->Count = (int)numents;
-	ProcessPointerList(group->getString("pointer"), list);
 }
 
 static void ProcessBossLevelListINI(const IniGroup *group, const wstring &mod_dir)
@@ -1185,7 +1184,7 @@ static void ProcessFieldStartPosINI(const IniGroup *group, const wstring &mod_di
 
 static void ProcessSoundTestListINI(const IniGroup *group, const wstring &mod_dir)
 {
-	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("pointer")) return;
+	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address")) return;
 	const IniFile *inidata = new IniFile(mod_dir + L'\\' + group->getWString("filename"));
 	vector<SoundTestEntry> sounds;
 	for (int i = 0; i < 999; i++)
@@ -1201,16 +1200,15 @@ static void ProcessSoundTestListINI(const IniGroup *group, const wstring &mod_di
 	}
 	delete inidata;
 	auto numents = sounds.size();
-	SoundTestCategory *cat = new SoundTestCategory;
+	SoundTestCategory *cat = (SoundTestCategory*)(group->getIntRadix("address", 16) + 0x400000);;
 	cat->Entries = new SoundTestEntry[numents];
 	arrcpy(cat->Entries, sounds.data(), numents);
 	cat->Count = (int)numents;
-	ProcessPointerList(group->getString("pointer"), cat);
 }
 
 static void ProcessMusicListINI(const IniGroup *group, const wstring &mod_dir)
 {
-	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("pointer")) return;
+	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address")) return;
 	const IniFile *inidata = new IniFile(mod_dir + L'\\' + group->getWString("filename"));
 	vector<MusicInfo> songs;
 	for (int i = 0; i < 999; i++)
@@ -1226,14 +1224,12 @@ static void ProcessMusicListINI(const IniGroup *group, const wstring &mod_dir)
 	}
 	delete inidata;
 	auto numents = songs.size();
-	MusicInfo *list = new MusicInfo[numents];
-	arrcpy(list, songs.data(), numents);
-	ProcessPointerList(group->getString("pointer"), list);
+	arrcpy((MusicInfo*)(group->getIntRadix("address", 16) + 0x400000), songs.data(), numents);
 }
 
 static void ProcessSoundListINI(const IniGroup *group, const wstring &mod_dir)
 {
-	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("pointer")) return;
+	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address")) return;
 	const IniFile *inidata = new IniFile(mod_dir + L'\\' + group->getWString("filename"));
 	vector<SoundFileInfo> sounds;
 	for (int i = 0; i < 999; i++)
@@ -1249,11 +1245,10 @@ static void ProcessSoundListINI(const IniGroup *group, const wstring &mod_dir)
 	}
 	delete inidata;
 	auto numents = sounds.size();
-	SoundList *list = new SoundList;
+	SoundList *list = (SoundList*)(group->getIntRadix("address", 16) + 0x400000);;
 	list->List = new SoundFileInfo[numents];
 	arrcpy(list->List, sounds.data(), numents);
 	list->Count = (int)numents;
-	ProcessPointerList(group->getString("pointer"), list);
 }
 
 static vector<char *> ProcessStringArrayINI_Internal(const wstring &filename, uint8_t language)
@@ -1273,13 +1268,12 @@ static vector<char *> ProcessStringArrayINI_Internal(const wstring &filename, ui
 
 static void ProcessStringArrayINI(const IniGroup *group, const wstring &mod_dir)
 {
-	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("pointer")) return;
+	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address")) return;
 	vector<char *> strs = ProcessStringArrayINI_Internal(mod_dir + L'\\' + group->getWString("filename"),
 		ParseLanguage(group->getString("language")));
 	auto numents = strs.size();
-	char **list = new char *[numents];
+	char **list = (char**)(group->getIntRadix("address", 16) + 0x400000);;
 	arrcpy(list, strs.data(), numents);
-	ProcessPointerList(group->getString("pointer"), list);
 }
 
 static void ProcessNextLevelListINI(const IniGroup *group, const wstring &mod_dir)
@@ -2019,7 +2013,7 @@ static void __cdecl InitMods(void)
 	vector<std::pair<ModInitFunc, string>> initfuncs;
 	vector<std::pair<string, string>> errors;
 
-	string _mainsavepath, _chaosavepath;
+	string _mainsavepath, _chaosavepath, windowtitle;
 
 	// It's mod loading time!
 	PrintDebug("Loading mods...\n");
@@ -2275,6 +2269,9 @@ static void __cdecl InitMods(void)
 
 		if (modinfo->getBool("RedirectChaoSave"))
 			_chaosavepath = mod_dirA + "\\SAVEDATA";
+
+		if (modinfo->hasKeyNonEmpty("WindowTitle"))
+			windowtitle = modinfo->getString("WindowTitle");
 	}
 
 	if (!errors.empty())
@@ -2423,6 +2420,13 @@ static void __cdecl InitMods(void)
 		WriteData((char **)0x71AA6F, buf);
 		WriteData((char **)0x71ACDB, buf);
 		WriteData((char **)0x71ADC5, buf);
+	}
+
+	if (!windowtitle.empty())
+	{
+		char *buf = new char[windowtitle.size() + 1];
+		strncpy(buf, windowtitle.c_str(), windowtitle.size() + 1);
+		*(char**)0x892944 = buf;
 	}
 
 	PrintDebug("Finished loading mods\n");
