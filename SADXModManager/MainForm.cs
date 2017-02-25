@@ -90,6 +90,10 @@ namespace SADXModManager
 			horizontalResolution.Enabled        = loaderini.UseCustomResolution && !loaderini.ForceAspectRatio;
 			horizontalResolution.Value          = Math.Max(horizontalResolution.Minimum, Math.Min(horizontalResolution.Maximum, loaderini.HorizontalResolution));
 			verticalResolution.Value            = Math.Max(verticalResolution.Minimum, Math.Min(verticalResolution.Maximum, loaderini.VerticalResolution));
+			checkUpdateStartup.Checked          = loaderini.UpdateCheck;
+			checkUpdateModsStartup.Checked      = loaderini.ModUpdateCheck;
+			comboUpdateFrequency.SelectedIndex  = (int)loaderini.UpdateUnit;
+			numericUpdateFrequency.Value        = loaderini.UpdateFrequency;
 
 			suppressEvent = true;
 			forceAspectRatioCheckBox.Checked = loaderini.ForceAspectRatio;
@@ -531,6 +535,10 @@ namespace SADXModManager
 			loaderini.WindowWidth               = (int)windowWidth.Value;
 			loaderini.WindowHeight              = (int)windowHeight.Value;
 			loaderini.MaintainWindowAspectRatio = maintainWindowAspectRatioCheckBox.Checked;
+			loaderini.UpdateCheck               = checkUpdateStartup.Checked;
+			loaderini.ModUpdateCheck            = checkUpdateModsStartup.Checked;
+			loaderini.UpdateUnit                = (UpdateUnit)comboUpdateFrequency.SelectedIndex;
+			loaderini.UpdateFrequency           = (int)numericUpdateFrequency.Value;
 
 			IniFile.Serialize(loaderini, loaderinipath);
 
@@ -997,6 +1005,11 @@ namespace SADXModManager
 		{
 			updateChecker?.RunWorkerAsync(modListView.SelectedItems.Cast<ListViewItem>()
 				.Select(x => (string)x.Tag).Select(x => new KeyValuePair<string, ModInfo>(x, mods[x])).ToList());
+		}
+
+		private void comboUpdateFrequency_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			numericUpdateFrequency.Enabled = comboUpdateFrequency.SelectedIndex > 0;
 		}
 	}
 }

@@ -4,6 +4,14 @@ using IniSerializer;
 
 namespace SADXModManager
 {
+	enum UpdateUnit
+	{
+		Always,
+		Hours,
+		Days,
+		Weeks,
+	}
+
 	class LoaderInfo
 	{
 		public bool DebugConsole { get; set; }
@@ -38,6 +46,17 @@ namespace SADXModManager
 		[DefaultValue(480)]
 		public int WindowHeight { get; set; }
 		public bool MaintainWindowAspectRatio { get; set; }
+
+		[DefaultValue(true)]
+		public bool UpdateCheck { get; set; }
+		[DefaultValue(true)]
+		public bool ModUpdateCheck { get; set; }
+		
+		[DefaultValue(UpdateUnit.Days)]
+		public UpdateUnit UpdateUnit { get; set; }
+		[DefaultValue(1)]
+		public int UpdateFrequency { get; set; }
+
 		[IniName("Mod")]
 		[IniCollection(IniCollectionMode.NoSquareBrackets, StartIndex = 1)]
 		public List<string> Mods { get; set; }
