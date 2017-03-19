@@ -1045,11 +1045,14 @@ namespace SADXModManager
 				List<ModManifest> manifest;
 				List<ModManifestDiff> diff;
 
-				// TODO: allow cancellation
-				using (var progress = new ManifestDialog(modPath, $"Generating manifest: {(string)item.Tag}", false))
+				using (var progress = new ManifestDialog(modPath, $"Generating manifest: {(string)item.Tag}", true))
 				{
 					progress.SetTask("Generating file index...");
-					progress.ShowDialog(this);
+					if (progress.ShowDialog(this) == DialogResult.Cancel)
+					{
+						continue;
+					}
+
 					manifest = progress.manifest;
 					diff = progress.diff;
 				}

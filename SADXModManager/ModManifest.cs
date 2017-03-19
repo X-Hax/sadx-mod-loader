@@ -41,14 +41,16 @@ namespace SADXModManager
 	{
 		public FileHashEventArgs(string fileName, int fileIndex, int fileCount)
 		{
-			FileName = fileName;
+			FileName  = fileName;
 			FileIndex = fileIndex;
 			FileCount = fileCount;
+			Cancel    = false;
 		}
 
-		public string FileName { get; }
-		public int FileIndex { get; }
-		public int FileCount { get; }
+		public string FileName  { get; }
+		public int    FileIndex { get; }
+		public int    FileCount { get; }
+		public bool   Cancel    { get; set; }
 	}
 
 	public class ModManifestGenerator
@@ -89,7 +91,14 @@ namespace SADXModManager
 				byte[] hash;
 
 				++i;
-				OnFileHashStart(new FileHashEventArgs(relativePath, i, fileIndex.Count));
+
+				var args = new FileHashEventArgs(relativePath, i, fileIndex.Count);
+				OnFileHashStart(args);
+
+				if (args.Cancel)
+				{
+					return null;
+				}
 
 				using (var sha = new SHA256Cng())
 				{
@@ -99,7 +108,13 @@ namespace SADXModManager
 					}
 				}
 
-				OnFileHashEnd(new FileHashEventArgs(relativePath, i, fileIndex.Count));
+				args = new FileHashEventArgs(relativePath, i, fileIndex.Count);
+				OnFileHashEnd(args);
+
+				if (args.Cancel)
+				{
+					return null;
+				}
 
 				result.Add(new ModManifest
 				{
@@ -122,7 +137,7 @@ namespace SADXModManager
 
 			foreach (ModManifest entry in newManifest)
 			{
-				var exact = old.FirstOrDefault(x => Equals(x, entry));
+				ModManifest exact = old.FirstOrDefault(x => Equals(x, entry));
 				if (exact != null)
 				{
 					old.Remove(exact);
@@ -135,7 +150,7 @@ namespace SADXModManager
 				{
 					var name = Path.GetFileName(entry.FilePath);
 
-					foreach (var c in checksum)
+					foreach (ModManifest c in checksum)
 					{
 						old.Remove(c);
 					}
@@ -147,7 +162,7 @@ namespace SADXModManager
 					}
 				}
 
-				var nameMatch = old.FirstOrDefault(x => x.FilePath == entry.FilePath);
+				ModManifest nameMatch = old.FirstOrDefault(x => x.FilePath == entry.FilePath);
 				if (nameMatch != null)
 				{
 					old.Remove(nameMatch);
