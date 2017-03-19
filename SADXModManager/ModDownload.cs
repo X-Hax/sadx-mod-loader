@@ -84,6 +84,8 @@ namespace SADXModManager
 
 		public void Download(WebClient client, string updatePath)
 		{
+			bool cancel = false;
+
 			switch (Type)
 			{
 				case ModDownloadType.Archive:
@@ -93,15 +95,16 @@ namespace SADXModManager
 					var info = new FileInfo(filePath);
 					if (!info.Exists || info.Length != Size)
 					{
-						AsyncCompletedEventHandler downloadComplete = (sender, args) =>
+						void DownloadComplete(object sender, AsyncCompletedEventArgs args)
 						{
+							cancel = true;
 							lock (args.UserState)
 							{
 								Monitor.Pulse(args.UserState);
 							}
-						};
+						}
 
-						client.DownloadFileCompleted += downloadComplete;
+						client.DownloadFileCompleted += DownloadComplete;
 
 						var sync = new object();
 						lock (sync)
@@ -110,105 +113,115 @@ namespace SADXModManager
 							Monitor.Wait(sync);
 						}
 
-						client.DownloadFileCompleted -= downloadComplete;
+						client.DownloadFileCompleted -= DownloadComplete;
 					}
 
-					string dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
-					if (!Directory.Exists(dataDir))
+					if (!cancel)
 					{
-						Directory.CreateDirectory(dataDir);
-					}
-
-					OnExtracting();
-					using (Stream fileStream = File.OpenRead(filePath))
-					{
-						if (SevenZipArchive.IsSevenZipFile(fileStream))
+						string dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
+						if (!Directory.Exists(dataDir))
 						{
-							using (SevenZipArchive archive = SevenZipArchive.Open(fileStream))
-							{
-								Extract(archive.ExtractAllEntries(), dataDir);
-							}
+							Directory.CreateDirectory(dataDir);
 						}
-						else
+
+						OnExtracting();
+						using (Stream fileStream = File.OpenRead(filePath))
 						{
-							using (IReader reader = ReaderFactory.Open(fileStream))
+							if (SevenZipArchive.IsSevenZipFile(fileStream))
 							{
-								Extract(reader, dataDir);
+								using (SevenZipArchive archive = SevenZipArchive.Open(fileStream))
+								{
+									Extract(archive.ExtractAllEntries(), dataDir);
+								}
 							}
-						}
-					}
-
-					string workDir = Path.GetDirectoryName(ModInfo.GetModFiles(new DirectoryInfo(dataDir)).FirstOrDefault());
-
-					if (string.IsNullOrEmpty(workDir))
-					{
-						throw new DirectoryNotFoundException("Unable to locate mod.ini in " + dataDir);
-					}
-
-					string newManPath = Path.Combine(workDir, "mod.manifest");
-					string oldManPath = Path.Combine(Folder, "mod.manifest");
-
-					OnParsingManifest();
-
-					if (!File.Exists(newManPath))
-					{
-						throw new FileNotFoundException("This mod is missing a manifest!");
-					}
-
-					List<ModManifest> newManifest = ModManifest.FromFile(newManPath);
-
-					OnApplyingManifest();
-
-					if (File.Exists(oldManPath))
-					{
-						List<ModManifest> oldManifest = ModManifest.FromFile(oldManPath);
-						IEnumerable<ModManifest> unique = oldManifest.Except(newManifest);
-
-						foreach (string removed in unique.Select(x => Path.Combine(Folder, x.FilePath)))
-						{
-							if (File.Exists(removed))
+							else
 							{
-								File.Delete(removed);
-							}
-							else if (Directory.Exists(removed))
-							{
-								Directory.Delete(removed, true);
-							}
-						}
-					}
-
-					foreach (ModManifest file in newManifest)
-					{
-						string dir = Path.GetDirectoryName(file.FilePath);
-						if (!string.IsNullOrEmpty(dir))
-						{
-							string newDir = Path.Combine(Folder, dir);
-							if (!Directory.Exists(newDir))
-							{
-								Directory.CreateDirectory(newDir);
+								using (IReader reader = ReaderFactory.Open(fileStream))
+								{
+									Extract(reader, dataDir);
+								}
 							}
 						}
 
-						string dest = Path.Combine(Folder, file.FilePath);
+						string workDir = Path.GetDirectoryName(ModInfo.GetModFiles(new DirectoryInfo(dataDir)).FirstOrDefault());
 
-						if (File.Exists(dest))
+						if (string.IsNullOrEmpty(workDir))
 						{
-							File.Delete(dest);
+							throw new DirectoryNotFoundException("Unable to locate mod.ini in " + dataDir);
 						}
 
-						File.Move(Path.Combine(workDir, file.FilePath), dest);
+						string newManPath = Path.Combine(workDir, "mod.manifest");
+						string oldManPath = Path.Combine(Folder, "mod.manifest");
+
+						OnParsingManifest();
+
+						if (!File.Exists(newManPath))
+						{
+							throw new FileNotFoundException("This mod is missing a manifest!");
+						}
+
+						List<ModManifest> newManifest = ModManifest.FromFile(newManPath);
+
+						OnApplyingManifest();
+
+						if (File.Exists(oldManPath))
+						{
+							List<ModManifest> oldManifest = ModManifest.FromFile(oldManPath);
+							IEnumerable<ModManifest> unique = oldManifest.Except(newManifest);
+
+							foreach (string removed in unique.Select(x => Path.Combine(Folder, x.FilePath)))
+							{
+								if (File.Exists(removed))
+								{
+									File.Delete(removed);
+								}
+								else if (Directory.Exists(removed))
+								{
+									Directory.Delete(removed, true);
+								}
+							}
+						}
+
+						foreach (ModManifest file in newManifest)
+						{
+							string dir = Path.GetDirectoryName(file.FilePath);
+							if (!string.IsNullOrEmpty(dir))
+							{
+								string newDir = Path.Combine(Folder, dir);
+								if (!Directory.Exists(newDir))
+								{
+									Directory.CreateDirectory(newDir);
+								}
+							}
+
+							string dest = Path.Combine(Folder, file.FilePath);
+
+							if (File.Exists(dest))
+							{
+								File.Delete(dest);
+							}
+
+							File.Move(Path.Combine(workDir, file.FilePath), dest);
+						}
+
+						File.Copy(newManPath, oldManPath, true);
+						Directory.Delete(dataDir, true);
 					}
 
-					File.Copy(newManPath, oldManPath, true);
-					Directory.Delete(dataDir, true);
-					File.Delete(filePath);
+					if (File.Exists(filePath))
+					{
+						File.Delete(filePath);
+					}
 					break;
 
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
 
-			File.WriteAllText(Path.Combine(Folder, "mod.version"), Updated);
+			if (!cancel)
+			{
+				File.WriteAllText(Path.Combine(Folder, "mod.version"), Updated);
+			}
 		}
 
 		protected virtual void OnExtracting()

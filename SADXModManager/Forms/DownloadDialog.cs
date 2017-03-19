@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -11,6 +12,7 @@ namespace SADXModManager.Forms
 	{
 		private readonly List<ModDownload> updates;
 		private readonly string updatePath;
+		private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
 
 		public DownloadDialog(List<ModDownload> updates, string updatePath)
 			: base("Update Progress", updates.Select(x => (int)x.Size / 1024).ToArray(), true)
@@ -24,20 +26,27 @@ namespace SADXModManager.Forms
 
 		private void OnCancelEvent(object sender, EventArgs eventArgs)
 		{
-			throw new NotImplementedException();
+			tokenSource.Cancel();
 		}
 
 		private void OnShown(object sender, EventArgs eventArgs)
 		{
 			using (var client = new UpdaterWebClient())
 			{
-				DownloadProgressChangedEventHandler progressChanged = (o, args) =>
+				CancellationToken token = tokenSource.Token;
+
+				void ProgressChanged(object o, DownloadProgressChangedEventArgs args)
 				{
 					SetProgress((int)args.BytesReceived / 1024);
-					SetStep($"Downloading: { args.BytesReceived } / { args.TotalBytesToReceive }");
-				};
+					SetStep($"Downloading: {args.BytesReceived} / {args.TotalBytesToReceive}");
 
-				client.DownloadProgressChanged += progressChanged;
+					if (token.IsCancellationRequested)
+					{
+						client.CancelAsync();
+					}
+				}
+
+				client.DownloadProgressChanged += ProgressChanged;
 
 				foreach (ModDownload update in updates)
 				{
@@ -56,16 +65,16 @@ namespace SADXModManager.Forms
 						try
 						{
 							// poor man's await Task.Run (not available in .net 4.0)
-							using (var task = new Task(() => update.Download(client, updatePath)))
+							using (var task = new Task(() => update.Download(client, updatePath), token))
 							{
 								task.Start();
 
-								while (!task.IsCompleted)
+								while (!task.IsCompleted && !task.IsCanceled)
 								{
 									Application.DoEvents();
 								}
 
-								task.Wait();
+								task.Wait(token);
 							}
 						}
 						catch (AggregateException ae)
@@ -83,6 +92,12 @@ namespace SADXModManager.Forms
 					NextTask();
 				}
 			}
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			tokenSource.Dispose();
+			base.Dispose(disposing);
 		}
 	}
 }
