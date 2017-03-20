@@ -23,7 +23,7 @@ namespace SADXModManager.Forms
 			{
 				listDiff.Items.Add(new ListViewItem(new[]
 				{
-					entry.Manifest.FilePath,
+					entry.Current.FilePath,
 					entry.State.ToString()
 				})
 				{
@@ -39,8 +39,8 @@ namespace SADXModManager.Forms
 		{
 			var result = new List<ModManifest>();
 
-			result.AddRange(listDiff.Items.Cast<ListViewItem>().Where(x => x.Checked).Select(x => ((ModManifestDiff)x.Tag).Manifest));
-			result.AddRange(diff.Where(x => x.State == ModManifestState.Unchanged).Select(x => x.Manifest));
+			result.AddRange(listDiff.Items.Cast<ListViewItem>().Where(x => x.Checked).Select(x => ((ModManifestDiff)x.Tag).Current));
+			result.AddRange(diff.Where(x => x.State == ModManifestState.Unchanged).Select(x => x.Current));
 
 			return result;
 		}

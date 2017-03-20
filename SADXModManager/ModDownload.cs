@@ -76,7 +76,7 @@ namespace SADXModManager
 				.ToList();
 
 			FilesToDownload = toDownload.Count;
-			Size = Math.Max(toDownload.Select(x => x.Manifest.FileSize).Sum(), toDownload.Count);
+			Size = Math.Max(toDownload.Select(x => x.Current.FileSize).Sum(), toDownload.Count);
 
 			// TODO: auto-generate "Changes"?
 		}
@@ -260,7 +260,7 @@ namespace SADXModManager
 						foreach (ModManifestDiff i in newStuff)
 						{
 
-							string filePath = Path.Combine(tempDir, i.Manifest.FilePath);
+							string filePath = Path.Combine(tempDir, i.Current.FilePath);
 							string dir = Path.GetDirectoryName(filePath);
 
 							if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
@@ -272,7 +272,7 @@ namespace SADXModManager
 
 							lock (sync)
 							{
-								client.DownloadFileAsync(new Uri(uri, i.Manifest.FilePath), filePath, sync);
+								client.DownloadFileAsync(new Uri(uri, i.Current.FilePath), filePath, sync);
 								Monitor.Wait(sync);
 							}
 
@@ -294,20 +294,9 @@ namespace SADXModManager
 						var movedStuff = ChangedFiles.Except(newStuff)
 							.Where(x => x.State == ModManifestState.Moved);
 
-						// We'll need the local manifest for this.
-						string oldManPath = Path.Combine(Folder, "mod.manifest");
-						List<ModManifest> oldManifest = null;
-
-						if (File.Exists(oldManPath))
+						foreach (ModManifestDiff i in movedStuff)
 						{
-							oldManifest = ModManifest.FromFile(oldManPath);
-						}
-
-						foreach (var i in movedStuff)
-						{
-							var old = oldManifest.FirstOrDefault(x => x.FileSize == i.Manifest.FileSize
-							&& x.Checksum == i.Manifest.Checksum);
-
+							ModManifest old = i.Last;
 							// This would be considered an error...
 							if (old == null)
 							{
@@ -315,7 +304,7 @@ namespace SADXModManager
 							}
 
 							string oldPath = Path.Combine(Folder, old.FilePath);
-							string newPath = Path.Combine(tempDir, i.Manifest.FilePath);
+							string newPath = Path.Combine(tempDir, i.Current.FilePath);
 
 							var dir = Path.GetDirectoryName(newPath);
 
@@ -334,8 +323,8 @@ namespace SADXModManager
 						// Now move the stuff from the temporary folder over to the working directory.
 						foreach (var i in newStuff.Concat(movedStuff))
 						{
-							var tempPath = Path.Combine(tempDir, i.Manifest.FilePath);
-							var workPath = Path.Combine(Folder, i.Manifest.FilePath);
+							var tempPath = Path.Combine(tempDir, i.Current.FilePath);
+							var workPath = Path.Combine(Folder, i.Current.FilePath);
 							var dir = Path.GetDirectoryName(workPath);
 
 							if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
@@ -354,7 +343,17 @@ namespace SADXModManager
 						var removedFiles = ChangedFiles.Where(x => x.State == ModManifestState.Removed);
 						foreach (var i in removedFiles)
 						{
-							var path = Path.Combine(Folder, i.Manifest.FilePath);
+							var path = Path.Combine(Folder, i.Current.FilePath);
+							if (File.Exists(path))
+							{
+								File.Delete(path);
+							}
+						}
+
+						// Same for files that have been moved.
+						foreach (var i in movedStuff)
+						{
+							var path = Path.Combine(Folder, i.Last.FilePath);
 							if (File.Exists(path))
 							{
 								File.Delete(path);
@@ -362,6 +361,7 @@ namespace SADXModManager
 						}
 
 						// And last but not least, copy over the new manifest.
+						string oldManPath = Path.Combine(Folder, "mod.manifest");
 						if (File.Exists(oldManPath))
 						{
 							File.Delete(oldManPath);

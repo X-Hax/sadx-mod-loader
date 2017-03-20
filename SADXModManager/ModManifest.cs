@@ -18,12 +18,14 @@ namespace SADXModManager
 	public class ModManifestDiff
 	{
 		public readonly ModManifestState State;
-		public readonly ModManifest Manifest;
+		public readonly ModManifest Current;
+		public readonly ModManifest Last;
 
-		public ModManifestDiff(ModManifestState state, ModManifest manifest)
+		public ModManifestDiff(ModManifestState state, ModManifest current, ModManifest last)
 		{
-			State = state;
-			Manifest = manifest;
+			State   = state;
+			Current = current;
+			Last    = last;
 		}
 	}
 
@@ -141,23 +143,21 @@ namespace SADXModManager
 				if (exact != null)
 				{
 					old.Remove(exact);
-					result.Add(new ModManifestDiff(ModManifestState.Unchanged, entry));
+					result.Add(new ModManifestDiff(ModManifestState.Unchanged, entry, null));
 					continue;
 				}
 
 				List<ModManifest> checksum = old.Where(x => x.Checksum == entry.Checksum).ToList();
 				if (checksum.Count > 0)
 				{
-					var name = Path.GetFileName(entry.FilePath);
-
 					foreach (ModManifest c in checksum)
 					{
 						old.Remove(c);
 					}
 
-					if (checksum.All(x => Path.GetFileName(x.FilePath) != name))
+					if (checksum.Any(x => x.FilePath != entry.FilePath))
 					{
-						result.Add(new ModManifestDiff(ModManifestState.Moved, entry));
+						result.Add(new ModManifestDiff(ModManifestState.Moved, entry, checksum[0]));
 						continue;
 					}
 				}
@@ -166,16 +166,16 @@ namespace SADXModManager
 				if (nameMatch != null)
 				{
 					old.Remove(nameMatch);
-					result.Add(new ModManifestDiff(ModManifestState.Changed, entry));
+					result.Add(new ModManifestDiff(ModManifestState.Changed, entry, nameMatch));
 					continue;
 				}
 
-				result.Add(new ModManifestDiff(ModManifestState.Added, entry));
+				result.Add(new ModManifestDiff(ModManifestState.Added, entry, null));
 			}
 
 			if (old.Count > 0)
 			{
-				result.AddRange(old.Select(x => new ModManifestDiff(ModManifestState.Removed, x)));
+				result.AddRange(old.Select(x => new ModManifestDiff(ModManifestState.Removed, x, null)));
 			}
 
 			return result;
