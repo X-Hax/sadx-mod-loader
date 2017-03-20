@@ -140,6 +140,10 @@ namespace SADXModManager
 
 							client.DownloadFileCompleted -= DownloadComplete;
 						}
+						else
+						{
+							done = true;
+						}
 
 						if (done)
 						{
@@ -312,12 +316,8 @@ namespace SADXModManager
 							{
 								Directory.CreateDirectory(dir);
 							}
-							else if (File.Exists(newPath))
-							{
-								File.Delete(newPath);
-							}
 
-							File.Copy(oldPath, newPath);
+							File.Copy(oldPath, newPath, true);
 						}
 
 						// Now move the stuff from the temporary folder over to the working directory.
@@ -331,12 +331,8 @@ namespace SADXModManager
 							{
 								Directory.CreateDirectory(dir);
 							}
-							else if (File.Exists(workPath))
-							{
-								File.Delete(workPath);
-							}
 
-							File.Copy(tempPath, workPath);
+							File.Copy(tempPath, workPath, true);
 						}
 
 						// Once that has succeeded we can safely delete files that have been marked for removal.
@@ -362,13 +358,7 @@ namespace SADXModManager
 
 						// And last but not least, copy over the new manifest.
 						string oldManPath = Path.Combine(Folder, "mod.manifest");
-						if (File.Exists(oldManPath))
-						{
-							File.Delete(oldManPath);
-						}
-
-						File.Copy(Path.Combine(tempDir, "mod.manifest"), oldManPath);
-
+						File.Copy(Path.Combine(tempDir, "mod.manifest"), oldManPath, true);
 						break;
 					}
 
