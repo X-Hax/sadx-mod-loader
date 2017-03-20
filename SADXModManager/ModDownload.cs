@@ -108,11 +108,11 @@ namespace SADXModManager
 
 		public void Download(WebClient client, string updatePath)
 		{
-			bool cancel = false;
+			bool done = false;
 
 			void DownloadComplete(object sender, AsyncCompletedEventArgs args)
 			{
-				cancel = true;
+				done = true;
 				lock (args.UserState)
 				{
 					Monitor.Pulse(args.UserState);
@@ -141,7 +141,7 @@ namespace SADXModManager
 							client.DownloadFileCompleted -= DownloadComplete;
 						}
 
-						if (!cancel)
+						if (done)
 						{
 							string dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
 							if (!Directory.Exists(dataDir))
@@ -259,10 +259,6 @@ namespace SADXModManager
 
 						foreach (ModManifestDiff i in newStuff)
 						{
-							if (cancel)
-							{
-								return;
-							}
 
 							string filePath = Path.Combine(tempDir, i.Manifest.FilePath);
 							string dir = Path.GetDirectoryName(filePath);
@@ -272,16 +268,18 @@ namespace SADXModManager
 								Directory.CreateDirectory(dir);
 							}
 
+							done = false;
+
 							lock (sync)
 							{
 								client.DownloadFileAsync(new Uri(uri, i.Manifest.FilePath), filePath, sync);
 								Monitor.Wait(sync);
 							}
-						}
 
-						if (cancel)
-						{
-							return;
+							if (!done)
+							{
+								return;
+							}
 						}
 
 						lock (sync)

@@ -71,8 +71,8 @@ namespace SADXModManager
 			var result = new List<ModManifest>();
 			List<string> fileIndex = Directory.EnumerateFiles(modPath, "*", SearchOption.AllDirectories)
 				.Where(x => !string.IsNullOrEmpty(x)
-				            && !x.Equals("mod.manifest", StringComparison.InvariantCultureIgnoreCase)
-				            && !x.Equals("mod.version", StringComparison.InvariantCultureIgnoreCase))
+				            && !Path.GetFileName(x).Equals("mod.manifest", StringComparison.InvariantCultureIgnoreCase)
+				            && !Path.GetFileName(x).Equals("mod.version", StringComparison.InvariantCultureIgnoreCase))
 				.ToList();
 
 			if (fileIndex.Count < 1)

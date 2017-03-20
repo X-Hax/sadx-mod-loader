@@ -31,6 +31,8 @@ namespace SADXModManager.Forms
 
 		private void OnShown(object sender, EventArgs eventArgs)
 		{
+			DialogResult = DialogResult.OK;
+
 			using (var client = new UpdaterWebClient())
 			{
 				CancellationToken token = tokenSource.Token;
@@ -92,8 +94,6 @@ namespace SADXModManager.Forms
 					NextTask();
 				}
 			}
-
-			DialogResult = DialogResult.OK;
 		}
 
 		protected override void Dispose(bool disposing)
