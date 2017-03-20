@@ -20,18 +20,18 @@ namespace SADXModManager
 	{
 		public ModInfo Info { get; private set; }
 		public readonly ModDownloadType Type;
-		public readonly string Url = string.Empty;
-		public readonly string Folder = string.Empty;
-		public readonly string Changes = string.Empty;
+		public readonly string Url;
+		public readonly string Folder;
+		public readonly string Changes;
 		public long Size { get; private set; }
 		public int FilesToDownload { get; private set; }
 		public List<ModManifestDiff> ChangedFiles { get; private set; }
 
-		public string HomePage = string.Empty;
-		public string Name = string.Empty;
-		public string Version = string.Empty;
-		public string Published = string.Empty;
-		public string Updated = string.Empty;
+		public string HomePage   = string.Empty;
+		public string Name       = string.Empty;
+		public string Version    = string.Empty;
+		public string Published  = string.Empty;
+		public string Updated    = string.Empty;
 		public string ReleaseUrl = string.Empty;
 
 		/// <summary>
@@ -45,12 +45,12 @@ namespace SADXModManager
 		/// <seealso cref="ModDownloadType"/>
 		public ModDownload(ModInfo info, string url, string folder, string changes, long size)
 		{
-			Info = info;
-			Type = ModDownloadType.Archive;
-			Url = url;
-			Folder = folder;
-			Changes = changes;
-			Size = size;
+			Info            = info;
+			Type            = ModDownloadType.Archive;
+			Url             = url;
+			Folder          = folder;
+			Changes         = changes;
+			Size            = size;
 			FilesToDownload = 1;
 		}
 
@@ -64,21 +64,23 @@ namespace SADXModManager
 		/// <seealso cref="ModDownloadType"/>
 		public ModDownload(ModInfo info, string url, string folder, List<ModManifestDiff> diff)
 		{
-			Info = info;
-			Type = ModDownloadType.Modular;
-			Url = url;
-			Folder = folder;
+			Info         = info;
+			Type         = ModDownloadType.Modular;
+			Url          = url;
+			ReleaseUrl   = url;
+			Folder       = folder;
+			ChangedFiles = diff?.Where(x => x.State != ModManifestState.Unchanged).ToList()
+				?? throw new ArgumentNullException(nameof(diff));
 
-			ChangedFiles = diff ?? throw new ArgumentNullException(nameof(diff));
-			ChangedFiles = ChangedFiles.Where(x => x.State != ModManifestState.Unchanged).ToList();
-
-			List<ModManifestDiff> toDownload = ChangedFiles.Where(x => x.State == ModManifestState.Added || x.State == ModManifestState.Changed)
+			List<ModManifestDiff> toDownload = ChangedFiles
+				.Where(x => x.State == ModManifestState.Added || x.State == ModManifestState.Changed)
 				.ToList();
 
 			FilesToDownload = toDownload.Count;
 			Size = Math.Max(toDownload.Select(x => x.Current.FileSize).Sum(), toDownload.Count);
 
-			// TODO: auto-generate "Changes"?
+			Changes = "Files changed in this update:\n\n"
+				+ string.Join("\n", ChangedFiles.Select(x => "- " + x.State.ToString() + ":\t" + x.Current.FilePath));
 		}
 
 		public event EventHandler Extracting;
