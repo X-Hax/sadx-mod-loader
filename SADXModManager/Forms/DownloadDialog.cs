@@ -92,6 +92,8 @@ namespace SADXModManager.Forms
 					NextTask();
 				}
 			}
+
+			DialogResult = DialogResult.OK;
 		}
 
 		protected override void Dispose(bool disposing)

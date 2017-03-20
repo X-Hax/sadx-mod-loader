@@ -33,7 +33,7 @@ namespace SADXModManager.Forms
 			}
 			set
 			{
-				if (value >= progressBar.Maximum)
+				if (value > progressBar.Maximum)
 				{
 					return;
 				}

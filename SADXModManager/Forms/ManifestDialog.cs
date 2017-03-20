@@ -21,7 +21,12 @@ namespace SADXModManager.Forms
 			modPath = path;
 			manifestPath = Path.Combine(path, "mod.manifest");
 			Shown += OnShown;
-			CancelEvent += (sender, args) => tokenSource.Cancel();
+			CancelEvent += OnCancelEvent;
+		}
+
+		private void OnCancelEvent(object sender, EventArgs eventArgs)
+		{
+			tokenSource.Cancel();
 		}
 
 		private void OnShown(object sender, EventArgs e)
@@ -66,6 +71,8 @@ namespace SADXModManager.Forms
 
 				task.Wait(token);
 			}
+
+			DialogResult = DialogResult.OK;
 		}
 
 		protected override void Dispose(bool disposing)
