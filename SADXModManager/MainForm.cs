@@ -8,7 +8,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using IniSerializer;
+using IniFile;
 using Newtonsoft.Json;
 using SADXModManager.Forms;
 
@@ -66,7 +66,7 @@ namespace SADXModManager
 
 		private void MainForm_Load(object sender, EventArgs e)
 		{
-			loaderini = File.Exists(loaderinipath) ? IniFile.Deserialize<LoaderInfo>(loaderinipath) : new LoaderInfo();
+			loaderini = File.Exists(loaderinipath) ? IniSerializer.Deserialize<LoaderInfo>(loaderinipath) : new LoaderInfo();
 
 			if (CheckForUpdates())
 				return;
@@ -134,7 +134,7 @@ namespace SADXModManager
 			// click the save button.
 			if (checkedForUpdates)
 			{
-				IniFile.Serialize(loaderini, loaderinipath);
+				IniSerializer.Serialize(loaderini, loaderinipath);
 			}
 
 			if (!File.Exists(datadllpath))
@@ -175,7 +175,7 @@ namespace SADXModManager
 
 			foreach (string filename in ModInfo.GetModFiles(new DirectoryInfo(modDir)))
 			{
-				mods.Add(Path.GetDirectoryName(filename).Substring(modDir.Length + 1), IniFile.Deserialize<ModInfo>(filename));
+				mods.Add(Path.GetDirectoryName(filename).Substring(modDir.Length + 1), IniSerializer.Deserialize<ModInfo>(filename));
 			}
 
 			modListView.BeginUpdate();
@@ -399,107 +399,196 @@ namespace SADXModManager
 					}
 
 					ModInfo mod = info.Value;
-					if (string.IsNullOrEmpty(mod.GitHubRepo))
+					if (!string.IsNullOrEmpty(mod.GitHubRepo))
 					{
-						continue;
-					}
-
-					if (string.IsNullOrEmpty(mod.GitHubAsset))
-					{
-						errors.Add($"[{ mod.Name }] GitHubRepo specified, but GitHubAsset is missing.");
-						continue;
-					}
-
-					List<GitHubRelease> releases;
-					var url = "https://api.github.com/repos/" + mod.GitHubRepo + "/releases";
-					if (!cache.ContainsKey(url))
-					{
-						try
+						if (string.IsNullOrEmpty(mod.GitHubAsset))
 						{
-							var text = client.DownloadString(url);
-							releases = JsonConvert.DeserializeObject<List<GitHubRelease>>(text)
-								.Where(x => !x.Draft && !x.PreRelease).ToList();
-
-							if (releases.Count > 0)
-							{
-								cache[url] = releases;
-							}
-						}
-						catch (Exception ex)
-						{
-							errors.Add($"[{ mod.Name }] Error checking for updates at { url }: { ex.Message }");
+							errors.Add($"[{ mod.Name }] GitHubRepo specified, but GitHubAsset is missing.");
 							continue;
 						}
 
-					}
-					else
-					{
-						releases = cache[url];
-					}
-
-					// No releases available.
-					if (releases == null || releases.Count == 0)
-					{
-						continue;
-					}
-
-					var versionPath = Path.Combine("mods", info.Key, "mod.version");
-					string localVersion = File.Exists(versionPath) ? File.ReadAllText(versionPath).Trim() : null;
-
-					GitHubRelease latestRelease = null;
-					GitHubAsset latestAsset = null;
-
-					foreach (GitHubRelease release in releases)
-					{
-						GitHubAsset asset = release.Assets
-							.FirstOrDefault(x => x.Name.Equals(mod.GitHubAsset, StringComparison.OrdinalIgnoreCase));
-
-						if (asset == null)
+						ModDownload d = GetGitHubReleases(mod, info.Key, client, cache, errors);
+						if (d != null)
 						{
-							continue;
+							updates.Add(d);
 						}
-
-						latestRelease = release;
-
-						// No updates available.
-						if (asset.Uploaded == localVersion)
+					}
+					else if (!string.IsNullOrEmpty(mod.UpdateUrl))
+					{
+						ModDownload d = CheckModularVersion(mod, info.Key, client, errors);
+						if (d != null)
 						{
-							break;
+							updates.Add(d);
 						}
-
-						latestAsset = asset;
-						break;
 					}
-
-					if (latestRelease == null)
-					{
-						errors.Add($"[{ mod.Name }] No releases with matching asset \"{ mod.GitHubAsset }\" could be found in { releases.Count } release(s).");
-						continue;
-					}
-
-					if (latestAsset == null)
-					{
-						continue;
-					}
-
-					var body = Regex.Replace(latestRelease.Body, "(?<!\r)\n", "\r\n");
-
-					var d = new ModDownload(mod, ModDownloadType.Archive,
-						latestAsset.DownloadUrl, Path.Combine("mods", info.Key), body, latestAsset.Size)
-					{
-						HomePage   = "https://github.com/" + mod.GitHubRepo,
-						Name       = latestRelease.Name,
-						Version    = latestRelease.TagName,
-						Published  = latestRelease.Published,
-						Updated    = latestAsset.Uploaded,
-						ReleaseUrl = latestRelease.HtmlUrl,
-					};
-
-					updates.Add(d);
 				}
 			}
 
 			e.Result = new Tuple<List<ModDownload>, List<string>>(updates, errors);
+		}
+
+		private static ModDownload GetGitHubReleases(ModInfo mod, string folder, 
+			UpdaterWebClient client, Dictionary<string, List<GitHubRelease>> cache, List<string> errors)
+		{
+			List<GitHubRelease> releases;
+			var url = "https://api.github.com/repos/" + mod.GitHubRepo + "/releases";
+			if (!cache.ContainsKey(url))
+			{
+				try
+				{
+					var text = client.DownloadString(url);
+					releases = JsonConvert.DeserializeObject<List<GitHubRelease>>(text)
+						.Where(x => !x.Draft && !x.PreRelease)
+						.ToList();
+
+					if (releases.Count > 0)
+					{
+						cache[url] = releases;
+					}
+				}
+				catch (Exception ex)
+				{
+					errors.Add($"[{mod.Name}] Error checking for updates at {url}: {ex.Message}");
+					return null;
+				}
+			}
+			else
+			{
+				releases = cache[url];
+			}
+
+			// No releases available.
+			if (releases == null || releases.Count == 0)
+			{
+				return null;
+			}
+
+			var versionPath = Path.Combine("mods", folder, "mod.version");
+			string localVersion = File.Exists(versionPath) ? File.ReadAllText(versionPath).Trim() : null;
+
+			GitHubRelease latestRelease = null;
+			GitHubAsset latestAsset = null;
+
+			foreach (GitHubRelease release in releases)
+			{
+				GitHubAsset asset = release.Assets
+					.FirstOrDefault(x => x.Name.Equals(mod.GitHubAsset, StringComparison.OrdinalIgnoreCase));
+
+				if (asset == null)
+				{
+					continue;
+				}
+
+				latestRelease = release;
+
+				// No updates available.
+				if (asset.Uploaded == localVersion)
+				{
+					break;
+				}
+
+				latestAsset = asset;
+				break;
+			}
+
+			if (latestRelease == null)
+			{
+				errors.Add($"[{mod.Name}] No releases with matching asset \"{mod.GitHubAsset}\" could be found in {releases.Count} release(s).");
+				return null;
+			}
+
+			if (latestAsset == null)
+			{
+				return null;
+			}
+
+			var body = Regex.Replace(latestRelease.Body, "(?<!\r)\n", "\r\n");
+
+			return new ModDownload(mod,
+				latestAsset.DownloadUrl, Path.Combine("mods", folder), body, latestAsset.Size)
+			{
+				HomePage   = "https://github.com/" + mod.GitHubRepo,
+				Name       = latestRelease.Name,
+				Version    = latestRelease.TagName,
+				Published  = latestRelease.Published,
+				Updated    = latestAsset.Uploaded,
+				ReleaseUrl = latestRelease.HtmlUrl
+			};
+		}
+
+		private static ModDownload CheckModularVersion(ModInfo mod, string folder,
+			UpdaterWebClient client, List<string> errors)
+		{
+			var url = new Uri(mod.UpdateUrl);
+			url = new Uri(url, "mod.ini");
+
+			ModInfo remoteInfo;
+
+			try
+			{
+				var dict = IniFile.IniFile.Load(client.OpenRead(url));
+				remoteInfo = IniSerializer.Deserialize<ModInfo>(dict);
+			}
+			catch (Exception ex)
+			{
+				errors.Add($"[{mod.Name}] Error pulling mod.ini from \"{mod.UpdateUrl}\": {ex.Message}");
+				return null;
+			}
+
+			if (remoteInfo.Version == mod.Version)
+			{
+				return null;
+			}
+
+			string manString;
+
+			try
+			{
+				manString = client.DownloadString(new Uri(new Uri(mod.UpdateUrl), "mod.manifest"));
+			}
+			catch (Exception ex)
+			{
+				errors.Add($"[{mod.Name}] Error pulling mod.manifest from \"{mod.UpdateUrl}\": {ex.Message}");
+				return null;
+			}
+
+			List<ModManifest> remoteManifest;
+
+			try
+			{
+				remoteManifest = ModManifest.FromString(manString);
+			}
+			catch (Exception ex)
+			{
+				errors.Add($"[{mod.Name}] Error parsing remote manifest from \"{mod.UpdateUrl}\": {ex.Message}");
+				return null;
+			}
+
+			var manPath = Path.Combine("mods", folder, "mod.manifest");
+			var gen = new ModManifestGenerator();
+			List<ModManifest> localManifest = null;
+
+			if (File.Exists(manPath))
+			{
+				try
+				{
+					localManifest = ModManifest.FromFile(manPath);
+				}
+				catch (Exception ex)
+				{
+					errors.Add($"[{mod.Name}] Error parsing local manifest: {ex.Message}");
+					return null;
+				}
+			}
+
+			List<ModManifestDiff> diff = gen.Diff(remoteManifest, localManifest);
+
+			if (diff.Count < 1 || diff.All(x => x.State == ModManifestState.Unchanged))
+			{
+				return null;
+			}
+
+			return new ModDownload(mod, mod.UpdateUrl, Path.Combine("mods", folder), diff);
 		}
 
 		private void modListView_SelectedIndexChanged(object sender, EventArgs e)
@@ -603,7 +692,7 @@ namespace SADXModManager
 			loaderini.UpdateUnit                = (UpdateUnit)comboUpdateFrequency.SelectedIndex;
 			loaderini.UpdateFrequency           = (int)numericUpdateFrequency.Value;
 
-			IniFile.Serialize(loaderini, loaderinipath);
+			IniSerializer.Serialize(loaderini, loaderinipath);
 
 			List<Code> selectedCodes = new List<Code>();
 			List<Code> selectedPatches = new List<Code>();
@@ -1062,7 +1151,7 @@ namespace SADXModManager
 					continue;
 				}
 
-				if (diff.Count(x => x.State != ModManifestState.Unmodified) <= 0)
+				if (diff.Count(x => x.State != ModManifestState.Unchanged) <= 0)
 				{
 					continue;
 				}

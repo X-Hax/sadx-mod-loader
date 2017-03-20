@@ -22,8 +22,6 @@ namespace SADXModManager.Forms
 			listModUpdates.BeginUpdate();
 			foreach (ModDownload download in mods)
 			{
-				download.CheckFiles();
-
 				listModUpdates.Items.Add(new ListViewItem(new[] { download.Info.Name })
 				{
 					Checked = true, Tag = download

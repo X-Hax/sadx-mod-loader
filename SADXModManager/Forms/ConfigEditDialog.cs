@@ -4,7 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using IniSerializer;
+using IniFile;
 using SADXModManager.Controls;
 using SharpDX.DirectInput;
 
@@ -87,7 +87,7 @@ namespace SADXModManager.Forms
 
 		private void LoadConfigIni()
 		{
-			configFile = File.Exists(sadxIni) ? IniFile.Deserialize<ConfigFile>(sadxIni) : new ConfigFile();
+			configFile = File.Exists(sadxIni) ? IniSerializer.Deserialize<ConfigFile>(sadxIni) : new ConfigFile();
 			if (configFile.GameConfig == null)
 			{
 				configFile.GameConfig = new GameConfig
@@ -202,7 +202,7 @@ namespace SADXModManager.Forms
 				}
 			}
 
-			IniFile.Serialize(configFile, sadxIni);
+			IniSerializer.Serialize(configFile, sadxIni);
 		}
 
 		private void comboMouseActions_SelectedIndexChanged(object sender, EventArgs e)

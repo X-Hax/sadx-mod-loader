@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Forms;
-using IniSerializer;
+using IniFile;
 
 namespace SADXModManager.Forms
 {
@@ -40,7 +40,7 @@ namespace SADXModManager.Forms
 							RedirectChaoSave	= checkRedirectChaoSave.Checked
 						};
 
-						IniFile.Serialize(newMod, Path.Combine(moddir, "mod.ini"));
+						IniSerializer.Serialize(newMod, Path.Combine(moddir, "mod.ini"));
 
 						// I feel like this is a little hackish, but it works.
 						// Setting it on the button causes it to close regardless

@@ -19,7 +19,7 @@ namespace SADXModManager.Forms
 		{
 			listDiff.BeginUpdate();
 
-			foreach (ModManifestDiff entry in diff.Where(x => x.State != ModManifestState.Unmodified))
+			foreach (ModManifestDiff entry in diff.Where(x => x.State != ModManifestState.Unchanged))
 			{
 				listDiff.Items.Add(new ListViewItem(new[]
 				{
@@ -40,7 +40,7 @@ namespace SADXModManager.Forms
 			var result = new List<ModManifest>();
 
 			result.AddRange(listDiff.Items.Cast<ListViewItem>().Where(x => x.Checked).Select(x => ((ModManifestDiff)x.Tag).Manifest));
-			result.AddRange(diff.Where(x => x.State == ModManifestState.Unmodified).Select(x => x.Manifest));
+			result.AddRange(diff.Where(x => x.State == ModManifestState.Unchanged).Select(x => x.Manifest));
 
 			return result;
 		}

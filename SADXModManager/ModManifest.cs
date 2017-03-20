@@ -8,7 +8,7 @@ namespace SADXModManager
 {
 	public enum ModManifestState
 	{
-		Unmodified,
+		Unchanged,
 		Moved,
 		Changed,
 		Added,
@@ -141,7 +141,7 @@ namespace SADXModManager
 				if (exact != null)
 				{
 					old.Remove(exact);
-					result.Add(new ModManifestDiff(ModManifestState.Unmodified, entry));
+					result.Add(new ModManifestDiff(ModManifestState.Unchanged, entry));
 					continue;
 				}
 
@@ -226,6 +226,12 @@ namespace SADXModManager
 		public static List<ModManifest> FromFile(string filePath)
 		{
 			string[] lines = File.ReadAllLines(filePath);
+			return lines.Select(line => new ModManifest(line)).ToList();
+		}
+
+		public static List<ModManifest> FromString(string str)
+		{
+			string[] lines = str.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 			return lines.Select(line => new ModManifest(line)).ToList();
 		}
 

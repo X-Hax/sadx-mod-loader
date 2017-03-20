@@ -99,6 +99,7 @@
     </Compile>
     <Compile Include="GitHub.cs" />
     <Compile Include="IniFile.cs" />
+    <Compile Include="IniSerializer.cs" />
     <Compile Include="LoaderInfo.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
