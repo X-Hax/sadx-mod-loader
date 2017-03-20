@@ -130,7 +130,7 @@ namespace SADXModManager
 			return result;
 		}
 
-		public List<ModManifestDiff> Diff(List<ModManifest> newManifest, List<ModManifest> oldManifest)
+		public static List<ModManifestDiff> Diff(List<ModManifest> newManifest, List<ModManifest> oldManifest)
 		{
 			var result = new List<ModManifestDiff>();
 

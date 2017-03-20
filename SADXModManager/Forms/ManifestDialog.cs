@@ -58,7 +58,7 @@ namespace SADXModManager.Forms
 
 				if (!token.IsCancellationRequested)
 				{
-					diff = generator.Diff(manifest, File.Exists(manifestPath) ? ModManifest.FromFile(manifestPath) : null);
+					diff = ModManifestGenerator.Diff(manifest, File.Exists(manifestPath) ? ModManifest.FromFile(manifestPath) : null);
 				}
 			}))
 			{

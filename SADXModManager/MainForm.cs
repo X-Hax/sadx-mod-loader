@@ -519,6 +519,11 @@ namespace SADXModManager
 		private static ModDownload CheckModularVersion(ModInfo mod, string folder,
 			UpdaterWebClient client, List<string> errors)
 		{
+			if (!mod.UpdateUrl.EndsWith("/", StringComparison.InvariantCulture))
+			{
+				mod.UpdateUrl += "/";
+			}
+
 			var url = new Uri(mod.UpdateUrl);
 			url = new Uri(url, "mod.ini");
 
@@ -565,7 +570,6 @@ namespace SADXModManager
 			}
 
 			var manPath = Path.Combine("mods", folder, "mod.manifest");
-			var gen = new ModManifestGenerator();
 			List<ModManifest> localManifest = null;
 
 			if (File.Exists(manPath))
@@ -581,7 +585,7 @@ namespace SADXModManager
 				}
 			}
 
-			List<ModManifestDiff> diff = gen.Diff(remoteManifest, localManifest);
+			List<ModManifestDiff> diff = ModManifestGenerator.Diff(remoteManifest, localManifest);
 
 			if (diff.Count < 1 || diff.All(x => x.State == ModManifestState.Unchanged))
 			{
