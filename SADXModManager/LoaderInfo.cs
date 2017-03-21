@@ -52,7 +52,7 @@ namespace SADXModManager
 		[DefaultValue(true)]
 		public bool ModUpdateCheck { get; set; }
 		
-		[DefaultValue(UpdateUnit.Days)]
+		[DefaultValue(UpdateUnit.Weeks)]
 		public UpdateUnit UpdateUnit { get; set; }
 		[DefaultValue(1)]
 		public int UpdateFrequency { get; set; }
