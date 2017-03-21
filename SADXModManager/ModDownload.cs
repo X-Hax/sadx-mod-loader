@@ -251,7 +251,6 @@ namespace SADXModManager
 					{
 						// First let's download all the new stuff.
 						var newStuff = ChangedFiles.Where(x => x.State == ModManifestState.Added || x.State == ModManifestState.Changed);
-						client.DownloadFileCompleted += DownloadComplete;
 
 						var uri = new Uri(Url);
 						var tempDir = Path.Combine(updatePath, uri.Segments.Last());
@@ -265,7 +264,6 @@ namespace SADXModManager
 
 						foreach (ModManifestDiff i in newStuff)
 						{
-
 							string filePath = Path.Combine(tempDir, i.Current.FilePath);
 							string dir = Path.GetDirectoryName(filePath);
 
@@ -276,11 +274,13 @@ namespace SADXModManager
 
 							done = false;
 
+							client.DownloadFileCompleted += DownloadComplete;
 							lock (sync)
 							{
 								client.DownloadFileAsync(new Uri(uri, i.Current.FilePath), filePath, sync);
 								Monitor.Wait(sync);
 							}
+							client.DownloadFileCompleted -= DownloadComplete;
 
 							if (!done)
 							{
@@ -293,8 +293,6 @@ namespace SADXModManager
 							client.DownloadFileAsync(new Uri(uri, "mod.manifest"), Path.Combine(tempDir, "mod.manifest"), sync);
 							Monitor.Wait(sync);
 						}
-
-						client.DownloadFileCompleted -= DownloadComplete;
 
 						// Now handle all file operations except where removals are concerned.
 						var movedStuff = ChangedFiles.Except(newStuff)
