@@ -463,8 +463,8 @@ namespace SADXModManager
 				return null;
 			}
 
-			var versionPath = Path.Combine("mods", folder, "mod.version");
-			string localVersion = File.Exists(versionPath) ? File.ReadAllText(versionPath).Trim() : null;
+			string versionPath = Path.Combine("mods", folder, "mod.version");
+			string localVersion = File.Exists(versionPath) ? File.ReadAllText(versionPath).Trim() : string.Empty;
 
 			GitHubRelease latestRelease = null;
 			GitHubAsset latestAsset = null;
@@ -1006,44 +1006,6 @@ namespace SADXModManager
 			foreach (ListViewItem item in modListView.SelectedItems)
 			{
 				Process.Start(Path.Combine("mods", (string)item.Tag));
-			}
-		}
-
-		private void forceUpdateToolStripMenuItem_Click(object sender, EventArgs e)
-		{
-			DialogResult result = MessageBox.Show(this, "This will forcefully re-download the latest version of all selected mods."
-				+ "\n\nAre you sure you wish to continue?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-			if (result != DialogResult.Yes)
-			{
-				return;
-			}
-
-			var forcedUpdates = new List<KeyValuePair<string, ModInfo>>();
-
-			foreach (ListViewItem item in modListView.SelectedItems)
-			{
-				var dir = (string)item.Tag;
-				var modDir = Path.Combine("mods", dir);
-				var verPath = Path.Combine(modDir, "mod.version");
-
-				if (File.Exists(verPath))
-				{
-					File.Delete(verPath);
-					continue;
-				}
-
-				if (!File.Exists(Path.Combine(modDir, "mod.manifest")))
-				{
-					continue;
-				}
-
-				forcedUpdates.Add(new KeyValuePair<string, ModInfo>(modDir, mods[dir]));
-			}
-
-			if (forcedUpdates.Count > 0)
-			{
-				updateChecker?.RunWorkerAsync(forcedUpdates);
 			}
 		}
 

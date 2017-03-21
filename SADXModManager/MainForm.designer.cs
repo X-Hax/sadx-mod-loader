@@ -89,8 +89,6 @@
 			this.openFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
 			this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.forceUpdateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
 			this.uninstallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
 			this.advancedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -849,13 +847,11 @@
             this.openFolderToolStripMenuItem,
             this.toolStripMenuItem1,
             this.checkForUpdatesToolStripMenuItem,
-            this.forceUpdateToolStripMenuItem,
-            this.toolStripMenuItem2,
             this.uninstallToolStripMenuItem,
             this.toolStripMenuItem3,
             this.advancedToolStripMenuItem});
 			this.modContextMenu.Name = "modContextMenu";
-			this.modContextMenu.Size = new System.Drawing.Size(171, 132);
+			this.modContextMenu.Size = new System.Drawing.Size(171, 104);
 			// 
 			// openFolderToolStripMenuItem
 			// 
@@ -875,18 +871,6 @@
 			this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
 			this.checkForUpdatesToolStripMenuItem.Text = "Check for updates";
 			this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
-			// 
-			// forceUpdateToolStripMenuItem
-			// 
-			this.forceUpdateToolStripMenuItem.Name = "forceUpdateToolStripMenuItem";
-			this.forceUpdateToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-			this.forceUpdateToolStripMenuItem.Text = "Force update";
-			this.forceUpdateToolStripMenuItem.Click += new System.EventHandler(this.forceUpdateToolStripMenuItem_Click);
-			// 
-			// toolStripMenuItem2
-			// 
-			this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-			this.toolStripMenuItem2.Size = new System.Drawing.Size(167, 6);
 			// 
 			// uninstallToolStripMenuItem
 			// 
@@ -1000,8 +984,6 @@
 		private System.Windows.Forms.ContextMenuStrip modContextMenu;
 		private System.Windows.Forms.ToolStripMenuItem openFolderToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
-		private System.Windows.Forms.ToolStripMenuItem forceUpdateToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
 		private System.Windows.Forms.ToolStripMenuItem uninstallToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
 		private System.Windows.Forms.ToolStripMenuItem advancedToolStripMenuItem;
