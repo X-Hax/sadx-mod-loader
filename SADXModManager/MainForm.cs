@@ -464,7 +464,20 @@ namespace SADXModManager
 			}
 
 			string versionPath = Path.Combine("mods", folder, "mod.version");
-			string localVersion = File.Exists(versionPath) ? File.ReadAllText(versionPath).Trim() : string.Empty;
+			DateTime? localVersion = null;
+
+			if (File.Exists(versionPath))
+			{
+				localVersion = DateTime.Parse(File.ReadAllText(versionPath).Trim());
+			}
+			else
+			{
+				var info = new FileInfo(Path.Combine("mods", folder, "mod.manifest"));
+				if (info.Exists)
+				{
+					localVersion = info.LastWriteTimeUtc;
+				}
+			}
 
 			GitHubRelease latestRelease = null;
 			GitHubAsset latestAsset = null;
@@ -482,9 +495,13 @@ namespace SADXModManager
 				latestRelease = release;
 
 				// No updates available.
-				if (asset.Uploaded == localVersion)
+				if (localVersion.HasValue)
 				{
-					break;
+					DateTime uploaded = DateTime.Parse(asset.Uploaded);
+					if (localVersion >= uploaded)
+					{
+						break;
+					}
 				}
 
 				latestAsset = asset;
