@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace SADXModManager.Forms
 		private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
 
 		public DownloadDialog(List<ModDownload> updates, string updatePath)
-			: base("Update Progress", updates.Select(x => (int)x.Size / 1024).ToArray(), true)
+			: base("Update Progress", true)
 		{
 			this.updates    = updates;
 			this.updatePath = updatePath;
@@ -32,27 +33,73 @@ namespace SADXModManager.Forms
 		{
 			DialogResult = DialogResult.OK;
 
+			var taskSteps = new List<int>();
+			foreach (ModDownload update in updates)
+			{
+				switch (update.Type)
+				{
+					case ModDownloadType.Archive:
+						taskSteps.Add((int)update.Size / 1024);
+						break;
+
+					case ModDownloadType.Modular:
+						taskSteps.AddRange(update.ChangedFiles
+							.Where(x => x.State == ModManifestState.Added || x.State == ModManifestState.Changed)
+							.Select(i => Math.Max(1, (int)i.Current.FileSize / 1024)));
+						break;
+
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
+			}
+
+			SetTaskSteps(taskSteps.ToArray());
+
 			using (var client = new UpdaterWebClient())
 			{
 				CancellationToken token = tokenSource.Token;
 
-				void DownloadProgress(object o, DownloadProgressEventArgs args)
+				void OnExtracting(object o, CancelEventArgs args)
 				{
-					SetProgress((int)args.BytesReceived / 1024);
-					SetStep($"Downloading: {args.BytesReceived} / {args.TotalBytesToReceive}");
+					SetTaskAndStep("Extracting...");
+					args.Cancel = token.IsCancellationRequested;
+				}
+				void OnParsingManifest(object o, CancelEventArgs args)
+				{
+					SetTaskAndStep("Parsing manifest...");
+					args.Cancel = token.IsCancellationRequested;
+				}
+				void OnApplyingManifest(object o, CancelEventArgs args)
+				{
+					SetTaskAndStep("Applying manifest...");
+					args.Cancel = token.IsCancellationRequested;
+				}
+				void OnDownloadProgress(object o, DownloadProgressEventArgs args)
+				{
+					SetProgress(Math.Max(1, (int)(args.BytesReceived / 1024)));
+					SetTaskAndStep($"Downloading file {args.FileDownloading} of {args.FilesToDownload}:",
+						$"({SizeSuffix.GetSizeSuffix(args.BytesReceived)} / {SizeSuffix.GetSizeSuffix(args.TotalBytesToReceive)})");
+					args.Cancel = token.IsCancellationRequested;
+				}
+				void OnDownloadCompleted(object o, CancelEventArgs args)
+				{
+					NextTask();
 					args.Cancel = token.IsCancellationRequested;
 				}
 
+				int modIndex = 0;
 				foreach (ModDownload update in updates)
 				{
 					DialogResult result;
 
-					SetTaskAndStep($"Updating mod: { update.Info.Name }", "Starting download...");
+					Title = $"Updating mod {++modIndex} of {updates.Count}: {update.Info.Name}";
+					SetTaskAndStep("Starting download...");
 
-					update.Extracting       += (o, args) => { SetStep("Extracting..."); };
-					update.ParsingManifest  += (o, args) => { SetStep("Parsing manifest..."); };
-					update.ApplyingManifest += (o, args) => { SetStep("Applying manifest..."); };
-					update.DownloadProgress += DownloadProgress;
+					update.Extracting        += OnExtracting;
+					update.ParsingManifest   += OnParsingManifest;
+					update.ApplyingManifest  += OnApplyingManifest;
+					update.DownloadProgress  += OnDownloadProgress;
+					update.DownloadCompleted += OnDownloadCompleted;
 
 					do
 					{
@@ -85,7 +132,11 @@ namespace SADXModManager.Forms
 						}
 					} while (result == DialogResult.Retry);
 
-					NextTask();
+					update.Extracting        -= OnExtracting;
+					update.ParsingManifest   -= OnParsingManifest;
+					update.ApplyingManifest  -= OnApplyingManifest;
+					update.DownloadProgress  -= OnDownloadProgress;
+					update.DownloadCompleted -= OnDownloadCompleted;
 				}
 			}
 		}

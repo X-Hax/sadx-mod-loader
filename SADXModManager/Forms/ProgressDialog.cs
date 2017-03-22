@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Windows.Forms;
 
+// TODO: start over
+
 namespace SADXModManager.Forms
 {
 	public partial class ProgressDialog : Form
@@ -22,19 +24,21 @@ namespace SADXModManager.Forms
 		/// <summary>
 		/// Gets or sets the title of the window.
 		/// </summary>
-		public string Title => Text;
+		public string Title
+		{
+			get => Text;
+			set => Text = value;
+		}
 
 		// HACK: This is a work around for slow progress bar animation.
 		private int progressValue
 		{
-			get
-			{
-				return progressBar.Value;
-			}
+			get => progressBar.Value;
 			set
 			{
 				if (value > progressBar.Maximum)
 				{
+					progressBar.Value = progressBar.Maximum;
 					return;
 				}
 
@@ -110,19 +114,24 @@ namespace SADXModManager.Forms
 			if (taskIndex + 1 < taskSteps.Length)
 			{
 				++taskIndex;
-				int value = 0;
-
-				for (int i = 0; i < taskIndex; i++)
-				{
-					value += taskSteps[i];
-				}
-
-				progressValue = value;
+				progressValue = GetCurrentMinimum();
 				return;
 			}
 
 			progressBar.Value = progressBar.Maximum;
 			Close();
+		}
+
+		private int GetCurrentMinimum()
+		{
+			int value = 0;
+
+			for (int i = 0; i < taskIndex; i++)
+			{
+				value += taskSteps[i];
+			}
+
+			return value;
 		}
 
 		/// <summary>
@@ -156,7 +165,7 @@ namespace SADXModManager.Forms
 				return;
 			}
 
-			progressValue = value;
+			progressValue = GetCurrentMinimum() + value;
 		}
 
 		/// <summary>

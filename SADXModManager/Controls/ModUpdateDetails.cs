@@ -30,7 +30,7 @@ namespace SADXModManager.Controls
 			{
 				// Download details
 				labelDownloadPublished.Text = entry.Updated;
-				labelSize.Text              = entry.Size.ToString(); // TODO: SizeSuffix
+				labelSize.Text              = SizeSuffix.GetSizeSuffix(entry.Size);
 				labelFileCount.Text         = entry.FilesToDownload.ToString();
 
 				// Release details

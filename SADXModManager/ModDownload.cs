@@ -25,9 +25,15 @@ namespace SADXModManager
 		public long   BytesReceived       => args.BytesReceived;
 		public long   TotalBytesToReceive => args.TotalBytesToReceive;
 
-		public DownloadProgressEventArgs(DownloadProgressChangedEventArgs args)
+		public int FileDownloading { get; }
+		public int FilesToDownload { get; }
+
+		public DownloadProgressEventArgs(DownloadProgressChangedEventArgs args,
+			int fileDownloading, int filesToDownload)
 		{
 			this.args = args;
+			FileDownloading = fileDownloading;
+			FilesToDownload = filesToDownload;
 		}
 	}
 
@@ -49,8 +55,9 @@ namespace SADXModManager
 		public string Updated    = string.Empty;
 		public string ReleaseUrl = string.Empty;
 
-
+		public event CancelEventHandler DownloadStarted;
 		public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
+		public event CancelEventHandler DownloadCompleted;
 		public event CancelEventHandler Extracting;
 		public event CancelEventHandler ParsingManifest;
 		public event CancelEventHandler ApplyingManifest;
@@ -130,6 +137,8 @@ namespace SADXModManager
 			var cancelArgs = new CancelEventArgs(false);
 			DownloadProgressEventArgs downloadArgs = null;
 
+			int fileDownloading = 0;
+
 			void DownloadComplete(object sender, AsyncCompletedEventArgs args)
 			{
 				lock (args.UserState)
@@ -140,7 +149,7 @@ namespace SADXModManager
 
 			void DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs args)
 			{
-				downloadArgs = new DownloadProgressEventArgs(args);
+				downloadArgs = new DownloadProgressEventArgs(args, fileDownloading, FilesToDownload);
 				if (OnDownloadProgress(downloadArgs))
 				{
 					((WebClient)sender).CancelAsync();
@@ -157,8 +166,14 @@ namespace SADXModManager
 						var info = new FileInfo(filePath);
 						if (!info.Exists || info.Length != Size)
 						{
+							if (OnDownloadStarted(cancelArgs))
+							{
+								return;
+							}
+
 							client.DownloadFileCompleted += DownloadComplete;
 							client.DownloadProgressChanged += DownloadProgressChanged;
+							++fileDownloading;
 
 							var sync = new object();
 							lock (sync)
@@ -171,6 +186,11 @@ namespace SADXModManager
 							client.DownloadFileCompleted -= DownloadComplete;
 
 							if (cancelArgs.Cancel || downloadArgs?.Cancel == true)
+							{
+								return;
+							}
+
+							if (OnDownloadCompleted(cancelArgs))
 							{
 								return;
 							}
@@ -315,8 +335,14 @@ namespace SADXModManager
 								Directory.CreateDirectory(dir);
 							}
 
+							if (OnDownloadStarted(cancelArgs))
+							{
+								return;
+							}
+
 							client.DownloadFileCompleted += DownloadComplete;
 							client.DownloadProgressChanged += DownloadProgressChanged;
+							++fileDownloading;
 
 							lock (sync)
 							{
@@ -328,6 +354,11 @@ namespace SADXModManager
 							client.DownloadFileCompleted -= DownloadComplete;
 
 							if (cancelArgs.Cancel || downloadArgs?.Cancel == true)
+							{
+								return;
+							}
+
+							if (OnDownloadCompleted(cancelArgs))
 							{
 								return;
 							}
@@ -343,6 +374,11 @@ namespace SADXModManager
 						List<ModManifestDiff> movedStuff = ChangedFiles.Except(newStuff)
 							.Where(x => x.State == ModManifestState.Moved)
 							.ToList();
+
+						if (OnApplyingManifest(cancelArgs))
+						{
+							return;
+						}
 
 						foreach (ModManifestDiff i in movedStuff)
 						{
@@ -407,9 +443,22 @@ namespace SADXModManager
 					throw new ArgumentOutOfRangeException();
 			}
 		}
+
+		protected virtual bool OnDownloadStarted(CancelEventArgs e)
+		{
+			DownloadStarted?.Invoke(this, e);
+			return e.Cancel;
+		}
+
 		protected virtual bool OnDownloadProgress(DownloadProgressEventArgs e)
 		{
 			DownloadProgress?.Invoke(this, e);
+			return e.Cancel;
+		}
+
+		protected virtual bool OnDownloadCompleted(CancelEventArgs e)
+		{
+			DownloadCompleted?.Invoke(this, e);
 			return e.Cancel;
 		}
 

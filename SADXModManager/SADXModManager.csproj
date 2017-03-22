@@ -136,6 +136,7 @@
     <Compile Include="Forms\UpdateMessageDialog.Designer.cs">
       <DependentUpon>UpdateMessageDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="SizeSuffix.cs" />
     <EmbeddedResource Include="Controls\ButtonControl.resx">
       <DependentUpon>ButtonControl.cs</DependentUpon>
     </EmbeddedResource>
