@@ -33,27 +33,7 @@ namespace SADXModManager.Forms
 		{
 			DialogResult = DialogResult.OK;
 
-			var taskSteps = new List<int>();
-			foreach (ModDownload update in updates)
-			{
-				switch (update.Type)
-				{
-					case ModDownloadType.Archive:
-						taskSteps.Add((int)update.Size / 1024);
-						break;
-
-					case ModDownloadType.Modular:
-						taskSteps.AddRange(update.ChangedFiles
-							.Where(x => x.State == ModManifestState.Added || x.State == ModManifestState.Changed)
-							.Select(i => Math.Max(1, (int)i.Current.FileSize / 1024)));
-						break;
-
-					default:
-						throw new ArgumentOutOfRangeException();
-				}
-			}
-
-			SetTaskSteps(taskSteps.ToArray());
+			SetTaskCount(updates.Sum(update => update.FilesToDownload));
 
 			using (var client = new UpdaterWebClient())
 			{
@@ -76,7 +56,7 @@ namespace SADXModManager.Forms
 				}
 				void OnDownloadProgress(object o, DownloadProgressEventArgs args)
 				{
-					SetProgress(Math.Max(1, (int)(args.BytesReceived / 1024)));
+					SetProgress(args.BytesReceived / (double)args.TotalBytesToReceive);
 					SetTaskAndStep($"Downloading file {args.FileDownloading} of {args.FilesToDownload}:",
 						$"({SizeSuffix.GetSizeSuffix(args.BytesReceived)} / {SizeSuffix.GetSizeSuffix(args.TotalBytesToReceive)})");
 					args.Cancel = token.IsCancellationRequested;

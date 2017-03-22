@@ -164,7 +164,14 @@ namespace SADXModManager
 						string filePath = Path.Combine(updatePath, uri.Segments.Last());
 
 						var info = new FileInfo(filePath);
-						if (!info.Exists || info.Length != Size)
+						if (info.Exists && info.Length == Size)
+						{
+							if (OnDownloadCompleted(cancelArgs))
+							{
+								return;
+							}
+						}
+						else
 						{
 							if (OnDownloadStarted(cancelArgs))
 							{
@@ -364,11 +371,13 @@ namespace SADXModManager
 							}
 						}
 
+						client.DownloadFileCompleted += DownloadComplete;
 						lock (sync)
 						{
 							client.DownloadFileAsync(new Uri(uri, "mod.manifest"), Path.Combine(tempDir, "mod.manifest"), sync);
 							Monitor.Wait(sync);
 						}
+						client.DownloadFileCompleted -= DownloadComplete;
 
 						// Now handle all file operations except where removals are concerned.
 						List<ModManifestDiff> movedStuff = ChangedFiles.Except(newStuff)

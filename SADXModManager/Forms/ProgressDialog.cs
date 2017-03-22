@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Forms;
-
-// TODO: start over
 
 namespace SADXModManager.Forms
 {
@@ -51,19 +48,20 @@ namespace SADXModManager.Forms
 
 		#endregion
 
+		private int taskCount;
 		private int taskIndex;
-		private int[] taskSteps;
+		private double multiplier;
 
 		/// <summary>
 		/// Initializes a ProgressDialog which displays the current task, the step in that task, and a progress bar.
 		/// </summary>
 		/// <param name="title">The title of the window</param>
-		/// <param name="taskSteps">Array of steps required for each task.</param>
+		/// <param name="taskCount">Number of tasks this dialog will handle.</param>
 		/// <param name="allowCancel">Enables or disables the cancel button.</param>
-		public ProgressDialog(string title, int[] taskSteps, bool allowCancel)
+		public ProgressDialog(string title, int taskCount, bool allowCancel)
 			: this(title, allowCancel)
 		{
-			SetTaskSteps(taskSteps);
+			SetTaskCount(taskCount);
 		}
 
 		/// <summary>
@@ -75,32 +73,22 @@ namespace SADXModManager.Forms
 		{
 			InitializeComponent();
 
-			Text = title;
+			Title = title;
 			labelTask.Text = "";
 			labelStep.Text = "";
 			buttonCancel.Enabled = allowCancel;
 		}
 
-		public void SetTaskSteps(int[] taskSteps)
+		public void SetTaskCount(int count)
 		{
 			if (InvokeRequired)
 			{
-				Invoke((Action<int[]>)SetTaskSteps, taskSteps);
+				Invoke((Action<int>)SetTaskCount, count);
 				return;
 			}
 
-			if (taskSteps == null)
-			{
-				throw new ArgumentNullException(nameof(taskSteps));
-			}
-
-			if (taskSteps.Length < 1)
-			{
-				throw new ArgumentException("Array must not be empty.", nameof(taskSteps));
-			}
-
-			this.taskSteps = taskSteps;
-			progressBar.Maximum = taskSteps.Sum();
+			taskCount = count;
+			multiplier = progressBar.Maximum / (double)count;
 		}
 
 		public void NextTask()
@@ -111,10 +99,10 @@ namespace SADXModManager.Forms
 				return;
 			}
 
-			if (taskIndex + 1 < taskSteps.Length)
+			if (taskIndex + 1 < taskCount)
 			{
 				++taskIndex;
-				progressValue = GetCurrentMinimum();
+				progressValue = (int)(taskIndex * multiplier);
 				return;
 			}
 
@@ -122,50 +110,15 @@ namespace SADXModManager.Forms
 			Close();
 		}
 
-		private int GetCurrentMinimum()
-		{
-			int value = 0;
-
-			for (int i = 0; i < taskIndex; i++)
-			{
-				value += taskSteps[i];
-			}
-
-			return value;
-		}
-
-		/// <summary>
-		/// Increments the progress bar.
-		/// </summary>
-		/// <param name="amount">The amount by which to increment. Defaults to 1.</param>
-		public void StepProgress(int amount = 1)
+		public void SetProgress(double value)
 		{
 			if (InvokeRequired)
 			{
-				Invoke((Action<int>)StepProgress, amount);
+				Invoke((Action<double>)SetProgress, value);
 				return;
 			}
 
-			// Not using progressBar.Step() because dirty hacks
-			progressValue = progressValue + amount;
-
-			if (progressBar.Value != progressBar.Maximum)
-			{
-				return;
-			}
-
-			Close();
-		}
-
-		public void SetProgress(int value)
-		{
-			if (InvokeRequired)
-			{
-				Invoke((Action<int>)SetProgress, value);
-				return;
-			}
-
-			progressValue = GetCurrentMinimum() + value;
+			progressValue = (int)(taskIndex * multiplier + value / multiplier);
 		}
 
 		/// <summary>

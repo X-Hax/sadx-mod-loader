@@ -33,23 +33,24 @@ namespace SADXModManager.Forms
 		{
 			CancellationToken token = tokenSource.Token;
 			var generator = new ModManifestGenerator();
+
 			generator.FilesIndexed += (o, args) =>
 			{
 				SetTask("Manifest generation complete!");
-				SetTaskSteps(new int[] { args.FileCount });
+				SetTaskCount(args.FileCount);
 			};
 
 			generator.FileHashStart += (o, args) =>
 			{
 				args.Cancel = token.IsCancellationRequested;
-				SetTask($"Hashing file: {args.FileIndex}/{args.FileCount}");
-				SetStep(args.FileName);
+				SetTaskAndStep($"Hashing file: {args.FileIndex}/{args.FileCount}", args.FileName);
+				SetProgress(args.FileIndex / (double)args.FileCount);
 			};
 
 			generator.FileHashEnd += (o, args) =>
 			{
 				args.Cancel = token.IsCancellationRequested;
-				StepProgress();
+				NextTask();
 			};
 
 			using (var task = new Task(() =>

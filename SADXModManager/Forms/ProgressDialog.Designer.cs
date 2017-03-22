@@ -39,6 +39,7 @@
 			this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.progressBar.Location = new System.Drawing.Point(12, 39);
+			this.progressBar.Maximum = 2147483646;
 			this.progressBar.Name = "progressBar";
 			this.progressBar.Size = new System.Drawing.Size(344, 23);
 			this.progressBar.Step = 1;
@@ -66,6 +67,7 @@
 			// buttonCancel
 			// 
 			this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
 			this.buttonCancel.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.buttonCancel.Location = new System.Drawing.Point(281, 68);
 			this.buttonCancel.Name = "buttonCancel";
