@@ -95,7 +95,6 @@ namespace SADXModManager
 			Info         = info;
 			Type         = ModDownloadType.Modular;
 			Url          = url;
-			ReleaseUrl   = url;
 			Folder       = folder;
 			ChangedFiles = diff?.Where(x => x.State != ModManifestState.Unchanged).ToList()
 				?? throw new ArgumentNullException(nameof(diff));
