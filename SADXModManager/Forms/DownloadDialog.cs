@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -37,18 +36,12 @@ namespace SADXModManager.Forms
 			{
 				CancellationToken token = tokenSource.Token;
 
-				void ProgressChanged(object o, DownloadProgressChangedEventArgs args)
+				void DownloadProgress(object o, DownloadProgressEventArgs args)
 				{
 					SetProgress((int)args.BytesReceived / 1024);
 					SetStep($"Downloading: {args.BytesReceived} / {args.TotalBytesToReceive}");
-
-					if (token.IsCancellationRequested)
-					{
-						client.CancelAsync();
-					}
+					args.Cancel = token.IsCancellationRequested;
 				}
-
-				client.DownloadProgressChanged += ProgressChanged;
 
 				foreach (ModDownload update in updates)
 				{
@@ -59,6 +52,7 @@ namespace SADXModManager.Forms
 					update.Extracting       += (o, args) => { SetStep("Extracting..."); };
 					update.ParsingManifest  += (o, args) => { SetStep("Parsing manifest..."); };
 					update.ApplyingManifest += (o, args) => { SetStep("Applying manifest..."); };
+					update.DownloadProgress += DownloadProgress;
 
 					do
 					{

@@ -521,8 +521,7 @@ namespace SADXModManager
 
 			var body = Regex.Replace(latestRelease.Body, "(?<!\r)\n", "\r\n");
 
-			return new ModDownload(mod,
-				latestAsset.DownloadUrl, Path.Combine("mods", folder), body, latestAsset.Size)
+			return new ModDownload(mod, Path.Combine("mods", folder), latestAsset.DownloadUrl, body, latestAsset.Size)
 			{
 				HomePage   = "https://github.com/" + mod.GitHubRepo,
 				Name       = latestRelease.Name,
@@ -536,6 +535,12 @@ namespace SADXModManager
 		private static ModDownload CheckModularVersion(ModInfo mod, string folder,
 			UpdaterWebClient client, List<string> errors)
 		{
+			if (!mod.UpdateUrl.StartsWith("http://", StringComparison.InvariantCulture)
+			    && !mod.UpdateUrl.StartsWith("https://", StringComparison.InvariantCulture))
+			{
+				mod.UpdateUrl = "http://" + mod.UpdateUrl;
+			}
+
 			if (!mod.UpdateUrl.EndsWith("/", StringComparison.InvariantCulture))
 			{
 				mod.UpdateUrl += "/";
@@ -609,7 +614,7 @@ namespace SADXModManager
 				return null;
 			}
 
-			return new ModDownload(mod, mod.UpdateUrl, Path.Combine("mods", folder), diff);
+			return new ModDownload(mod, Path.Combine("mods", folder), mod.UpdateUrl, diff);
 		}
 
 		private void modListView_SelectedIndexChanged(object sender, EventArgs e)

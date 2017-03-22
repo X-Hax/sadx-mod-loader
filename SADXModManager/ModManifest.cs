@@ -60,7 +60,6 @@ namespace SADXModManager
 		public event EventHandler<FilesIndexedEventArgs> FilesIndexed;
 		public event EventHandler<FileHashEventArgs> FileHashStart;
 		public event EventHandler<FileHashEventArgs> FileHashEnd;
-		public event EventHandler FileHashingComplete;
 
 		public List<ModManifest> Generate(string modPath)
 		{
@@ -79,7 +78,6 @@ namespace SADXModManager
 
 			if (fileIndex.Count < 1)
 			{
-				OnFileHashingComplete();
 				return result;
 			}
 
@@ -126,7 +124,6 @@ namespace SADXModManager
 				});
 			}
 
-			OnFileHashingComplete();
 			return result;
 		}
 
@@ -184,11 +181,6 @@ namespace SADXModManager
 		protected virtual void OnFilesIndexed(FilesIndexedEventArgs e)
 		{
 			FilesIndexed?.Invoke(this, e);
-		}
-
-		protected virtual void OnFileHashingComplete()
-		{
-			FileHashingComplete?.Invoke(this, EventArgs.Empty);
 		}
 
 		protected virtual void OnFileHashStart(FileHashEventArgs e)

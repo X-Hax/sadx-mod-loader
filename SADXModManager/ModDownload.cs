@@ -16,6 +16,21 @@ namespace SADXModManager
 		Modular
 	}
 
+	public class DownloadProgressEventArgs : CancelEventArgs
+	{
+		private readonly DownloadProgressChangedEventArgs args;
+
+		public int    ProgressPercentage  => args.ProgressPercentage;
+		public object UserState           => args.UserState;
+		public long   BytesReceived       => args.BytesReceived;
+		public long   TotalBytesToReceive => args.TotalBytesToReceive;
+
+		public DownloadProgressEventArgs(DownloadProgressChangedEventArgs args)
+		{
+			this.args = args;
+		}
+	}
+
 	public class ModDownload
 	{
 		public ModInfo Info { get; private set; }
@@ -34,16 +49,22 @@ namespace SADXModManager
 		public string Updated    = string.Empty;
 		public string ReleaseUrl = string.Empty;
 
+
+		public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
+		public event CancelEventHandler Extracting;
+		public event CancelEventHandler ParsingManifest;
+		public event CancelEventHandler ApplyingManifest;
+
 		/// <summary>
 		/// Constructs a ModDownload instance with the type <value>ModDownloadType.Archive</value>.
 		/// </summary>
-		/// <param name="info"></param>
-		/// <param name="url"></param>
-		/// <param name="folder"></param>
-		/// <param name="changes"></param>
-		/// <param name="size"></param>
+		/// <param name="info">Metadata for the associated mod.</param>
+		/// <param name="folder">The folder containing the mod.</param>
+		/// <param name="url">URL of the mod download.</param>
+		/// <param name="changes">List of changes for this update.</param>
+		/// <param name="size">Size of the archive to download.</param>
 		/// <seealso cref="ModDownloadType"/>
-		public ModDownload(ModInfo info, string url, string folder, string changes, long size)
+		public ModDownload(ModInfo info, string folder, string url, string changes, long size)
 		{
 			Info            = info;
 			Type            = ModDownloadType.Archive;
@@ -57,12 +78,12 @@ namespace SADXModManager
 		/// <summary>
 		/// Constructs a ModDownload instance with the type <value>ModDownloadType.Modular</value>.
 		/// </summary>
-		/// <param name="info"></param>
-		/// <param name="url"></param>
-		/// <param name="folder"></param>
-		/// <param name="diff"></param>
+		/// <param name="info">Metadata for the associated mod.</param>
+		/// <param name="folder">The folder containing the mod.</param>
+		/// <param name="url">URL of the mod download.</param>
+		/// <param name="diff">A diff of the remote and local manifests.</param>
 		/// <seealso cref="ModDownloadType"/>
-		public ModDownload(ModInfo info, string url, string folder, List<ModManifestDiff> diff)
+		public ModDownload(ModInfo info, string folder, string url, List<ModManifestDiff> diff)
 		{
 			Info         = info;
 			Type         = ModDownloadType.Modular;
@@ -82,10 +103,6 @@ namespace SADXModManager
 			Changes = "Files changed in this update:\n\n"
 				+ string.Join("\n", ChangedFiles.Select(x => "- " + x.State.ToString() + ":\t" + x.Current.FilePath));
 		}
-
-		public event EventHandler Extracting;
-		public event EventHandler ParsingManifest;
-		public event EventHandler ApplyingManifest;
 
 		private static void Extract(IReader reader, string outDir)
 		{
@@ -110,14 +127,23 @@ namespace SADXModManager
 
 		public void Download(WebClient client, string updatePath)
 		{
-			bool done = false;
+			var cancelArgs = new CancelEventArgs(false);
+			DownloadProgressEventArgs downloadArgs = null;
 
 			void DownloadComplete(object sender, AsyncCompletedEventArgs args)
 			{
-				done = true;
 				lock (args.UserState)
 				{
 					Monitor.Pulse(args.UserState);
+				}
+			}
+
+			void DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs args)
+			{
+				downloadArgs = new DownloadProgressEventArgs(args);
+				if (OnDownloadProgress(downloadArgs))
+				{
+					((WebClient)sender).CancelAsync();
 				}
 			}
 
@@ -132,6 +158,7 @@ namespace SADXModManager
 						if (!info.Exists || info.Length != Size)
 						{
 							client.DownloadFileCompleted += DownloadComplete;
+							client.DownloadProgressChanged += DownloadProgressChanged;
 
 							var sync = new object();
 							lock (sync)
@@ -140,105 +167,119 @@ namespace SADXModManager
 								Monitor.Wait(sync);
 							}
 
+							client.DownloadProgressChanged -= DownloadProgressChanged;
 							client.DownloadFileCompleted -= DownloadComplete;
+
+							if (cancelArgs.Cancel || downloadArgs?.Cancel == true)
+							{
+								return;
+							}
 						}
-						else
+
+						string dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
+						if (!Directory.Exists(dataDir))
 						{
-							done = true;
+							Directory.CreateDirectory(dataDir);
 						}
 
-						if (done)
+						if (OnExtracting(cancelArgs))
 						{
-							string dataDir = Path.Combine(updatePath, Path.GetFileNameWithoutExtension(filePath));
-							if (!Directory.Exists(dataDir))
-							{
-								Directory.CreateDirectory(dataDir);
-							}
-
-							OnExtracting();
-							using (Stream fileStream = File.OpenRead(filePath))
-							{
-								if (SevenZipArchive.IsSevenZipFile(fileStream))
-								{
-									using (SevenZipArchive archive = SevenZipArchive.Open(fileStream))
-									{
-										Extract(archive.ExtractAllEntries(), dataDir);
-									}
-								}
-								else
-								{
-									using (IReader reader = ReaderFactory.Open(fileStream))
-									{
-										Extract(reader, dataDir);
-									}
-								}
-							}
-
-							string workDir = Path.GetDirectoryName(ModInfo.GetModFiles(new DirectoryInfo(dataDir)).FirstOrDefault());
-
-							if (string.IsNullOrEmpty(workDir))
-							{
-								throw new DirectoryNotFoundException("Unable to locate mod.ini in " + dataDir);
-							}
-
-							string newManPath = Path.Combine(workDir, "mod.manifest");
-							string oldManPath = Path.Combine(Folder, "mod.manifest");
-
-							OnParsingManifest();
-
-							if (!File.Exists(newManPath))
-							{
-								throw new FileNotFoundException("This mod is missing a manifest!");
-							}
-
-							List<ModManifest> newManifest = ModManifest.FromFile(newManPath);
-
-							OnApplyingManifest();
-
-							if (File.Exists(oldManPath))
-							{
-								List<ModManifest> oldManifest = ModManifest.FromFile(oldManPath);
-								IEnumerable<ModManifest> unique = oldManifest.Except(newManifest);
-
-								foreach (string removed in unique.Select(x => Path.Combine(Folder, x.FilePath)))
-								{
-									if (File.Exists(removed))
-									{
-										File.Delete(removed);
-									}
-									else if (Directory.Exists(removed))
-									{
-										Directory.Delete(removed, true);
-									}
-								}
-							}
-
-							foreach (ModManifest file in newManifest)
-							{
-								string dir = Path.GetDirectoryName(file.FilePath);
-								if (!string.IsNullOrEmpty(dir))
-								{
-									string newDir = Path.Combine(Folder, dir);
-									if (!Directory.Exists(newDir))
-									{
-										Directory.CreateDirectory(newDir);
-									}
-								}
-
-								string dest = Path.Combine(Folder, file.FilePath);
-
-								if (File.Exists(dest))
-								{
-									File.Delete(dest);
-								}
-
-								File.Move(Path.Combine(workDir, file.FilePath), dest);
-							}
-
-							File.Copy(newManPath, oldManPath, true);
-							Directory.Delete(dataDir, true);
-							File.WriteAllText(Path.Combine(Folder, "mod.version"), Updated);
+							return;
 						}
+
+						using (Stream fileStream = File.OpenRead(filePath))
+						{
+							if (SevenZipArchive.IsSevenZipFile(fileStream))
+							{
+								using (SevenZipArchive archive = SevenZipArchive.Open(fileStream))
+								{
+									Extract(archive.ExtractAllEntries(), dataDir);
+								}
+							}
+							else
+							{
+								using (IReader reader = ReaderFactory.Open(fileStream))
+								{
+									Extract(reader, dataDir);
+								}
+							}
+						}
+
+						string workDir = Path.GetDirectoryName(ModInfo.GetModFiles(new DirectoryInfo(dataDir)).FirstOrDefault());
+
+						if (string.IsNullOrEmpty(workDir))
+						{
+							throw new DirectoryNotFoundException("Unable to locate mod.ini in " + dataDir);
+						}
+
+						string newManPath = Path.Combine(workDir, "mod.manifest");
+						string oldManPath = Path.Combine(Folder, "mod.manifest");
+
+						if (OnParsingManifest(cancelArgs))
+						{
+							return;
+						}
+
+						if (!File.Exists(newManPath))
+						{
+							throw new FileNotFoundException("This mod is missing a manifest!");
+						}
+
+						if (OnParsingManifest(cancelArgs))
+						{
+							return;
+						}
+
+						List<ModManifest> newManifest = ModManifest.FromFile(newManPath);
+
+						if (OnApplyingManifest(cancelArgs))
+						{
+							return;
+						}
+
+						if (File.Exists(oldManPath))
+						{
+							List<ModManifest> oldManifest = ModManifest.FromFile(oldManPath);
+							IEnumerable<ModManifest> unique = oldManifest.Except(newManifest);
+
+							foreach (string removed in unique.Select(x => Path.Combine(Folder, x.FilePath)))
+							{
+								if (File.Exists(removed))
+								{
+									File.Delete(removed);
+								}
+								else if (Directory.Exists(removed))
+								{
+									Directory.Delete(removed, true);
+								}
+							}
+						}
+
+						foreach (ModManifest file in newManifest)
+						{
+							string dir = Path.GetDirectoryName(file.FilePath);
+							if (!string.IsNullOrEmpty(dir))
+							{
+								string newDir = Path.Combine(Folder, dir);
+								if (!Directory.Exists(newDir))
+								{
+									Directory.CreateDirectory(newDir);
+								}
+							}
+
+							string dest = Path.Combine(Folder, file.FilePath);
+
+							if (File.Exists(dest))
+							{
+								File.Delete(dest);
+							}
+
+							File.Move(Path.Combine(workDir, file.FilePath), dest);
+						}
+
+						File.Copy(newManPath, oldManPath, true);
+						Directory.Delete(dataDir, true);
+						File.WriteAllText(Path.Combine(Folder, "mod.version"), Updated);
 
 						if (File.Exists(filePath))
 						{
@@ -250,10 +291,12 @@ namespace SADXModManager
 				case ModDownloadType.Modular:
 					{
 						// First let's download all the new stuff.
-						var newStuff = ChangedFiles.Where(x => x.State == ModManifestState.Added || x.State == ModManifestState.Changed);
+						List<ModManifestDiff> newStuff = ChangedFiles
+							.Where(x => x.State == ModManifestState.Added || x.State == ModManifestState.Changed)
+							.ToList();
 
 						var uri = new Uri(Url);
-						var tempDir = Path.Combine(updatePath, uri.Segments.Last());
+						string tempDir = Path.Combine(updatePath, uri.Segments.Last());
 
 						if (!Directory.Exists(tempDir))
 						{
@@ -272,17 +315,19 @@ namespace SADXModManager
 								Directory.CreateDirectory(dir);
 							}
 
-							done = false;
-
 							client.DownloadFileCompleted += DownloadComplete;
+							client.DownloadProgressChanged += DownloadProgressChanged;
+
 							lock (sync)
 							{
 								client.DownloadFileAsync(new Uri(uri, i.Current.FilePath), filePath, sync);
 								Monitor.Wait(sync);
 							}
+
+							client.DownloadProgressChanged -= DownloadProgressChanged;
 							client.DownloadFileCompleted -= DownloadComplete;
 
-							if (!done)
+							if (cancelArgs.Cancel || downloadArgs?.Cancel == true)
 							{
 								return;
 							}
@@ -295,8 +340,9 @@ namespace SADXModManager
 						}
 
 						// Now handle all file operations except where removals are concerned.
-						var movedStuff = ChangedFiles.Except(newStuff)
-							.Where(x => x.State == ModManifestState.Moved);
+						List<ModManifestDiff> movedStuff = ChangedFiles.Except(newStuff)
+							.Where(x => x.State == ModManifestState.Moved)
+							.ToList();
 
 						foreach (ModManifestDiff i in movedStuff)
 						{
@@ -310,7 +356,7 @@ namespace SADXModManager
 							string oldPath = Path.Combine(Folder, old.FilePath);
 							string newPath = Path.Combine(tempDir, i.Current.FilePath);
 
-							var dir = Path.GetDirectoryName(newPath);
+							string dir = Path.GetDirectoryName(newPath);
 
 							if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
 							{
@@ -321,11 +367,11 @@ namespace SADXModManager
 						}
 
 						// Now move the stuff from the temporary folder over to the working directory.
-						foreach (var i in newStuff.Concat(movedStuff))
+						foreach (ModManifestDiff i in newStuff.Concat(movedStuff))
 						{
-							var tempPath = Path.Combine(tempDir, i.Current.FilePath);
-							var workPath = Path.Combine(Folder, i.Current.FilePath);
-							var dir = Path.GetDirectoryName(workPath);
+							string tempPath = Path.Combine(tempDir, i.Current.FilePath);
+							string workPath = Path.Combine(Folder, i.Current.FilePath);
+							string dir = Path.GetDirectoryName(workPath);
 
 							if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
 							{
@@ -336,24 +382,19 @@ namespace SADXModManager
 						}
 
 						// Once that has succeeded we can safely delete files that have been marked for removal.
-						var removedFiles = ChangedFiles.Where(x => x.State == ModManifestState.Removed);
-						foreach (var i in removedFiles)
+						List<ModManifestDiff> removedFiles = ChangedFiles
+							.Where(x => x.State == ModManifestState.Removed)
+							.ToList();
+
+						foreach (string path in removedFiles.Select(i => Path.Combine(Folder, i.Current.FilePath)).Where(File.Exists))
 						{
-							var path = Path.Combine(Folder, i.Current.FilePath);
-							if (File.Exists(path))
-							{
-								File.Delete(path);
-							}
+							File.Delete(path);
 						}
 
 						// Same for files that have been moved.
-						foreach (var i in movedStuff)
+						foreach (string path in movedStuff.Select(i => Path.Combine(Folder, i.Last.FilePath)).Where(File.Exists))
 						{
-							var path = Path.Combine(Folder, i.Last.FilePath);
-							if (File.Exists(path))
-							{
-								File.Delete(path);
-							}
+							File.Delete(path);
 						}
 
 						// And last but not least, copy over the new manifest.
@@ -366,20 +407,28 @@ namespace SADXModManager
 					throw new ArgumentOutOfRangeException();
 			}
 		}
-
-		protected virtual void OnExtracting()
+		protected virtual bool OnDownloadProgress(DownloadProgressEventArgs e)
 		{
-			Extracting?.Invoke(this, EventArgs.Empty);
+			DownloadProgress?.Invoke(this, e);
+			return e.Cancel;
 		}
 
-		protected virtual void OnParsingManifest()
+		protected virtual bool OnExtracting(CancelEventArgs e)
 		{
-			ParsingManifest?.Invoke(this, EventArgs.Empty);
+			Extracting?.Invoke(this, e);
+			return e.Cancel;
 		}
 
-		protected virtual void OnApplyingManifest()
+		protected virtual bool OnParsingManifest(CancelEventArgs e)
 		{
-			ApplyingManifest?.Invoke(this, EventArgs.Empty);
+			ParsingManifest?.Invoke(this, e);
+			return e.Cancel;
+		}
+
+		protected virtual bool OnApplyingManifest(CancelEventArgs e)
+		{
+			ApplyingManifest?.Invoke(this, e);
+			return e.Cancel;
 		}
 	}
 }
