@@ -182,6 +182,7 @@ namespace SADXModManager.Forms
 		{
 			if (MessageBox.Show(this, "Are you sure you want to cancel?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
 			{
+				DialogResult = DialogResult.None;
 				return;
 			}
 
