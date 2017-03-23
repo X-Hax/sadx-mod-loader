@@ -48,19 +48,19 @@
 			// 
 			// labelTask
 			// 
-			this.labelTask.AutoSize = true;
+			this.labelTask.AutoEllipsis = true;
 			this.labelTask.Location = new System.Drawing.Point(12, 9);
 			this.labelTask.Name = "labelTask";
-			this.labelTask.Size = new System.Drawing.Size(53, 13);
+			this.labelTask.Size = new System.Drawing.Size(344, 13);
 			this.labelTask.TabIndex = 1;
 			this.labelTask.Text = "labelTask";
 			// 
 			// labelStep
 			// 
-			this.labelStep.AutoSize = true;
-			this.labelStep.Location = new System.Drawing.Point(12, 22);
+			this.labelStep.AutoEllipsis = true;
+			this.labelStep.Location = new System.Drawing.Point(12, 23);
 			this.labelStep.Name = "labelStep";
-			this.labelStep.Size = new System.Drawing.Size(51, 13);
+			this.labelStep.Size = new System.Drawing.Size(344, 13);
 			this.labelStep.TabIndex = 2;
 			this.labelStep.Text = "labelStep";
 			// 
@@ -97,7 +97,6 @@
 			this.Text = "ProgressDialog";
 			this.Load += new System.EventHandler(this.ProgressDialog_Load);
 			this.ResumeLayout(false);
-			this.PerformLayout();
 
 		}
 

@@ -377,8 +377,6 @@
 			// saveAndPlayButton
 			// 
 			this.saveAndPlayButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.saveAndPlayButton.AutoSize = true;
-			this.saveAndPlayButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.saveAndPlayButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.saveAndPlayButton.Location = new System.Drawing.Point(3, 323);
 			this.saveAndPlayButton.Name = "saveAndPlayButton";
@@ -392,7 +390,6 @@
 			// 
 			this.installButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.installButton.AutoSize = true;
-			this.installButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.installButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.installButton.Location = new System.Drawing.Point(168, 323);
 			this.installButton.Name = "installButton";
@@ -405,8 +402,6 @@
 			// configEditorButton
 			// 
 			this.configEditorButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.configEditorButton.AutoSize = true;
-			this.configEditorButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.configEditorButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.configEditorButton.Location = new System.Drawing.Point(295, 323);
 			this.configEditorButton.Name = "configEditorButton";
@@ -464,7 +459,6 @@
 			// 
 			this.modDownButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.modDownButton.AutoSize = true;
-			this.modDownButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.modDownButton.Enabled = false;
 			this.modDownButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.modDownButton.Location = new System.Drawing.Point(345, 35);
@@ -479,7 +473,6 @@
 			// 
 			this.modUpButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.modUpButton.AutoSize = true;
-			this.modUpButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.modUpButton.Enabled = false;
 			this.modUpButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
 			this.modUpButton.Location = new System.Drawing.Point(345, 6);
