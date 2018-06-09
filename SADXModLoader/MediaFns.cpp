@@ -8,6 +8,7 @@
 #include "FileReplacement.h"
 #include "FileSystem.h"
 
+#include "bass.h"
 #include "bass_vgmstream.h"
 
 #include <string>
@@ -16,8 +17,6 @@ using std::string;
 using std::vector;
 
 static bool bassinit = false;
-static bool musicwmp = true;
-static bool voicewmp = true;
 static DWORD basschan = 0;
 static DWORD voicechan = 0;
 
@@ -28,6 +27,8 @@ static DWORD voicechan = 0;
 void WMPInit_r()
 {
 	bassinit = BASS_Init(-1, 44100, 0, nullptr, nullptr) ? true : false;
+	BASS_PluginLoad(L"basswma.dll", BASS_UNICODE);
+	BASS_PluginLoad(L"bassflac.dll", BASS_UNICODE);
 }
 
 /**
@@ -65,24 +66,20 @@ static void __stdcall onVoiceEnd(HSYNC handle, DWORD channel, DWORD data, void *
 int __cdecl PlayMusicFile_r(LPCSTR filename, int loop)
 {
 	if (!WMPMusicInfo) return 0;
-	if (musicwmp)
-	{
-		WMPInfo__Stop(WMPMusicInfo);
-		WMPInfo__Close(WMPMusicInfo);
-	}
-	else if (basschan != 0)
-	{
-		BASS_ChannelStop(basschan);
-		BASS_StreamFree(basschan);
-	}
 	filename = sadx_fileMap.replaceFile(filename);
 	if (bassinit)
 	{
+		if (basschan != 0)
+		{
+			BASS_ChannelStop(basschan);
+			BASS_StreamFree(basschan);
+		}
 		basschan = BASS_VGMSTREAM_StreamCreate(filename, loop ? BASS_SAMPLE_LOOP : 0);
+		if (basschan == 0)
+			basschan = BASS_StreamCreateFile(false, filename, 0, 0, loop ? BASS_SAMPLE_LOOP : 0);
 		if (basschan != 0)
 		{
 			// Stream opened!
-			musicwmp = false;
 			BASS_ChannelPlay(basschan, false);
 			BASS_ChannelSetAttribute(basschan, BASS_ATTRIB_VOL, (MusicVolume + 10000) / 30000.0f);
 			BASS_ChannelSetSync(basschan, BASS_SYNC_END, 0, onTrackEnd, nullptr);
@@ -92,23 +89,26 @@ int __cdecl PlayMusicFile_r(LPCSTR filename, int loop)
 			return 1;
 		}
 	}
-
-	musicwmp = true;
-	WCHAR WideCharStr[MAX_PATH];
-	MultiByteToWideChar(0, 0, filename, -1, WideCharStr, LengthOfArray(WideCharStr));
-	if ( WMPMusicInfo && (WMPInfo__Open(WMPMusicInfo, WideCharStr) & 0x80000000u) == 0)
+	else
 	{
-		WMPInfo__Play(WMPMusicInfo, 0, 0, MusicVolume);
-		MusicLooping = loop;
-		dword_3ABDFA0 = 1;
-		dword_3ABDF98 = 3;
-		if ( WMPInfo__GetStatus(WMPMusicInfo) == WMPStatus_Stopped )
+		WMPInfo__Stop(WMPMusicInfo);
+		WMPInfo__Close(WMPMusicInfo);
+		WCHAR WideCharStr[MAX_PATH];
+		MultiByteToWideChar(0, 0, filename, -1, WideCharStr, LengthOfArray(WideCharStr));
+		if (WMPMusicInfo && (WMPInfo__Open(WMPMusicInfo, WideCharStr) & 0x80000000u) == 0)
 		{
-			do
-			Sleep(0);
-			while ( WMPInfo__GetStatus(WMPMusicInfo) == WMPStatus_Stopped );
+			WMPInfo__Play(WMPMusicInfo, 0, 0, MusicVolume);
+			MusicLooping = loop;
+			dword_3ABDFA0 = 1;
+			dword_3ABDF98 = 3;
+			if (WMPInfo__GetStatus(WMPMusicInfo) == WMPStatus_Stopped)
+			{
+				do
+					Sleep(0);
+				while (WMPInfo__GetStatus(WMPMusicInfo) == WMPStatus_Stopped);
+			}
+			return 1;
 		}
-		return 1;
 	}
 	return 0;
 }
@@ -117,8 +117,7 @@ void __cdecl WMPRestartMusic_r()
 {
 	LPDIRECTSOUNDBUFFER v0; // eax@6
 
-	if (!musicwmp)
-		return;
+	if (bassinit) return;
 	if ( dword_3ABDFA0 )
 	{
 		if ( WMPInfo__GetStatus(WMPMusicInfo) == WMPStatus_Stopped )
@@ -150,21 +149,17 @@ void __cdecl PauseSound_r()
 	if ( dword_3ABDFA0 )
 	{
 		++dword_3ABDFA8;
-		if (musicwmp)
+		if (!bassinit)
 			WMPInfo__Pause(WMPMusicInfo);
 		else
 			BASS_ChannelPause(basschan);
 	}
 	if ( WMPVoiceInfo )
 	{
-		if (voicewmp)
-		{
+		if (!bassinit)
 			WMPInfo__Pause(WMPVoiceInfo);
-		}
 		else
-		{
 			BASS_ChannelPause(voicechan);
-		}
 	}
 }
 
@@ -175,7 +170,7 @@ void __cdecl ResumeSound_r()
 		--dword_3ABDFA8;
 		if ( dword_3ABDFA8 <= 0 )
 		{
-			if (musicwmp)
+			if (!bassinit)
 				WMPInfo__Resume(WMPMusicInfo);
 			else
 				BASS_ChannelPlay(basschan, false);
@@ -184,14 +179,10 @@ void __cdecl ResumeSound_r()
 	}
 	if (WMPVoiceInfo)
 	{
-		if (voicewmp)
-		{
+		if (!bassinit)
 			WMPInfo__Resume(WMPVoiceInfo);
-		}
 		else
-		{
 			BASS_ChannelPlay(voicechan, false);
-		}
 	}
 }
 
@@ -201,7 +192,7 @@ void __cdecl WMPClose_r(int a1)
 	{
 		if ( a1 == 1 && WMPVoiceInfo )
 		{
-			if (voicewmp)
+			if (!bassinit)
 			{	
 				WMPInfo__Stop(WMPVoiceInfo);
 				WMPInfo__Close(WMPVoiceInfo);
@@ -219,7 +210,7 @@ void __cdecl WMPClose_r(int a1)
 	{
 		if ( dword_3ABDFA0 )
 		{
-			if (musicwmp)
+			if (!bassinit)
 			{
 				WMPInfo__Stop(WMPMusicInfo);
 				WMPInfo__Close(WMPMusicInfo);
@@ -265,34 +256,30 @@ int __cdecl PlayVoiceFile_r(LPCSTR filename)
 	if (!WMPVoiceInfo)
 		return 0;
 
-	if (voicewmp)
-	{
-		WMPInfo__Stop(WMPVoiceInfo);
-		WMPInfo__Close(WMPVoiceInfo);
-	}
-	else if (voicechan != 0)
-	{
-		BASS_ChannelStop(voicechan);
-		BASS_StreamFree(voicechan);
-	}
-
 	filename = sadx_fileMap.replaceFile(filename);
 
 	if (bassinit)
 	{
-		voicechan = BASS_VGMSTREAM_StreamCreate(filename, 0);
 		if (voicechan != 0)
 		{
-			voicewmp = false;
+			BASS_ChannelStop(voicechan);
+			BASS_StreamFree(voicechan);
+		}
+
+		voicechan = BASS_VGMSTREAM_StreamCreate(filename, 0);
+		if (voicechan == 0)
+			voicechan = BASS_StreamCreateFile(false, filename, 0, 0, 0);
+		if (voicechan != 0)
+		{
 			BASS_ChannelPlay(voicechan, false);
 			BASS_ChannelSetAttribute(voicechan, BASS_ATTRIB_VOL, (VoiceVolume + 10000) / 30000.0f);
 			BASS_ChannelSetSync(voicechan, BASS_SYNC_END, 0, onVoiceEnd, nullptr);
 			return 1;
 		}
+		return 0;
 	}
-
-	voicewmp = true;
-	return PlayVoiceFile(filename);
+	else
+		return PlayVoiceFile(filename);
 }
 
 struc_64 *LoadSoundPack(const char *path, int bank)
