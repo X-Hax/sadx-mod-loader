@@ -549,7 +549,7 @@ struct ObjectMaster
 	EntityData1 *Data1;
 	void *Data2;
 	void *UnknownA_ptr;
-	void *UnknownB_ptr;
+	AllocatedMem *memory;
 	int field_30;
 };
 
