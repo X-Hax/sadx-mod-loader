@@ -34,7 +34,7 @@ typedef void what;
 struct AllocatedMem
 {
 	AllocatedMem *next;
-	AllocatedMem *field_4;
+	AllocatedMem *allocationList;
 	AllocatedMem *field_8;
 	int PointsToLastThingMaybe;
 	int field_10;
