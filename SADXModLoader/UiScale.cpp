@@ -480,14 +480,12 @@ static void njDrawTextureMemList_init()
  * \tparam Args
  * \param align Alignment mode
  * \param is_background Enables background scaling mode.
- * \param t Trampoline
- * \param args Option arguments for function
+ * \param pfn The function to call.
+ * \param args Option arguments for function.
  */
 template<typename T, typename... Args>
-void scale_trampoline(Uint8 align, bool is_background, const T&, const Trampoline* t, Args... args)
+void scale_function(Uint8 align, bool is_background, T *const pfn, Args... args)
 {
-	T *const pfn = reinterpret_cast<T*>(t->Target());
-
 	if (is_background && bg_fill == FillMode::stretch)
 	{
 		scale_disable();
@@ -508,15 +506,13 @@ void scale_trampoline(Uint8 align, bool is_background, const T&, const Trampolin
  * \tparam Args 
  * \param align Alignment mode
  * \param is_background Enables background scaling mode.
- * \param t Trampoline
- * \param args Optional arguments for function
- * \return Return value of trampoline function
+ * \param pfn The function to call.
+ * \param args Optional arguments for function.
+ * \return Return value of function.
  */
 template<typename R, typename T, typename... Args>
-R scale_trampoline(Uint8 align, bool is_background, const T&, const Trampoline* t, Args... args)
+R scale_function(Uint8 align, bool is_background, T *const pfn, Args... args)
 {
-	T *const pfn = reinterpret_cast<T*>(t->Target());
-
 	if (is_background && bg_fill == FillMode::stretch)
 	{
 		scale_disable();
@@ -529,6 +525,40 @@ R scale_trampoline(Uint8 align, bool is_background, const T&, const Trampoline* 
 	R result = pfn(args...);
 	scale_pop();
 	return result;
+}
+
+/**
+ * \brief Calls a trampoline function.
+ * \tparam T Function type
+ * \tparam Args
+ * \param align Alignment mode
+ * \param is_background Enables background scaling mode.
+ * \param t Trampoline
+ * \param args Option arguments for function
+ */
+template<typename T, typename... Args>
+void scale_trampoline(Uint8 align, bool is_background, const T&, const Trampoline* t, Args... args)
+{
+	T *const pfn = reinterpret_cast<T*>(t->Target());
+	scale_function(align, is_background, pfn, args...);
+}
+
+/**
+ * \brief Calls a trampoline function with a return type.
+ * \tparam R Return type
+ * \tparam T Function type
+ * \tparam Args 
+ * \param align Alignment mode
+ * \param is_background Enables background scaling mode.
+ * \param t Trampoline
+ * \param args Optional arguments for function
+ * \return Return value of trampoline function
+ */
+template<typename R, typename T, typename... Args>
+R scale_trampoline(Uint8 align, bool is_background, const T&, const Trampoline* t, Args... args)
+{
+	T *const pfn = reinterpret_cast<T*>(t->Target());
+	return scale_function<R>(align, is_background, pfn, args...);
 }
 
 #pragma endregion
@@ -590,6 +620,7 @@ static Trampoline* PauseMenu_Map_Display_t;
 static Trampoline* DrawSubtitles_t;
 static Trampoline* EmblemCollected_Init_t;
 static Trampoline* EmblemCollected_Main_t;
+static Trampoline* DrawTitleScreen_t;
 
 #pragma endregion
 
@@ -859,6 +890,565 @@ static void EmblemCollected_Main_r(ObjectMaster* a1)
 	scale_trampoline(Align::center, false, EmblemCollected_Main_r, EmblemCollected_Main_t, a1);
 }
 
+#pragma pack(push, 1)
+struct TitleScreenData
+{
+  int f0;
+  void *field_4;
+  void *field_8;
+  float field_C;
+  char gap_10[4];
+  int field_14;
+  int field_18;
+  char gap_1c[8];
+  _DWORD dword24;
+  _DWORD dword28;
+  uint8_t f2C[4];
+  _DWORD dword30;
+  float float34;
+  uint8_t byte38;
+  char _padding[3];
+  char field_3C[36];
+};
+#pragma pack(pop)
+
+
+static void __cdecl DrawTitleScreen_o(void* a1)
+{
+	auto orig = DrawTitleScreen_t->Target();
+
+	__asm
+	{
+		mov esi, a1
+		call orig
+	}
+}
+
+DataPointer(int, dword_3B11180, 0x3B11180);
+
+template<class T> int8_t __SETS__(T x)
+{
+	if (sizeof(T) == 1)
+		return int8_t(x) < 0;
+	if (sizeof(T) == 2)
+		return int16_t(x) < 0;
+	if (sizeof(T) == 4)
+		return int32_t(x) < 0;
+	return int64_t(x) < 0;
+}
+
+template <class T, class U>
+int8_t __OFSUB__(T x, U y)
+{
+	if (sizeof(T) < sizeof(U))
+	{
+		U x2 = x;
+		int8_t sx = __SETS__(x2);
+		return (sx ^ __SETS__(y)) & (sx ^ __SETS__(x2 - y));
+	}
+	else
+	{
+		T y2 = y;
+		int8_t sx = __SETS__(x);
+		return (sx ^ __SETS__(y2)) & (sx ^ __SETS__(x - y2));
+	}
+}
+
+static void __cdecl DrawTitleScreen_r(TitleScreenData* a1)
+{
+	auto v1 = a1->dword30;
+
+	if (v1 >= 0x3C)
+	{
+		SetVtxColorA(0xFFFFFFFF);
+	}
+	else
+	{
+		SetVtxColorA(((char)(255 * v1 / 0x3C) << 24) + 0xFFFFFF);
+	}
+
+	auto original_fill_mode = bg_fill;
+
+	SetVtxColorB(0xFFFFFFFF);
+	njSetTexture(&ava_title_cmn_TEXLIST);
+	auto v17  = 0;
+	auto v279 = 0;
+
+	bg_fill = FillMode::fill;
+	scale_push(Align::center, true);
+
+	// draw the scrolling background
+	do
+	{
+		auto v18 = v17 + a1->byte38;
+
+		if (v18 >= 10)
+		{
+			v18 -= 10;
+		}
+
+		int v19 = v18;
+		float v20 = HorizontalStretch * 0.5f;
+		float v21 = (float)(signed int)v279 * 256.0f - 64.0f;
+		float scaleY = VerticalStretch * 0.46874997f;
+		float v23 = (v21 - a1->float34) * v20;
+		DrawBG(v18 + 27, v23, -16.0f, 2.0f, v20, scaleY);
+		float v24 = VerticalStretch * 0.46874997f;
+		float v25 = HorizontalStretch * 0.5f;
+		float v26 = v24 * 256.0f - 16.0f;
+		float v27 = (v21 - a1->float34) * v25;
+		DrawBG(v19 + 37, v27, v26, 2.0f, v25, v24);
+		auto v28 = VerticalStretch * 0.46874997f;
+		auto v29 = HorizontalStretch * 0.5f;
+		auto v30 = v28 * 512.0f - 16.0f;
+		auto v31 = (v21 - a1->float34) * v29;
+		DrawBG(v19 + 47, v31, v30, 2.0f, v29, v28);
+		auto v32 = VerticalStretch * 0.46874997f;
+		auto v33 = HorizontalStretch * 0.5f;
+		auto v34 = v32 * 768.0f - 16.0f;
+		auto v35 = (v21 - a1->float34) * v33;
+		DrawBG(v19 + 57, v35, v34, 2.0, v33, v32);
+		v279 = ++v17;
+	} while (v17 < 9);
+
+	scale_pop();
+
+	auto v36 = (float)(dword_3B11180 + 1) * 4.21f + a1->float34;
+	a1->float34 = v36;
+	if (v36 >= 256.0f)
+	{
+		auto v37 = a1->byte38 + 1;
+		auto v228 = (char)(a1->byte38 - 9) < 0;
+		a1->float34 = 0.0f;
+		a1->byte38 = v37;
+		if (!((unsigned __int8)v228 ^ __OFSUB__(v37, 10)))
+		{
+			a1->byte38 = 0;
+		}
+	}
+	
+	auto v38 = 0;
+	auto v280 = 0;
+
+	// draw the top bar
+	do
+	{
+		auto v39 = VerticalStretch * 0.46874997f;
+		auto v40 = HorizontalStretch * 0.5f;
+		auto v41 = HorizontalStretch * 128.0f * (float)(signed int)v280;
+		DrawBG(v38++, v41, 0.0f, 1.3f, v40, v39);
+		v280 = v38;
+	} while (v38 < 5);
+
+	auto v42 = 0;
+	auto v281 = 0;
+
+	// draw upper part of white circle thing
+	do
+	{
+		auto v43 = VerticalStretch * 0.46874997f;
+		auto v44 = HorizontalStretch * 0.5f;
+		auto v45 = VerticalStretch * 120.0f;
+		auto v46 = (float)(signed int)v281 * (HorizontalStretch * 128.0f)
+		           + HorizontalStretch * 128.0f
+		           + HorizontalStretch * 128.0f;
+		DrawBG(v42++ + 5, v46, v45, 1.3f, v44, v43);
+		v281 = v42;
+	} while (v42 < 2);
+
+	auto v47 = 0;
+	auto v282 = 0;
+
+	float v276 = 0.0f;
+	float v275 = 0.0f;
+	float scaleX = 0.0f;
+	float v126 = 0.0f;
+
+	// draw uh... second... upper part of white circle thing
+	do
+	{
+		auto v48 = VerticalStretch * 0.46874997f;
+		auto v49 = HorizontalStretch * 0.5f;
+		auto v50 = VerticalStretch * 240.0f;
+		auto v51 = (float)(signed int)v282 * (HorizontalStretch * 128.0f)
+		           + HorizontalStretch * 128.0f
+		           + HorizontalStretch * 128.0f;
+		DrawBG(v47++ + 7, v51, v50, 1.3f, v49, v48);
+		v282 = v47;
+	} while (v47 < 2);
+
+	auto v52 = 0;
+	auto v283 = 0;
+
+	// draw bottom bar
+	do
+	{
+		auto v53 = VerticalStretch * 0.46874997f;
+		auto v54 = HorizontalStretch * 0.5f;
+		auto v55 = VerticalStretch * 360.0f;
+		auto v56 = HorizontalStretch * 128.0f * (float)(signed int)v283;
+		DrawBG(v52++ + 9, v56, v55, 1.3f, v54, v53);
+		v283 = v52;
+	} while (v52 < 5);
+
+	auto v57 = a1->dword30;
+
+	const auto w = static_cast<float>(HorizontalResolution);
+	const auto h = static_cast<float>(VerticalResolution);
+
+	bg_fill = (w / h < (4.0f / 3.0f)) ? FillMode::fill : FillMode::fit;
+	scale_push(Align::center, true);
+
+	if (v57 >= 0x50)
+	{
+		SetVtxColorB(0xFFFFFFFF);
+		njSetTexture(&ava_title_cmn_TEXLIST);
+
+		// draw static sonic
+	#if true
+		float v74 = VerticalStretch * 0.46874997 * 1.025;
+		float v75 = HorizontalStretch * 0.5 * 0.935;
+		float v76 = 0.0 * VerticalStretch;
+		float v77 = -110.0 * HorizontalStretch;
+		DrawBG(14, v77, v76, 1.2, v75, v74);
+		float v78 = VerticalStretch * 0.46874997 * 1.025;
+		float v79 = HorizontalStretch * 0.5 * 0.935;
+		float v80 = 0.0 * VerticalStretch;
+		float v81 = -110.0 * HorizontalStretch + HorizontalStretch * 119.68;
+		DrawBG(15, v81, v80, 1.2, v79, v78);
+		float v82 = VerticalStretch * 0.46874997 * 1.025;
+		float v83 = HorizontalStretch * 0.5 * 0.935;
+		float v84 = 0.0 * VerticalStretch;
+		float v85 = -110.0 * HorizontalStretch + HorizontalStretch * 239.36;
+		DrawBG(16, v85, v84, 1.2, v83, v82);
+		float v86 = VerticalStretch * 0.46874997 * 1.025;
+		float v87 = HorizontalStretch * 0.5 * 0.935;
+		float v88 = 0.0 * VerticalStretch + VerticalStretch * 123.0;
+		float v89 = -110.0 * HorizontalStretch + HorizontalStretch * 119.68;
+		DrawBG(17, v89, v88, 1.2, v87, v86);
+		float v90 = VerticalStretch * 0.46874997 * 1.025;
+		float v91 = HorizontalStretch * 0.5 * 0.935;
+		float v92 = 0.0 * VerticalStretch + VerticalStretch * 123.0;
+		float v93 = -110.0 * HorizontalStretch + HorizontalStretch * 239.36;
+		DrawBG(18, v93, v92, 1.2, v91, v90);
+		float v94 = VerticalStretch * 0.46874997 * 1.025;
+		float v95 = HorizontalStretch * 0.5 * 0.935;
+		float v96 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v97 = -110.0 * HorizontalStretch;
+		DrawBG(19, v97, v96, 1.2, v95, v94);
+		float v98 = VerticalStretch * 0.46874997 * 1.025;
+		float v99 = HorizontalStretch * 0.5 * 0.935;
+		float v100 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v101 = -110.0 * HorizontalStretch + HorizontalStretch * 119.68;
+		DrawBG(20, v101, v100, 1.2, v99, v98);
+		float v102 = VerticalStretch * 0.46874997 * 1.025;
+		float v103 = HorizontalStretch * 0.5 * 0.935;
+		float v104 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v105 = -110.0 * HorizontalStretch + HorizontalStretch * 239.36;
+		DrawBG(21, v105, v104, 1.2, v103, v102);
+		float v106 = VerticalStretch * 0.46874997 * 1.025;
+		float v107 = HorizontalStretch * 0.5 * 0.935;
+		float v108 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v109 = -110.0 * HorizontalStretch + HorizontalStretch * 359.04001;
+		DrawBG(22, v109, v108, 1.2, v107, v106);
+		float v110 = VerticalStretch * 0.46874997 * 1.025;
+		float v111 = HorizontalStretch * 0.5 * 0.935;
+		float v112 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v113 = -110.0 * HorizontalStretch;
+		DrawBG(23, v113, v112, 1.2, v111, v110);
+		float v114 = VerticalStretch * 0.46874997 * 1.025;
+		float v115 = HorizontalStretch * 0.5 * 0.935;
+		float v116 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v117 = -110.0 * HorizontalStretch + HorizontalStretch * 119.68;
+		DrawBG(24, v117, v116, 1.2, v115, v114);
+		float v118 = VerticalStretch * 0.46874997 * 1.025;
+		float v119 = HorizontalStretch * 0.5 * 0.935;
+		float v120 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v121 = -110.0 * HorizontalStretch + HorizontalStretch * 239.36;
+		DrawBG(25, v121, v120, 1.2, v119, v118);
+		float v122 = VerticalStretch * 0.46874997 * 1.025;
+		float v123 = HorizontalStretch * 0.5 * 0.935;
+		float v124 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v125 = -110.0 * HorizontalStretch + HorizontalStretch * 359.04001;
+		DrawBG(26, v125, v124, 1.2, v123, v122);
+	#endif
+
+		// draw logo
+		njSetTexture(&ava_gtitle0_e_TEXLIST);
+		float v127 = VerticalStretch * 0.46874997;
+		float v128 = HorizontalStretch * 0.5;
+		float v129 = 107.0 * VerticalStretch;
+		float v130 = 149.0 * HorizontalStretch;
+		DrawBG(0, v130, v129, 1.1, v128, v127);
+		float v131 = VerticalStretch * 0.46874997;
+		float v132 = HorizontalStretch * 0.5;
+		float v133 = 107.0 * VerticalStretch;
+		float v134 = 149.0 * HorizontalStretch + HorizontalStretch * 128.0;
+		DrawBG(1, v134, v133, 1.1, v132, v131);
+		float v135 = VerticalStretch * 0.46874997;
+		float v136 = HorizontalStretch * 0.5;
+		float v137 = 107.0 * VerticalStretch;
+		float v138 = 149.0 * HorizontalStretch + HorizontalStretch * 256.0;
+		DrawBG(2, v138, v137, 1.1, v136, v135);
+		float v139 = VerticalStretch * 0.46874997;
+		float v140 = HorizontalStretch * 0.5;
+		float v141 = 107.0 * VerticalStretch;
+		float v142 = 149.0 * HorizontalStretch + HorizontalStretch * 384.0;
+		DrawBG(3, v142, v141, 1.1, v140, v139);
+		float v143 = VerticalStretch * 0.46874997;
+		float v144 = HorizontalStretch * 0.5;
+		float v145 = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+		float v146 = 149.0 * HorizontalStretch;
+		DrawBG(4, v146, v145, 1.1, v144, v143);
+		float v147 = VerticalStretch * 0.46874997;
+		float v148 = HorizontalStretch * 0.5;
+		float v149 = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+		float v150 = 149.0 * HorizontalStretch + HorizontalStretch * 128.0;
+		DrawBG(5, v150, v149, 1.1, v148, v147);
+		float v151 = VerticalStretch * 0.46874997;
+		float v152 = HorizontalStretch * 0.5;
+		float v153 = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+		float v154 = 149.0 * HorizontalStretch + HorizontalStretch * 256.0;
+		DrawBG(6, v154, v153, 1.1, v152, v151);
+		v276 = VerticalStretch * 0.46874997;
+		v275 = HorizontalStretch * 0.5;
+		scaleX = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+		v126 = 149.0 * HorizontalStretch;
+	LABEL_56:
+		float v259 = v126 + HorizontalStretch * 384.0;
+		DrawBG(7, v259, scaleX, 1.1, v275, v276);
+		goto LABEL_57;
+	}
+
+	// slide into dms
+	if (v57 >= 0x32)
+	{
+		float v284;
+
+		if (v57 >= 0x37)
+		{
+			v284 = /*HorizontalStretch <= 1.0f ? 160.0 :*/ -110.0;
+		}
+		else
+		{
+			auto v157 = v57 - 50;
+			auto v158 = /*HorizontalStretch <= 1.0f ? 160.0f - 863.0f :*/ -110.0f - 863.0f;
+			v284 = v158 * (float)(unsigned int)v157 * 0.2f + 863.0f;
+		}
+
+		njSetTexture(&ava_title_cmn_TEXLIST);
+
+		// draw sonic
+	#if true
+		float v175 = VerticalStretch * 0.46874997 * 1.025;
+		float v176 = HorizontalStretch * 0.5 * 0.935;
+		float v177 = 0.0 * VerticalStretch;
+		float v178 = HorizontalStretch * v284;
+		DrawBG(14, v178, v177, 1.2, v176, v175);
+		float v179 = VerticalStretch * 0.46874997 * 1.025;
+		float v180 = HorizontalStretch * 0.5 * 0.935;
+		float v181 = 0.0 * VerticalStretch;
+		float v182 = HorizontalStretch * v284 + HorizontalStretch * 119.68;
+		DrawBG(15, v182, v181, 1.2, v180, v179);
+		float v183 = VerticalStretch * 0.46874997 * 1.025;
+		float v184 = HorizontalStretch * 0.5 * 0.935;
+		float v185 = 0.0 * VerticalStretch;
+		float v186 = HorizontalStretch * v284 + HorizontalStretch * 239.36;
+		DrawBG(16, v186, v185, 1.2, v184, v183);
+		float v187 = VerticalStretch * 0.46874997 * 1.025;
+		float v188 = HorizontalStretch * 0.5 * 0.935;
+		float v189 = 0.0 * VerticalStretch + VerticalStretch * 123.0;
+		float v190 = HorizontalStretch * v284 + HorizontalStretch * 119.68;
+		DrawBG(17, v190, v189, 1.2, v188, v187);
+		float v191 = VerticalStretch * 0.46874997 * 1.025;
+		float v192 = HorizontalStretch * 0.5 * 0.935;
+		float v193 = 0.0 * VerticalStretch + VerticalStretch * 123.0;
+		float v194 = HorizontalStretch * v284 + HorizontalStretch * 239.36;
+		DrawBG(18, v194, v193, 1.2, v192, v191);
+		float v195 = VerticalStretch * 0.46874997 * 1.025;
+		float v196 = HorizontalStretch * 0.5 * 0.935;
+		float v197 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v198 = HorizontalStretch * v284;
+		DrawBG(19, v198, v197, 1.2, v196, v195);
+		float v199 = VerticalStretch * 0.46874997 * 1.025;
+		float v200 = HorizontalStretch * 0.5 * 0.935;
+		float v201 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v202 = HorizontalStretch * v284 + HorizontalStretch * 119.68;
+		DrawBG(20, v202, v201, 1.2, v200, v199);
+		float v203 = VerticalStretch * 0.46874997 * 1.025;
+		float v204 = HorizontalStretch * 0.5 * 0.935;
+		float v205 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v206 = HorizontalStretch * v284 + HorizontalStretch * 239.36;
+		DrawBG(21, v206, v205, 1.2, v204, v203);
+		float v207 = VerticalStretch * 0.46874997 * 1.025;
+		float v208 = HorizontalStretch * 0.5 * 0.935;
+		float v209 = 0.0 * VerticalStretch + VerticalStretch * 246.0;
+		float v210 = HorizontalStretch * v284 + HorizontalStretch * 359.04001;
+		DrawBG(22, v210, v209, 1.2, v208, v207);
+		float v211 = VerticalStretch * 0.46874997 * 1.025;
+		float v212 = HorizontalStretch * 0.5 * 0.935;
+		float v213 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v214 = HorizontalStretch * v284;
+		DrawBG(23, v214, v213, 1.2, v212, v211);
+		float v215 = VerticalStretch * 0.46874997 * 1.025;
+		float v216 = HorizontalStretch * 0.5 * 0.935;
+		float v217 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v218 = HorizontalStretch * v284 + HorizontalStretch * 119.68;
+		DrawBG(24, v218, v217, 1.2, v216, v215);
+		float v219 = VerticalStretch * 0.46874997 * 1.025;
+		float v220 = HorizontalStretch * 0.5 * 0.935;
+		float v221 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v222 = HorizontalStretch * v284 + HorizontalStretch * 239.36;
+		DrawBG(25, v222, v221, 1.2, v220, v219);
+		float v223 = VerticalStretch * 0.46874997 * 1.025;
+		float v224 = HorizontalStretch * 0.5 * 0.935;
+		float v225 = 0.0 * VerticalStretch + VerticalStretch * 369.0;
+		float v226 = HorizontalStretch * v284 + HorizontalStretch * 359.04001;
+		DrawBG(26, v226, v225, 1.2, v224, v223);
+	#endif
+
+		// logo
+		auto v227 = a1->dword30;
+		if (v227 >= 0x46)
+		{
+			float v229;
+			int v228;
+
+			if (v227 > 0x4D)
+			{
+				v229 = (double)(signed int)(84 - v227);
+				v228 = (signed int)(84 - v227) < 0;
+			}
+			else
+			{
+				v229 = (double)(signed int)(v227 - 70);
+				v228 = (signed int)(v227 - 70) < 0;
+			}
+			if (v228)
+			{
+				v229 = v229 + 4294967300.0;
+			}
+			float v230 = v229 * 120.0 + -416.0;
+			njSetTexture(&ava_gtitle0_e_TEXLIST);
+			float v231 = VerticalStretch * 0.46874997;
+			float v232 = HorizontalStretch * 0.5;
+			float v233 = 107.0 * VerticalStretch;
+			float v234 = HorizontalStretch * v230;
+			DrawBG(0, v234, v233, 1.1, v232, v231);
+			float v235 = VerticalStretch * 0.46874997;
+			float v236 = HorizontalStretch * 0.5;
+			float v237 = 107.0 * VerticalStretch;
+			float v238 = HorizontalStretch * v230 + HorizontalStretch * 128.0;
+			DrawBG(1, v238, v237, 1.1, v236, v235);
+			float v239 = VerticalStretch * 0.46874997;
+			float v240 = HorizontalStretch * 0.5;
+			float v241 = 107.0 * VerticalStretch;
+			float v242 = HorizontalStretch * v230 + HorizontalStretch * 256.0;
+			DrawBG(2, v242, v241, 1.1, v240, v239);
+			float v243 = VerticalStretch * 0.46874997;
+			float v244 = HorizontalStretch * 0.5;
+			float v245 = 107.0 * VerticalStretch;
+			float v246 = HorizontalStretch * v230 + HorizontalStretch * 384.0;
+			DrawBG(3, v246, v245, 1.1, v244, v243);
+			float v247 = VerticalStretch * 0.46874997;
+			float v248 = HorizontalStretch * 0.5;
+			float v249 = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+			float v250 = HorizontalStretch * v230;
+			DrawBG(4, v250, v249, 1.1, v248, v247);
+			float v251 = VerticalStretch * 0.46874997;
+			float v252 = HorizontalStretch * 0.5;
+			float v253 = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+			float v254 = HorizontalStretch * v230 + HorizontalStretch * 128.0;
+			DrawBG(5, v254, v253, 1.1, v252, v251);
+			float v255 = VerticalStretch * 0.46874997;
+			float v256 = HorizontalStretch * 0.5;
+			float v257 = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+			float v258 = HorizontalStretch * v230 + HorizontalStretch * 256.0;
+			DrawBG(6, v258, v257, 1.1, v256, v255);
+			v276 = VerticalStretch * 0.46874997;
+			v275 = HorizontalStretch * 0.5;
+			scaleX = 107.0 * VerticalStretch + VerticalStretch * 120.0;
+			v126 = HorizontalStretch * v230;
+			goto LABEL_56;
+		}
+	}
+
+	scale_pop();
+
+LABEL_57:
+	if (a1->dword24 < 150)
+	{
+		a1->dword30 += MissedFrames_B;
+	}
+	else
+	{
+		if (TextLanguage)
+		{
+			njSetTexture(&ava_gtitle0_e_TEXLIST);
+		}
+		else
+		{
+			njSetTexture(&TexList_Ava_Gtitle0);
+		}
+
+		float v285;
+		float v287;
+
+		if (TextLanguage)
+		{
+			v285 = 278.0;
+			v287 = 342.0;
+		}
+		else
+		{
+			v285 = 260.0;
+			v287 = 333.0;
+		}
+		auto v261 = a1->dword28;
+		auto v260 = a1->dword28;
+		if ((a1->dword28 & 0x1FFu) >= 0x100)
+		{
+			v260 = -1 - v261;
+		}
+		SetVtxColorB((v260 << 24) + 0xFFFFFF);
+		Direct3D_SetZFunc(7u);
+		auto v262 = VerticalStretch * 0.46874997f;
+		auto v263 = HorizontalStretch * 0.5f;
+		auto v264 = VerticalStretch * v287;
+		auto v265 = HorizontalStretch * v285;
+		// draw PRESS ENTER
+		DrawBG(8, v265, v264, 1.1f, v263, v262);
+		auto v266 = VerticalStretch * 0.46874997f;
+		auto v267 = HorizontalStretch * 0.5f;
+		auto v268 = VerticalStretch * v287;
+		auto v269 = HorizontalStretch * v285 + HorizontalStretch * 128.0f;
+		DrawBG(9, v269, v268, 1.1, v267, v266);
+		if (!TextLanguage)
+		{
+			auto v270 = VerticalStretch * 0.46874997f;
+			auto v271 = HorizontalStretch * 0.5f;
+			auto v272 = VerticalStretch * v287;
+			auto v273 = HorizontalStretch * v285 + HorizontalStretch * 256.0f;
+			DrawBG(10, v273, v272, 1.1, v271, v270);
+		}
+		Direct3D_SetZFunc(1u);
+		a1->dword30 += MissedFrames_B;
+	}
+
+	bg_fill = original_fill_mode;
+}
+
+static void __declspec(naked) DrawTitleScreen_asm()
+{
+	__asm
+	{
+		push esi
+		call DrawTitleScreen_r
+		pop esi
+		ret
+	}
+}
+
 void uiscale::initialize()
 {
 	update_parameters();
@@ -880,6 +1470,7 @@ void uiscale::initialize()
 	PauseMenu_Map_Display_t              = new Trampoline(0x00458B00, 0x00458B06, PauseMenu_Map_Display_r);
 	EmblemCollected_Init_t               = new Trampoline(0x004B4860, 0x004B4867, EmblemCollected_Init_r);
 	EmblemCollected_Main_t               = new Trampoline(0x004B46A0, 0x004B46A6, EmblemCollected_Main_r);
+	DrawTitleScreen_t                    = new Trampoline(0x0050E470, 0x0050E476, DrawTitleScreen_asm);
 
 	DrawSubtitles_t = new Trampoline(0x0040D4D0, 0x0040D4D9, DrawSubtitles_r);
 	WriteCall(reinterpret_cast<void*>(reinterpret_cast<size_t>(DrawSubtitles_t->Target()) + 4), reinterpret_cast<void*>(0x00402F00));
