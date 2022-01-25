@@ -22,6 +22,7 @@
     <ClCompile Include="FileMap.cpp" />
     <ClCompile Include="FileReplacement.cpp" />
     <ClCompile Include="FixFOV.cpp" />
+    <ClCompile Include="gvm.cpp" />
     <ClCompile Include="hudscale.cpp" />
     <ClCompile Include="polybuff.cpp" />
     <ClCompile Include="prs.cpp" />

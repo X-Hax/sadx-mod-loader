@@ -76,6 +76,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="testspawn.cpp">
+    <ClCompile Include="gvm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -52,6 +52,7 @@ static int __cdecl LoadSystemPVM_r(const char* filename, NJS_TEXLIST* texlist);
 static void __cdecl LoadPVM_r(const char* filename, NJS_TEXLIST* texlist);
 static Sint32 __cdecl LoadPvmMEM2_r(const char* filename, NJS_TEXLIST* texlist);
 static Sint32 __cdecl njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList);
+signed int njLoadTextureGvmMemory(int* a1, NJS_TEXLIST* a2);
 
 void texpack::init()
 {
@@ -764,19 +765,21 @@ static Sint32 LoadPvmMEM2_r(const char* filename, NJS_TEXLIST* texlist)
 	return njLoadTexturePvmFile(filename, texlist);
 }
 
-static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
+static Sint32 LoadPVMInternal(const char* filename, NJS_TEXLIST* texList, bool gamecube)
 {
+	Sint32 result;
+
 	if (filename == nullptr || texList == nullptr)
 	{
 		return -1;
 	}
 
-	const std::string replaced = get_replaced_path(filename, ".PVM");
-	const std::string reaplced_extension = GetExtension(replaced);
+	const std::string replaced = get_replaced_path(filename, gamecube ? ".GVM" : ".PVM");
+	const std::string replaced_extension = GetExtension(replaced);
 
-	if (!_stricmp(reaplced_extension.c_str(), "prs"))
+	if (!_stricmp(replaced_extension.c_str(), "prs"))
 	{
-		//PrintDebug("Loading PRS'd PVM: %s\n", filename);
+		//PrintDebug("Loading PRS'd PVM/GVM: %s\n", filename);
 
 		auto out_buf = get_prs_data(replaced);
 
@@ -784,8 +787,10 @@ static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
 		{
 			return -1;
 		}
-
-		return njLoadTexturePvmMemory(out_buf.data(), texList);
+		if (gamecube)
+			return njLoadTextureGvmMemory((int*)out_buf.data(), texList);
+		else 
+			return njLoadTexturePvmMemory(out_buf.data(), texList);
 	}
 
 	std::string name = filename;
@@ -793,13 +798,38 @@ static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
 
 	if (extension.empty())
 	{
-		name += ".PVM";
+		if (gamecube)
+			name += ".GVM";
+		else
+			name += ".PVM";
 	}
 
 	Uint8* data = LoadPVx(name.c_str());
-	Sint32 result = njLoadTexturePvmMemory(data, texList);
+
+	if (gamecube) 
+		result = njLoadTextureGvmMemory((int*)data, texList);
+	else
+		result = njLoadTexturePvmMemory(data, texList);
 	j__HeapFree_0(data);
 	return result;
+}
+
+static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
+{
+	if (filename == nullptr || texList == nullptr)
+	{
+		return -1;
+	}
+
+	const std::string replaced_g = get_replaced_path(filename, ".GVM");
+	if (!Exists(replaced_g))
+		return LoadPVMInternal(filename, texList, false);
+	const std::string replaced_extension = GetExtension(replaced_g);
+
+	if (!_stricmp(replaced_extension.c_str(), "gvm"))
+		return LoadPVMInternal(filename, texList, true);
+	else 
+		return LoadPVMInternal(filename, texList, false);
 }
 
 #pragma endregion
