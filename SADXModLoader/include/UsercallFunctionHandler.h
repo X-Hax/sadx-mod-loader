@@ -1,6 +1,7 @@
 #pragma once
 #include "MemAccess.h"
 #include <cassert>
+#define USERCALLDEBUG 0
 
 enum registers
 {
@@ -32,6 +33,41 @@ enum registers
 	rst0,
 	noret
 };
+
+static int regfamilies[] = {
+	rEAX,
+	rEBX,
+	rECX,
+	rEDX,
+	rESI,
+	rEDI,
+	rEBP,
+	rEAX,
+	rEBX,
+	rECX,
+	rEDX,
+	rESI,
+	rEDI,
+	rEBP,
+	rEAX,
+	rEBX,
+	rECX,
+	rEDX,
+	rEAX,
+	rEBX,
+	rECX,
+	rEDX,
+	stack1,
+	stack2,
+	stack4,
+	rst0,
+	noret
+};
+
+inline bool regsequal(int reg1, int reg2)
+{
+	return regfamilies[reg1] == regfamilies[reg2];
+}
 
 inline void writebytes(uint8_t* dst, int& dstoff, uint8_t a1, uint8_t a2)
 {
@@ -177,12 +213,14 @@ constexpr T const GenerateUsercallWrapper(int ret, intptr_t address, TArgs... ar
 	case rEBP:
 		memsz += 2;
 		break;
+	case rAX:
 	case rBX:
 	case rCX:
 	case rDX:
 	case rSI:
 	case rDI:
 	case rBP:
+	case rAL:
 	case rBL:
 	case rCL:
 	case rDL:
@@ -429,7 +467,7 @@ constexpr T const GenerateUsercallWrapper(int ret, intptr_t address, TArgs... ar
 		break;
 	}
 	codeData[cdoff++] = 0xC3;
-#if 0
+#if USERCALLDEBUG
 	char fn[MAX_PATH];
 	sprintf_s(fn, "usercallwrapper@%08X.bin", address);
 	auto fh = fopen(fn, "wb");
@@ -518,7 +556,7 @@ constexpr void const GenerateUsercallHook(T func, int ret, intptr_t address, TAr
 	}
 	for (int i = 0; i < argc; ++i)
 	{
-		if (argarray[i] == ret)
+		if (regsequal(argarray[i], ret))
 			memsz += 3;
 		else
 			switch (argarray[i])
@@ -648,7 +686,7 @@ constexpr void const GenerateUsercallHook(T func, int ret, intptr_t address, TAr
 	}
 	for (int i = 0; i < argc; ++i)
 	{
-		if (argarray[i] == ret)
+		if (regsequal(argarray[i], ret))
 			writebytes(codeData, cdoff, 0x83, 0xC4, 4);
 		else
 			switch (argarray[i])
@@ -694,7 +732,7 @@ constexpr void const GenerateUsercallHook(T func, int ret, intptr_t address, TAr
 	if (stackcnt > 0)
 		writebytes(codeData, cdoff, 0x83, 0xC4, (uint8_t)(stackcnt * 4));
 	codeData[cdoff++] = 0xC3;
-#if 0
+#if USERCALLDEBUG
 	char fn[MAX_PATH];
 	sprintf_s(fn, "usercallhook@%08X.bin", address);
 	auto fh = fopen(fn, "wb");
