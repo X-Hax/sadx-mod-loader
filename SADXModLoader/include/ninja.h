@@ -1230,7 +1230,7 @@ public:
 		return _getNodeByIndex(this, index);
 	}
 
-	int countnode() const
+	int countnodes() const
 	{
 		int result = 1;
 		if (child != nullptr)
