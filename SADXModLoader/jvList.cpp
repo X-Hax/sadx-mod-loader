@@ -23,6 +23,80 @@ static UsercallFuncVoid(Knuckles_Upgrades_t, (playerwk* a1), (a1), 0x4726A0, rEA
 static vector<uint16_t> Knux_HandIndices;
 static vector<uint16_t> Knux_ShovelClawIndices;
 
+void FreeJVListIndices()
+{
+	for (uint32_t i = 0; i < so_jvlist.size(); i++)
+	{
+		auto pnum = so_jvlist.at(i).pnum;
+
+		if (pnum)
+		{
+			delete[] pnum;
+		}
+	}
+
+	for (uint32_t i = 0; i < egg_jvlist.size(); i++)
+	{
+		auto pnum = egg_jvlist.at(i).pnum;
+
+		if (pnum)
+		{
+			delete[] pnum;
+		}
+	}
+
+	for (uint32_t i = 0; i < miles_jvlist.size(); i++)
+	{
+		auto pnum = miles_jvlist.at(i).pnum;
+
+		if (pnum)
+		{
+			delete[] pnum;
+		}
+	}
+
+	for (uint32_t i = 0; i < knux_jvlist.size(); i++)
+	{
+		auto pnum = knux_jvlist.at(i).pnum;
+
+		if (pnum)
+		{
+			delete[] pnum;
+		}
+	}
+
+	for (uint32_t i = 0; i < tikal_jvlist.size(); i++)
+	{
+		auto pnum = tikal_jvlist.at(i).pnum;
+
+		if (pnum)
+		{
+			delete[] pnum;
+		}
+	}
+
+	for (uint32_t i = 0; i < amy_jvlist.size(); i++)
+	{
+		auto pnum = amy_jvlist.at(i).pnum;
+
+		if (pnum)
+		{
+			delete[] pnum;
+		}
+	}
+
+	for (uint32_t i = 0; i < big_jvlist.size(); i++)
+	{
+		auto pnum = big_jvlist.at(i).pnum;
+
+		if (pnum)
+		{
+			delete[] pnum;
+		}
+	}
+
+}
+
 static bool isWhiteSpace(const string s) 
 {
 	if (s.empty())

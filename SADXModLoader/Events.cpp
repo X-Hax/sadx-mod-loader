@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Trampoline.h"
 #include "Events.h"
+#include "jvList.h"
 
 std::vector<ModEvent>         modInitEndEvents;
 std::vector<ModEvent>         modFrameEvents;
@@ -56,6 +57,7 @@ void OnControl()
 void __cdecl OnExit(UINT uExitCode, int a1, int a2)
 {
 	RaiseEvents(modExitEvents);
+	FreeJVListIndices();
 	NonStaticFunctionPointer(void, original, (UINT, int, int), exitDetour.Target());
 	original(uExitCode, a1, a2);
 }
