@@ -434,7 +434,7 @@ void SetVoiceDuration(vector<__int16>& vec, int* voiceArray, uint32_t size, cons
 		memcpy(&vec[vec.size() - size], &voiceArray[0], sizeof(__int16) * size);
 	}
 
-	short curSize = _USVoiceDurationList.size();
+	short curSize = vec.size();
 
 	if (voiceID > INT16_MAX)
 		return;

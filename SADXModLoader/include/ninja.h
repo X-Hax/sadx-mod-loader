@@ -1230,6 +1230,16 @@ public:
 		return _getNodeByIndex(this, index);
 	}
 
+	int countnodes() const
+	{
+		int result = 1;
+		if (child != nullptr)
+			result += child->countanimated();
+		if (sibling != nullptr)
+			result += sibling->countanimated();
+		return result;
+	}
+
 	int countanimated() const
 	{
 		int result = (evalflags & NJD_EVAL_SKIP) == NJD_EVAL_SKIP ? 0 : 1;
