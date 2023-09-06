@@ -2685,5 +2685,18 @@ DataPointer(D3DMATRIX, ProjectionMatrix, 0x3D129C0);
 DataPointer(float*, OtherFogTableA, 0x3D12A00);
 DataPointer(float*, OtherFogTableB, 0x3D12C00);
 DataArray(Float, _nj_current_matrix_no_view_, 0x3D12E00, 16);
+DataArray(CollisionData, JumpPanel_Collision_, 0x97DF68, 4);
+DataPointer(NJS_OBJECT, Tornado1_Object, 0x28B1DA0);
+DataPointer(NJS_OBJECT, Tornado1_EventObj, 0x32611F8);
+DataPointer(NJS_OBJECT, Tornado1_EventShot, 0x2920FC0);
+DataPointer(NJS_OBJECT, Tornado2Before_Object, 0x27EB198);
+DataPointer(NJS_OBJECT, Tornado2Transfo_Object, 0x2863E20);
+DataPointer(NJS_OBJECT, Tornado2Change_Object, 0x280C158);
+DataPointer(NJS_OBJECT, Tornado2_EventObj, 0x32E9D28);
+DataPointer(NJS_OBJECT, Tornado2TakeOff_EventObj, 0x2C08F40);
+DataPointer(task*, TR2TakeOffEVPtr, 0x3C842B8);
+DataPointer(task*, TR2TailsRM, 0x3C84274);
+DataPointer(task*, TR2SonkRM, 0x3C84530);
+DataPointer(task*, TRB2, 0x3C841C4);
 
 #endif /* SADXMODLOADER_SADXVARS_H */
