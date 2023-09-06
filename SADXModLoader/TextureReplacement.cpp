@@ -478,6 +478,9 @@ NJS_TEXMEMLIST* load_texture_stream(ifstream& file, uint64_t offset, uint64_t si
 		return nullptr;
 	}
 
+	if (mipmap)
+		mipmap = !mipmap::is_blacklisted_gbix(global_index);
+
 	uint32_t mip_levels = mipmap ? D3DX_DEFAULT : 1;
 	auto texture_path = path + "\\" + name;
 
@@ -568,6 +571,9 @@ NJS_TEXMEMLIST* load_texture(const string& path, uint32_t global_index, const st
 		           global_index);
 		return nullptr;
 	}
+
+	if (mipmap)
+		mipmap = !mipmap::is_blacklisted_gbix(global_index);
 
 	uint32_t mip_levels = mipmap ? D3DX_DEFAULT : 1;
 	auto texture_path = path + "\\" + name;
