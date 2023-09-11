@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AutoMipmap.cpp" />
+    <ClCompile Include="BasicWeights.cpp" />
     <ClCompile Include="bgscale.cpp" />
     <ClCompile Include="ChunkSpecularFix.cpp" />
     <ClCompile Include="CrashDump.cpp" />
@@ -45,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoMipmap.h" />
+    <ClInclude Include="BasicWeights.h" />
     <ClInclude Include="bgscale.h" />
     <ClInclude Include="ChunkSpecularFix.h" />
     <ClInclude Include="CrashDump.h" />

@@ -4,6 +4,7 @@
 #include "DLLData.h"
 #include "EXEData.h"
 #include "MediaFns.hpp"
+#include "BasicWeights.h"
 
 using std::vector;
 using std::unordered_map;
@@ -549,6 +550,14 @@ ModList modList = {
 	ModListImpl::find_by_dll
 };
 
+BasicWeightFuncs weightFuncs = {
+	LoadWeights,
+	InitWeights,
+	ApplyWeights,
+	DeInitWeights,
+	FreeWeights
+};
+
 extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
@@ -588,5 +597,6 @@ HelperFunctions helperFunctions =
 	&RegisterJapaneseVoiceDuration,
 	&RegisterCharacterWelds,
 	&loaderSettings,
-	&modList
+	&modList,
+	&weightFuncs
 };
