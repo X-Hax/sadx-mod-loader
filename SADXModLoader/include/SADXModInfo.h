@@ -9,6 +9,7 @@
 #include "SADXStructs.h"
 #include "SADXStructsNew.h"
 #include "ScaleInfo.h"
+#include "WeightInfo.h"
 
  // SADX Mod Loader API version.
 static const int ModLoaderVer = 17;
@@ -174,47 +175,14 @@ struct ModList
 	}
 };
 
-struct WeightVertex
-{
-	int node;
-	int vertex;
-	float weight;
-};
-
-struct WeightVertexList
-{
-	int index;
-	WeightVertex* vertices;
-	int vertexCount;
-};
-
-struct WeightNode
-{
-	int index;
-	WeightVertexList* weights;
-	int weightCount;
-	NJS_VECTOR* vertices_orig;
-	NJS_VECTOR* normals_orig;
-};
-
-struct WeightInfo
-{
-	WeightNode* nodes;
-	int nodeCount;
-};
-
 struct BasicWeightFuncs
 {
-	// Loads weight info from an INI file.
-	WeightInfo* (*Load)(const char* filename);
 	// Initializes vertex buffers from a model.
 	void (*Init)(WeightInfo* weights, NJS_OBJECT* object);
 	// Apply weight info to a model based on the current animation frame.
 	void (*Apply)(WeightInfo* weights, NJS_ACTION* action, float frame);
 	// Restore the model's original vertices and free the buffers.
 	void (*DeInit)(WeightInfo* weights, NJS_OBJECT* object);
-	// Free the memory used by weights.
-	void (*Free)(WeightInfo* weights);
 };
 
 struct StartPosList

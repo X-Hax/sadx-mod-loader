@@ -4,84 +4,6 @@
 
 using std::vector;
 
-WeightInfo* LoadWeights(const char* filename)
-{
-	IniFile weldini(filename);
-	if (weldini.cbegin() == weldini.cend())
-		return nullptr;
-	vector<WeightNode> nodes;
-	for (auto& group : weldini)
-		if (!group.first.empty())
-		{
-			int nbPoint = group.second->getInt("VertexCount", 10000);
-			vector<WeightVertexList> weights;
-			weights.reserve(nbPoint);
-			for (int i = 0; i < nbPoint; i++)
-			{
-				vector<WeightVertex> verts;
-				verts.reserve(10);
-				char buf[100];
-				for (int j = 0; j < 10; j++)
-				{
-					sprintf_s(buf, "Vertices[%d][%d]", i, j);
-					if (group.second->hasKeyNonEmpty(buf))
-					{
-						auto str = group.second->getString(buf);
-						int ind = str.find(',');
-						int ind2 = str.find(',', ind + 1);
-						verts.push_back({
-							std::stoi(str.substr(0, ind)),
-							std::stoi(str.substr(ind + 1, ind2 - ind + 1)),
-							std::stof(str.substr(ind2 + 1))
-							});
-					}
-					else
-						break;
-				}
-				if (verts.size() > 0)
-				{
-					WeightVertex* tmp = new WeightVertex[verts.size()];
-					memcpy(tmp, verts.data(), verts.size() * sizeof(WeightVertex));
-					weights.push_back({
-						i,
-						tmp,
-						static_cast<int>(verts.size())
-						});
-				}
-			}
-			WeightVertexList* weightbuf = new WeightVertexList[weights.size()];
-			memcpy(weightbuf, weights.data(), weights.size() * sizeof(WeightVertexList));
-			nodes.push_back({
-				std::stoi(group.first),
-				weightbuf,
-				static_cast<int>(weights.size())
-				});
-		}
-	WeightNode* nodebuf = new WeightNode[nodes.size()];
-	memcpy(nodebuf, nodes.data(), nodes.size() * sizeof(WeightNode));
-	return new WeightInfo{
-		nodebuf,
-		static_cast<int>(nodes.size())
-	};
-}
-
-void FreeWeights(WeightInfo* weights)
-{
-	for (int ni = 0; ni < weights->nodeCount; ++ni)
-	{
-		auto& node = weights->nodes[ni];
-		for (int wi = 0; wi < node.weightCount; ++wi)
-			delete[] node.weights[wi].vertices;
-		delete[] node.weights;
-		if (node.vertices_orig)
-			delete[] node.vertices_orig;
-		if (node.normals_orig)
-			delete[] node.normals_orig;
-	}
-	delete[] weights->nodes;
-	delete weights;
-}
-
 void InitWeights(WeightInfo* weights, NJS_OBJECT* object)
 {
 	for (int ni = 0; ni < weights->nodeCount; ++ni)
@@ -91,7 +13,8 @@ void InitWeights(WeightInfo* weights, NJS_OBJECT* object)
 			delete[] node.vertices_orig;
 		if (node.normals_orig)
 			delete[] node.normals_orig;
-		auto model = object->getnode(node.index)->basicdxmodel;
+		node.nodeIndex = GetNodeIndex(object, node.node);
+		auto model = node.node->basicdxmodel;
 		node.vertices_orig = new NJS_VECTOR[model->nbPoint];
 		memcpy(node.vertices_orig, model->points, model->nbPoint * sizeof(NJS_VECTOR));
 		node.normals_orig = new NJS_VECTOR[model->nbPoint];
@@ -112,10 +35,16 @@ void ApplyWeights(WeightInfo* weights, NJS_ACTION* action, float frame)
 	for (int ni = 0; ni < weights->nodeCount; ++ni)
 	{
 		auto& node = weights->nodes[ni];
-		NJS_MODEL_SADX* model = action->object->getnode(node.index)->basicdxmodel;
+		if (node.nodeIndex == -1)
+		{
+			node.nodeIndex = GetNodeIndex(action->object, node.node);
+			if (node.nodeIndex == -1)
+				continue;
+		}
+		NJS_MODEL_SADX* model = node.node->basicdxmodel;
 		memcpy(model->points, node.vertices_orig, model->nbPoint * sizeof(NJS_VECTOR));
 		memcpy(model->normals, node.normals_orig, model->nbPoint * sizeof(NJS_VECTOR));
-		SetInstancedMatrix(node.index, basemat);
+		SetInstancedMatrix(node.nodeIndex, basemat);
 		njInvertMatrix(basemat);
 		for (int wi = 0; wi < node.weightCount; ++wi)
 		{
@@ -125,8 +54,14 @@ void ApplyWeights(WeightInfo* weights, NJS_ACTION* action, float frame)
 			for (int vi = 0; vi < weight.vertexCount; ++vi)
 			{
 				auto& vert = weight.vertices[vi];
-				SetInstancedMatrix(vert.node, matrix);
-				NJS_MODEL_SADX* vm = action->object->getnode(vert.node)->basicdxmodel;
+				if (vert.nodeIndex == -1)
+				{
+					vert.nodeIndex = GetNodeIndex(action->object, vert.node);
+					if (vert.nodeIndex == -1)
+						continue;
+				}
+				SetInstancedMatrix(vert.nodeIndex, matrix);
+				NJS_MODEL_SADX* vm = vert.node->basicdxmodel;
 				njCalcPoint(matrix, &vm->points[vert.vertex], &vd);
 				tmpvert.x += vd.x * vert.weight;
 				tmpvert.y += vd.y * vert.weight;
@@ -147,7 +82,7 @@ void DeInitWeights(WeightInfo* weights, NJS_OBJECT* object)
 	for (int ni = 0; ni < weights->nodeCount; ++ni)
 	{
 		auto& node = weights->nodes[ni];
-		auto model = object->getnode(node.index)->basicdxmodel;
+		auto model = node.node->basicdxmodel;
 		memcpy(model->points, node.vertices_orig, model->nbPoint * sizeof(NJS_VECTOR));
 		memcpy(model->normals, node.normals_orig, model->nbPoint * sizeof(NJS_VECTOR));
 		delete[] node.vertices_orig;

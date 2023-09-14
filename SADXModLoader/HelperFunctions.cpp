@@ -551,11 +551,9 @@ ModList modList = {
 };
 
 BasicWeightFuncs weightFuncs = {
-	LoadWeights,
 	InitWeights,
 	ApplyWeights,
-	DeInitWeights,
-	FreeWeights
+	DeInitWeights
 };
 
 extern LoaderSettings loaderSettings;

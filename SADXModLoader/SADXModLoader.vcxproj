@@ -70,6 +70,7 @@
     <ClInclude Include="include\SADXStructsNew.h" />
     <ClInclude Include="include\SADXVariablesNew.h" />
     <ClInclude Include="include\ScaleInfo.h" />
+    <ClInclude Include="include\WeightInfo.h" />
     <ClInclude Include="InterpolationFixes.h" />
     <ClInclude Include="jvList.h" />
     <ClInclude Include="MaterialColorFixes.h" />

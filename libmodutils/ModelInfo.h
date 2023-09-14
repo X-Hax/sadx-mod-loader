@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "ninja.h"
+#include "WeightInfo.h"
 
 enum ModelFormat
 {
@@ -44,6 +45,19 @@ public:
 	const std::unordered_map<std::string, void *>* getlabels() const;
 	const std::list<std::string>& getanimations() const;
 	const std::list<std::string>& getmorphs() const;
+	const NJS_OBJECT* getrighthandnode() const;
+	int getrighthanddir() const;
+	const NJS_OBJECT* getlefthandnode() const;
+	int getlefthanddir() const;
+	const NJS_OBJECT* getrightfootnode() const;
+	int getrightfootdir() const;
+	const NJS_OBJECT* getleftfootnode() const;
+	int getleftfootdir() const;
+	const NJS_OBJECT* getuser0node() const;
+	int getuser0dir() const;
+	const NJS_OBJECT* getuser1node() const;
+	int getuser1dir() const;
+	const WeightInfo* getweightinfo() const;
 
 private:
 	static const uint64_t SA1MDL        = 0x4C444D314153ULL;
@@ -63,6 +77,20 @@ private:
 	std::unordered_set<void *> fixedpointers;
 	std::unordered_map<void *, void *> reallocateddata;
 	std::list<std::string> animations, morphs;
+	NJS_OBJECT* rightHandNode;
+	int rightHandDir;
+	NJS_OBJECT* leftHandNode;
+	int leftHandDir;
+	NJS_OBJECT* rightFootNode;
+	int rightFootDir;
+	NJS_OBJECT* leftFootNode;
+	int leftFootDir;
+	NJS_OBJECT* user0Node;
+	int user0Dir;
+	NJS_OBJECT* user1Node;
+	int user1Dir;
+	std::vector<WeightNode> weightNodes;
+	WeightInfo weightInfo;
 
 	enum ChunkTypes : uint32_t
 	{
@@ -73,6 +101,13 @@ private:
 		ChunkTypes_Tool = 0x4C4F4F54,
 		ChunkTypes_Description = 0x43534544,
 		ChunkTypes_Texture = 0x584554,
+		ChunkTypes_RightHandNode = 0x444E4852,
+		ChunkTypes_LeftHandNode = 0x444E484C,
+		ChunkTypes_RightFootNode = 0x444E4652,
+		ChunkTypes_LeftFootNode = 0x444E464C,
+		ChunkTypes_User0Node = 0x444E3055,
+		ChunkTypes_User1Node = 0x444E3155,
+		ChunkTypes_Weights = 0x54484757,
 		ChunkTypes_End = 0x444E45
 	};
 
