@@ -77,20 +77,20 @@ private:
 	std::unordered_set<void *> fixedpointers;
 	std::unordered_map<void *, void *> reallocateddata;
 	std::list<std::string> animations, morphs;
-	NJS_OBJECT* rightHandNode;
-	int rightHandDir;
-	NJS_OBJECT* leftHandNode;
-	int leftHandDir;
-	NJS_OBJECT* rightFootNode;
-	int rightFootDir;
-	NJS_OBJECT* leftFootNode;
-	int leftFootDir;
-	NJS_OBJECT* user0Node;
-	int user0Dir;
-	NJS_OBJECT* user1Node;
-	int user1Dir;
+	NJS_OBJECT* rightHandNode = nullptr;
+	int rightHandDir = 0;
+	NJS_OBJECT* leftHandNode = nullptr;
+	int leftHandDir = 0;
+	NJS_OBJECT* rightFootNode = nullptr;
+	int rightFootDir = 0;
+	NJS_OBJECT* leftFootNode = nullptr;
+	int leftFootDir = 0;
+	NJS_OBJECT* user0Node = nullptr;
+	int user0Dir = 0;
+	NJS_OBJECT* user1Node = nullptr;
+	int user1Dir = 0;
 	std::vector<WeightNode> weightNodes;
-	WeightInfo weightInfo;
+	WeightInfo weightInfo{};
 
 	enum ChunkTypes : uint32_t
 	{
