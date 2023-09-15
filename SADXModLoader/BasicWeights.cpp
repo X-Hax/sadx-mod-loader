@@ -14,6 +14,15 @@ void InitWeights(WeightInfo* weights, NJS_OBJECT* object)
 		if (node.normals_orig)
 			delete[] node.normals_orig;
 		node.nodeIndex = GetNodeIndex(object, node.node);
+		for (int wi = 0; wi < node.weightCount; ++wi)
+		{
+			auto& weight = node.weights[wi];
+			for (int vi = 0; vi < weight.vertexCount; ++vi)
+			{
+				auto& vert = weight.vertices[vi];
+				vert.nodeIndex = GetNodeIndex(object, vert.node);
+			}
+		}
 		auto model = node.node->basicdxmodel;
 		node.vertices_orig = new NJS_VECTOR[model->nbPoint];
 		memcpy(node.vertices_orig, model->points, model->nbPoint * sizeof(NJS_VECTOR));
