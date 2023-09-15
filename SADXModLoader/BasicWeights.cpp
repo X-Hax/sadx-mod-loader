@@ -87,5 +87,7 @@ void DeInitWeights(WeightInfo* weights, NJS_OBJECT* object)
 		memcpy(model->normals, node.normals_orig, model->nbPoint * sizeof(NJS_VECTOR));
 		delete[] node.vertices_orig;
 		delete[] node.normals_orig;
+		node.vertices_orig = nullptr;
+		node.normals_orig = nullptr;
 	}
 }
