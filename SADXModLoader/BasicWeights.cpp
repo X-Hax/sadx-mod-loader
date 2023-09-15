@@ -28,7 +28,7 @@ void ApplyWeights(WeightInfo* weights, NJS_ACTION* action, float frame)
 		nj_unit_matrix_,
 		action,
 		frame,
-		0,
+		action->object->countnodes(),
 		0);
 	NJS_MATRIX basemat, matrix;
 	NJS_VECTOR tmpvert, tmpnorm, vd;
