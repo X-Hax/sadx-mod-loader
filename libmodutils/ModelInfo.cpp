@@ -98,31 +98,31 @@ const list<string>& ModelInfo::getanimations() const { return animations; }
 
 const list<string>& ModelInfo::getmorphs() const { return morphs; }
 
-const NJS_OBJECT* ModelInfo::getrighthandnode() const { return rightHandNode; }
+NJS_OBJECT* ModelInfo::getrighthandnode() const { return rightHandNode; }
 
 int ModelInfo::getrighthanddir() const { return rightHandDir; }
 
-const NJS_OBJECT* ModelInfo::getlefthandnode() const { return leftHandNode; }
+NJS_OBJECT* ModelInfo::getlefthandnode() const { return leftHandNode; }
 
 int ModelInfo::getlefthanddir() const { return leftHandDir; }
 
-const NJS_OBJECT* ModelInfo::getrightfootnode() const { return rightFootNode; }
+NJS_OBJECT* ModelInfo::getrightfootnode() const { return rightFootNode; }
 
 int ModelInfo::getrightfootdir() const { return rightFootDir; }
 
-const NJS_OBJECT* ModelInfo::getleftfootnode() const { return leftFootNode; }
+NJS_OBJECT* ModelInfo::getleftfootnode() const { return leftFootNode; }
 
 int ModelInfo::getleftfootdir() const { return leftFootDir; }
 
-const NJS_OBJECT* ModelInfo::getuser0node() const { return user0Node; }
+NJS_OBJECT* ModelInfo::getuser0node() const { return user0Node; }
 
 int ModelInfo::getuser0dir() const { return user0Dir; }
 
-const NJS_OBJECT* ModelInfo::getuser1node() const { return user1Node; }
+NJS_OBJECT* ModelInfo::getuser1node() const { return user1Node; }
 
 int ModelInfo::getuser1dir() const { return user1Dir; }
 
-const WeightInfo* ModelInfo::getweightinfo() const { return &weightInfo; }
+WeightInfo* ModelInfo::getweightinfo() { return &weightInfo; }
 
 static string getstring(istream& stream)
 {

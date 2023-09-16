@@ -45,19 +45,19 @@ public:
 	const std::unordered_map<std::string, void *>* getlabels() const;
 	const std::list<std::string>& getanimations() const;
 	const std::list<std::string>& getmorphs() const;
-	const NJS_OBJECT* getrighthandnode() const;
+	NJS_OBJECT* getrighthandnode() const;
 	int getrighthanddir() const;
-	const NJS_OBJECT* getlefthandnode() const;
+	NJS_OBJECT* getlefthandnode() const;
 	int getlefthanddir() const;
-	const NJS_OBJECT* getrightfootnode() const;
+	NJS_OBJECT* getrightfootnode() const;
 	int getrightfootdir() const;
-	const NJS_OBJECT* getleftfootnode() const;
+	NJS_OBJECT* getleftfootnode() const;
 	int getleftfootdir() const;
-	const NJS_OBJECT* getuser0node() const;
+	NJS_OBJECT* getuser0node() const;
 	int getuser0dir() const;
-	const NJS_OBJECT* getuser1node() const;
+	NJS_OBJECT* getuser1node() const;
 	int getuser1dir() const;
-	const WeightInfo* getweightinfo() const;
+	WeightInfo* getweightinfo();
 
 private:
 	static const uint64_t SA1MDL        = 0x4C444D314153ULL;
