@@ -2698,5 +2698,12 @@ DataPointer(task*, TR2TakeOffEVPtr, 0x3C842B8);
 DataPointer(task*, TR2TailsRM, 0x3C84274);
 DataPointer(task*, TR2SonkRM, 0x3C84530);
 DataPointer(task*, TRB2, 0x3C841C4);
+DataPointer(HWND, hWnd, 0x3D0FD30);
+DataPointer(KeyboardInput*, KeyboardInputPointer, 0x3B0E340);
+DataPointer(char, SoftResetByte, 0x3B0EAA0);
+DataPointer(int, Demo_Enabled, 0x3B2C470);
+DataPointer(int, Demo_ControlMode, 0x3B2C474);
+DataPointer(__int16, Demo_Frame, 0x3B2C464);
+DataPointer(__int16, Demo_MaxFrame, 0x3B2C460);
 
 #endif /* SADXMODLOADER_SADXVARS_H */
