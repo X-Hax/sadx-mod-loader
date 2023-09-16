@@ -9,9 +9,10 @@
 #include "SADXStructs.h"
 #include "SADXStructsNew.h"
 #include "ScaleInfo.h"
+#include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 16;
+static const int ModLoaderVer = 17;
 struct PatchInfo
 {
 	void* address;
@@ -186,6 +187,16 @@ struct ModList
 	{
 		return at(pos);
 	}
+};
+
+struct BasicWeightFuncs
+{
+	// Initializes vertex buffers from a model.
+	void (*Init)(WeightInfo* weights, NJS_OBJECT* object);
+	// Apply weight info to a model based on the current animation frame.
+	void (*Apply)(WeightInfo* weights, NJS_ACTION* action, float frame);
+	// Restore the model's original vertices and free the buffers.
+	void (*DeInit)(WeightInfo* weights, NJS_OBJECT* object);
 };
 
 struct StartPosList
@@ -388,6 +399,10 @@ struct HelperFunctions
 	// API for listing information on loaded mods.
 	// Requires version >= 16.
 	const ModList* Mods;
+
+	// API for applying weights to Ninja Basic models.
+	// Requires version >= 17.
+	const BasicWeightFuncs* Weights;
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);

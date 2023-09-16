@@ -269,6 +269,9 @@ FunctionPointer(Bool, ChkParabolaEnd, (sParabola* para), 0x4BD380); // Run parab
 FunctionPointer(void, PGetAcceleration1D, (taskwk* data1, motionwk2* data2, playerwk* co2), 0x442A50);
 FunctionPointer(void, PGetSpeed1D, (taskwk* data1, motionwk2* data2, playerwk* co2), 0x4441B0);
 FunctionPointer(int, PResetAccelerationAir, (taskwk* a1, motionwk2* a2, playerwk* a3), 0x44BD70);
+FunctionPointer(void, PGetAccelerationFly, (taskwk* a1, motionwk2* a2, playerwk* a3), 0x447E70);
+FunctionPointer(void, PGetAccelerationGlik, (taskwk* a1, motionwk2* a2, playerwk* a3), 0x448000);
+FunctionPointer(void, PGetSpeedGlik, (taskwk* a1, motionwk2* a2, playerwk* a3), 0x0444580);
 
 // Characters
 TaskFunc(SonicTheHedgehog, 0x49A9B0);
@@ -954,6 +957,9 @@ FunctionPointer(void, njDrawLine2D, (NJS_POINT2COL* p, int n, float pri, NJD_DRA
 FunctionPointer(void, njDrawTriangle3D, (NJS_POINT3COL* p, int n, NJD_DRAW atr), 0x77EBA0);
 FunctionPointer(void, njDrawTexture, (NJS_TEXTURE_VTX* p, Int count, Uint32 gbix, Int flag), 0x77DC70);
 FunctionPointer(void, njDrawQuadTextureEx, (NJS_QUAD_TEXTURE_EX* p), 0x77DE10);
+ThiscallFunctionPointer(void, njCnkPushPopMotion, (NJS_CNK_OBJECT* a1), 0x792F70);
+FunctionPointer(void, saCnkDrawMotionSA, (NJS_CNK_OBJECT* obj, NJS_MOTION* motion, float frame), 0x720A70);
+FunctionPointer(void, njCnkDrawMotion, (NJS_CNK_OBJECT* obj, NJS_MOTION* motion, float frame), 0x789690);
 
 // Direct draw functions
 FunctionPointer(void, njDrawModel, (NJS_MODEL_SADX* mdl), 0x77EF70);

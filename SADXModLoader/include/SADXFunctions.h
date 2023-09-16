@@ -479,6 +479,7 @@ FunctionPointer(void, SetMatrixInGiganticMatrixArrayIndex, (NJS_MATRIX *a3, int 
 FunctionPointer(void, InitSprite, (NJS_SPRITE *a1, NJS_TEXLIST *a2, NJS_TEXANIM *a3), 0x439B20);
 FunctionPointer(float, SkyDeck_IncrementFloat, (float a1, float a2, float a3), 0x439ED0);
 FunctionPointer(void, MorphPoints, (NJS_MODEL_SADX *a, NJS_MODEL_SADX *b, NJS_MODEL_SADX *destination, float factor), 0x439F20);
+FunctionPointer(int, GetNodeIndex, (NJS_OBJECT* rootNode, NJS_OBJECT* childNode), 0x439F60);
 FunctionPointer(void, InitLandTable, (int level, int act), 0x43A260);
 FunctionPointer(void, FreeLandTable, (int level, int act), 0x43A350);
 FunctionPointer(void, NextAct_FreeLandTable, (char increment), 0x43A460);
