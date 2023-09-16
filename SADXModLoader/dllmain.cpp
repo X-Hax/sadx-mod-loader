@@ -1073,12 +1073,6 @@ static void __cdecl InitAudio()
 		{
 			string fullPath = bassFolder + bassDLLs[i];
 			bassDLL = LoadLibraryA(fullPath.c_str());
-			PrintDebug("Load DLL: %s result %d\n", bassDLLs[i].c_str(), bassDLL);
-			if (bassDLLs[i].find("libvorbisfile") != string::npos)
-			{
-				PrintDebug("\n");
-			}
-
 		}
 
 		if (bassDLL)
