@@ -1046,16 +1046,14 @@ const std::string bassDLLs[] =
 	"libcelt-0061.dll",
 	"libcelt-0110.dll",
 	"libg719_decode.dll",
-	"libg7221_decode.dll",
 	"libmpg123-0.dll",
-	"libogg.dll",
-	"libspeex.dll",
+	"libspeex-1.dll",
 	"libvorbis.dll",
-	"avutil-vgmstream-56.dll",
-	"avcodec-vgmstream-58.dll",
-	"avformat-vgmstream-58.dll",
+	"avutil-vgmstream-57.dll",
+	"avcodec-vgmstream-59.dll",
+	"avformat-vgmstream-59.dll",
 	"jansson.dll",
-	"swresample-vgmstream-3.dll",
+	"swresample-vgmstream-4.dll",
 	"bass_vgmstream.dll",
 };
 
@@ -1075,6 +1073,12 @@ static void __cdecl InitAudio()
 		{
 			string fullPath = bassFolder + bassDLLs[i];
 			bassDLL = LoadLibraryA(fullPath.c_str());
+			PrintDebug("Load DLL: %s result %d\n", bassDLLs[i].c_str(), bassDLL);
+			if (bassDLLs[i].find("libvorbisfile") != string::npos)
+			{
+				PrintDebug("\n");
+			}
+
 		}
 
 		if (bassDLL)

@@ -186,6 +186,10 @@
     <PreBuildEvent>
       <Command>"C:\Program Files\Git\bin\bash.exe" ../git_version.sh &gt;git_version.h</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -214,6 +218,10 @@
     <PreBuildEvent>
       <Command>"C:\Program Files\Git\bin\bash.exe" ../git_version.sh &gt;git_version.h</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
