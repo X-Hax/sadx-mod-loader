@@ -6,9 +6,9 @@
 
 namespace polybuff
 {
-	int alignment_probably;
-	int count;
-	void* ptr;
+	int alignment_probably = 0;
+	int count = 0;
+	void* ptr = nullptr;
 }
 
 namespace
