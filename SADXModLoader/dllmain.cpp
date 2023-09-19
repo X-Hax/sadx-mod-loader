@@ -935,19 +935,6 @@ Bool __cdecl FixEKey(int i)
 	return IsFreeCameraAllowed() == TRUE && GetKey(i) == TRUE;
 }
 
-const auto loc_794566 = (void*)0x00794566;
-
-void __declspec(naked) PolyBuff_Init_FixVBuffParams()
-{
-	__asm
-	{
-		push D3DPOOL_MANAGED
-		push ecx
-		push D3DUSAGE_WRITEONLY
-		jmp loc_794566
-	}
-}
-
 void __cdecl Direct3D_TextureFilterPoint_ForceLinear()
 {
 	Direct3D_Device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
