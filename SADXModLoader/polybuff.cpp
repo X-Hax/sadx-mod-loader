@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include <Trampoline.h>
+#include <FunctionHook.h>
 
 #include "polybuff.h"
 
@@ -13,23 +13,21 @@ namespace polybuff
 
 namespace
 {
-	Trampoline* InitPolyBuffers_t = nullptr;
+	FunctionHook<void, int, int, void*> InitPolyBuffers_t(0x0078E720);
 
 	void __cdecl InitPolyBuffers_r(int alignment_probably, int count, void* ptr)
 	{
-		NonStaticFunctionPointer(void, original, (int alignment_probably, int count, void* ptr), InitPolyBuffers_t->Target());
-
 		polybuff::alignment_probably = alignment_probably;
 		polybuff::count = count;
 		polybuff::ptr = ptr;
 
-		original(alignment_probably, count, ptr);
+		InitPolyBuffers_t.Original(alignment_probably, count, ptr);
 	}
 }
 
 void polybuff::init()
 {
-	InitPolyBuffers_t = new Trampoline(0x0078E720, 0x0078E729, InitPolyBuffers_r);
+	InitPolyBuffers_t.Hook(InitPolyBuffers_r);
 }
 
 /*
