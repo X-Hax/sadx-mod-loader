@@ -1,5 +1,36 @@
 #include "stdafx.h"
+
+#include <Trampoline.h>
+
 #include "polybuff.h"
+
+namespace polybuff
+{
+	int alignment_probably;
+	int count;
+	void* ptr;
+}
+
+namespace
+{
+	Trampoline* InitPolyBuffers_t = nullptr;
+
+	void __cdecl InitPolyBuffers_r(int alignment_probably, int count, void* ptr)
+	{
+		NonStaticFunctionPointer(void, original, (int alignment_probably, int count, void* ptr), InitPolyBuffers_t->Target());
+
+		polybuff::alignment_probably = alignment_probably;
+		polybuff::count = count;
+		polybuff::ptr = ptr;
+
+		original(alignment_probably, count, ptr);
+	}
+}
+
+void polybuff::init()
+{
+	InitPolyBuffers_t = new Trampoline(0x0078E720, 0x0078E729, InitPolyBuffers_r);
+}
 
 /*
  * Despite having designated polybuff drawing functions

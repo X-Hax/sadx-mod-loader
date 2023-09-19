@@ -1245,8 +1245,6 @@ static void __cdecl InitMods()
 		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
 		// MeshSetBuffer_CreateVertexBuffer: Remove D3DUSAGE_DYNAMIC
 		WriteData((short*)0x007853F6, (short)D3DUSAGE_WRITEONLY);
-		// PolyBuff_Init: Remove D3DUSAGE_DYNAMIC and set pool to D3DPOOL_MANAGED
-		WriteJump((void*)0x0079455F, PolyBuff_Init_FixVBuffParams);
 	}
 
 	pauseWhenInactive = loaderSettings.PauseWhenInactive;
@@ -1384,6 +1382,9 @@ static void __cdecl InitMods()
 		uiscale::fmv_fill = static_cast<uiscale::FillMode>(fmvFill);
 		uiscale::setup_fmv_scale();
 	}
+
+	// This is different from the rewrite portion of the polybuff namespace!
+	polybuff::init();
 
 	if (!loaderSettings.DisablePolyBuff)
 		polybuff::rewrite_init();
