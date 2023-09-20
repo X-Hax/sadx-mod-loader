@@ -93,6 +93,8 @@ static const D3DRENDERSTATETYPE D3DRENDERSTATE_TYPES[] = {
 
 static HRESULT reset_parameters()
 {
+	FreePolyBuffers();
+
 	// Grab the current FOV before making any changes.
 	auto fov = fov::get_fov();
 
@@ -206,6 +208,8 @@ static HRESULT reset_parameters()
 
 	TransformAndViewportInvalid = 1;
 	Direct3D_SetViewportAndTransform();
+
+	InitPolyBuffers(polybuff::alignment_probably, polybuff::count, polybuff::ptr);
 
 	RaiseEvents(modRenderDeviceReset);
 
