@@ -98,30 +98,6 @@ const list<string>& ModelInfo::getanimations() const { return animations; }
 
 const list<string>& ModelInfo::getmorphs() const { return morphs; }
 
-NJS_OBJECT* ModelInfo::getrighthandnode() const { return rightHandNode; }
-
-int ModelInfo::getrighthanddir() const { return rightHandDir; }
-
-NJS_OBJECT* ModelInfo::getlefthandnode() const { return leftHandNode; }
-
-int ModelInfo::getlefthanddir() const { return leftHandDir; }
-
-NJS_OBJECT* ModelInfo::getrightfootnode() const { return rightFootNode; }
-
-int ModelInfo::getrightfootdir() const { return rightFootDir; }
-
-NJS_OBJECT* ModelInfo::getleftfootnode() const { return leftFootNode; }
-
-int ModelInfo::getleftfootdir() const { return leftFootDir; }
-
-NJS_OBJECT* ModelInfo::getuser0node() const { return user0Node; }
-
-int ModelInfo::getuser0dir() const { return user0Dir; }
-
-NJS_OBJECT* ModelInfo::getuser1node() const { return user1Node; }
-
-int ModelInfo::getuser1dir() const { return user1Dir; }
-
 WeightInfo* ModelInfo::getweightinfo() { return &weightInfo; }
 
 static string getstring(istream& stream)
@@ -350,37 +326,6 @@ void ModelInfo::init(istream& stream)
 				break;
 			case ChunkTypes_Description:
 				description = getstring(stream);
-				break;
-			case ChunkTypes_RightHandNode:
-				intptr_t tmp;
-				readdata(stream, tmp);
-				rightHandNode = (NJS_OBJECT*)(tmp + modelbase);
-				readdata(stream, rightHandDir);
-				break;
-			case ChunkTypes_LeftHandNode:
-				readdata(stream, tmp);
-				leftHandNode = (NJS_OBJECT*)(tmp + modelbase);
-				readdata(stream, leftHandDir);
-				break;
-			case ChunkTypes_RightFootNode:
-				readdata(stream, tmp);
-				rightFootNode = (NJS_OBJECT*)(tmp + modelbase);
-				readdata(stream, rightFootDir);
-				break;
-			case ChunkTypes_LeftFootNode:
-				readdata(stream, tmp);
-				leftFootNode = (NJS_OBJECT*)(tmp + modelbase);
-				readdata(stream, leftFootDir);
-				break;
-			case ChunkTypes_User0Node:
-				readdata(stream, tmp);
-				user0Node = (NJS_OBJECT*)(tmp + modelbase);
-				readdata(stream, user0Dir);
-				break;
-			case ChunkTypes_User1Node:
-				readdata(stream, tmp);
-				user1Node = (NJS_OBJECT*)(tmp + modelbase);
-				readdata(stream, user1Dir);
 				break;
 			case ChunkTypes_Weights:
 				intptr_t addr;
