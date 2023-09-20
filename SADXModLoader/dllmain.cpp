@@ -1311,7 +1311,6 @@ static void __cdecl InitMods()
 	loaderSettings.FmvFillMode = setgrp->getInt("FmvFillMode", uiscale::FillMode_Fit);
 	loaderSettings.EnableBassMusic = setgrp->getBool("EnableBassMusic", true);
 	loaderSettings.EnableBassSFX = setgrp->getBool("EnableBassSFX", false);
-	loaderSettings.EnableDynamicBuffer = setgrp->getBool("EnableDynamicBuffer", false);
 	loaderSettings.SEVolume = setgrp->getInt("SEVolume", 100);
 
 	loaderSettings.TestSpawnLevel = setgrp->getInt("TestSpawnLevel");
@@ -1425,7 +1424,7 @@ static void __cdecl InitMods()
 	}
 
 	// Causes significant performance drop on some systems.
-	if (windowResize && loaderSettings.EnableDynamicBuffer)
+	if (windowResize)
 	{
 		// MeshSetBuffer_CreateVertexBuffer: Change D3DPOOL_DEFAULT to D3DPOOL_MANAGED
 		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
@@ -1507,6 +1506,9 @@ static void __cdecl InitMods()
 		uiscale::fmv_fill = static_cast<uiscale::FillMode>(fmvFill);
 		uiscale::setup_fmv_scale();
 	}
+
+	// This is different from the rewrite portion of the polybuff namespace!
+		polybuff::init();
 
 	if (loaderSettings.PolyBuff)
 		polybuff::rewrite_init();

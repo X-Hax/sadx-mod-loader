@@ -48,7 +48,6 @@ struct LoaderSettings
 	int VerticalResolution;
 	bool ForceAspectRatio;
 	bool WindowedFullscreen;
-	bool EnableDynamicBuffer;
 	bool EnableVsync;
 	bool AutoMipmap;
 	bool TextureFilter;
