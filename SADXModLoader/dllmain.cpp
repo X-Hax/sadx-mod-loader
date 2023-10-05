@@ -909,7 +909,7 @@ vector<SoundList> _SoundLists;
 vector<MusicInfo> _MusicList;
 vector<__int16> _USVoiceDurationList;
 vector<__int16> _JPVoiceDurationList;
-extern const HelperFunctions helperFunctions;
+extern HelperFunctions helperFunctions;
 
 static const char* const dlldatakeys[] = {
 	"CHRMODELSData",

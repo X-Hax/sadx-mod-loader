@@ -573,7 +573,7 @@ uint16_t RegisterVoice(const char* fileJP, const char* fileEN, uint16_t duration
 
 extern LoaderSettings loaderSettings;
 
-const HelperFunctions helperFunctions =
+HelperFunctions helperFunctions =
 {
 	ModLoaderVer,
 	&RegisterStartPosition,
