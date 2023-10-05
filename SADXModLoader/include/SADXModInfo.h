@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 17;
+static const int ModLoaderVer = 18;
 struct PatchInfo
 {
 	void* address;
@@ -295,7 +295,7 @@ struct HelperFunctions
 	* allows other mods to replace this file without any extra work from you.
 	* Requires version >= 5.
 	*
-	* @param path The file path (e.g "SYSTEM\\my_cool_file.bin")
+	* @param path The file path (e.g "SYSTEM\\\\my_cool_file.bin")
 	* @return The replaced path to the file.
 	*/
 	const char* (__cdecl* GetReplaceablePath)(const char* path);
@@ -389,6 +389,19 @@ struct HelperFunctions
 	// API for applying weights to Ninja Basic models.
 	// Requires version >= 17.
 	const BasicWeightFuncs* Weights;
+
+	/**
+	* @brief Registers an ID for a new voice.
+	* Requires version >= 18.
+	*
+	* @param fileJP: The path to the audio file to play for Japanese.
+	* @param fileEN: The path to the audio file to play for English.
+	* @param durationJP: The duration for the Japanese voice.
+	* @param durationEN: The duration for the English voice.
+	* @return The ID number for your voice, or 0 if the list is full.
+	*
+	*/
+	uint16_t(__cdecl* RegisterVoice)(const char* fileJP, const char* fileEN, uint16_t durationJP, uint16_t durationEN);
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);
