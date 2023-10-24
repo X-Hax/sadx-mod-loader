@@ -278,8 +278,7 @@ void ProcessDLLData(const wchar_t* filename, const wstring& mod_dir)
 	delete dlldata;
 }
 
-void SetChrmodelsDLLHandle(HMODULE handle)
+void SetDLLHandle(const wchar_t* name, HMODULE handle)
 {
-	dllhandles[L"CHRMODELS_orig"] = handle;
-	dllhandles[L"CHRMODELS"] = handle;
+	dllhandles[name] = handle;
 }

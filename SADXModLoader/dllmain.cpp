@@ -2052,7 +2052,11 @@ static void __cdecl LoadChrmodels()
 			L"SADX Mod Loader", MB_ICONERROR);
 		ExitProcess(1);
 	}
-	SetChrmodelsDLLHandle(chrmodelshandle);
+	SetDLLHandle(L"CHRMODELS", chrmodelshandle);
+	SetDLLHandle(L"CHRMODELS_orig", chrmodelshandle);
+	SetDLLHandle(L"CHAOSTGGARDEN02MR_DAYTIME", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_DAYTIME.DLL"));
+	SetDLLHandle(L"CHAOSTGGARDEN02MR_EVENING", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_EVENING.DLL"));
+	SetDLLHandle(L"CHAOSTGGARDEN02MR_NIGHT", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_NIGHT.DLL"));
 	WriteCall((void*)0x402513, (void*)InitMods);
 }
 
