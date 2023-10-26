@@ -803,6 +803,9 @@ static void GetReplaceTextures(const char* filename, unordered_map<string, TexRe
 		}
 
 	auto replaced = GetBaseName(get_replaced_path(filename, ".PVM"));
+	auto ext = GetExtension(replaced);
+	if (!_stricmp(ext.c_str(), "prs"))
+		StripExtension(replaced);
 	StripExtension(replaced);
 
 	transform(replaced.begin(), replaced.end(), replaced.begin(), ::tolower);
