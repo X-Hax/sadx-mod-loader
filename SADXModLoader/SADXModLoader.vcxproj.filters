@@ -263,6 +263,9 @@
     <ClInclude Include="include\WeightInfo.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
+    <ClInclude Include="gvm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SADXModLoader.rc">

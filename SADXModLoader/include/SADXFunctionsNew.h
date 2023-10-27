@@ -120,6 +120,16 @@ FunctionPointer(Bool, OCMunregister, (OCMDATA* ocmdata), 0x5FE360);
 FunctionPointer(OCMDATA*, OCMsearchRideobj, (taskwk* otwp), 0x5FE380);
 VoidFunc(calcvsyncsyoriochi, 0x413920);
 
+// Filesystem
+FunctionPointer(void*, njOpenBinary, (const char* str), 0x7929D0);
+FunctionPointer(void, njCloseBinary, (LPVOID lpMem), 0x792A70);
+
+// Texture decoding
+FunctionPointer(NJS_TEXMEMLIST*, njLoadTexturePVRTAnalize, (NJS_TEXINFO* texinfo, Uint32 gbix), 0x77F7F0);
+FunctionPointer(NJS_TEXMEMLIST*, njSearchEmptyTexMemList, (Uint32 gbix), 0x0077F5B0);
+FunctionPointer(NJS_TEXMEMLIST*, njLoadTextureTexMemList, (void* data, int gbix), 0x77FBD0);
+ThiscallFunctionPointer(void, stSetPaletteBank, (NJS_TEXPALETTE* p), 0x78CF80);
+
 // Debug
 FunctionPointer(void, njPrintColor, (int color), 0x007808E0); // Sets debug font color
 FunctionPointer(void, njPrintC, (signed int position, const char* text), 0x7808F0); // Prints a string
