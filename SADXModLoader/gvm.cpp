@@ -7,6 +7,8 @@
 #include "gvm.h"
 #include "AutoMipmap.h"
 
+DataPointer(IDirect3DDevice8*, _st_d3d_device_, 0x3D128B0); // Direct3D device
+
 // Original code decompiled by Exant, cleaned up by PkR
 
 // Retrieves global index for the specified texture ID, requires the GVMH chunk pointer
@@ -37,7 +39,7 @@ Uint32 gjGetGlobalIndexFromGVMH(sStChunkPVMH* chunk, Uint16 n)
 	{
 		start += 2;
 	}
-	unsigned int result = *(_DWORD*)((int)chunk + 8 + start * (n + 1));
+	Uint32 result = *(_DWORD*)((int)chunk + 8 + start * (n + 1));
 	return _byteswap_ulong(result);
 }
 
@@ -50,7 +52,7 @@ void gjLoadTextureGVRTAnalize(NJS_TEXMEMLIST* texmemlist, Uint8* addr)
 	result->BitDepth = 0;
 
 	Uint32 value = _byteswap_ulong(*(Uint32*)(addr + 8));
-	Uint16 flags = value & 0xFF00;
+	Uint16 flags = (value & 0xFF00) >> 8;
 	Uint16 surfacetype = value & 0xFF;
 	result->Type = surfacetype;
 	switch (surfacetype)
@@ -65,16 +67,20 @@ void gjLoadTextureGVRTAnalize(NJS_TEXMEMLIST* texmemlist, Uint8* addr)
 		result->PixelFormat = GJD_TEXFMT_DXT1;
 		break;
 	}
-	result->fSurfaceFlags = GJD_SURFACEFLAGS_MIPMAPED;
-	if ((flags & 0x200) != 0)
+	result->fSurfaceFlags = 0;
+	if ((flags & GVR_FLAG_PALETTE) != 0)
 	{
 		result->fSurfaceFlags |= GJD_SURFACEFLAGS_PALETTIZED;
 	}
+	//if ((flags & GVR_FLAG_MIPMAP) != 0) // Looks like this needs to be on always? Otherwise non-mipmapped textures fade to black
+	//{
+		result->fSurfaceFlags |= GJD_SURFACEFLAGS_MIPMAPED;
+	//}
 	result->nWidth = _byteswap_ushort(*(Uint16*)(addr + 0xC));
 	result->nHeight = _byteswap_ushort(*(Uint16*)(addr + 14));
 	result->pSurface = (Uint32*)(addr + 16);
 	result->TextureSize = *(Uint32*)(addr + 4) - 8;
-	//PrintDebug("Orig: %08X, Value: %08X, Type: %X, Flags: %X\n", *(Uint32*)(addr + 8), v4, surfacetype, flags);
+	//PrintDebug("Value: %08X, Type: %X, Flags: %X\n", value, surfacetype, flags);
 	//PrintDebug("Width %d, Height %d\n", result->nWidth, result->nHeight);
 }
 
@@ -84,7 +90,7 @@ void gjLoadTextureTexMemListAnalize(NJS_TEXMEMLIST* memlist)
 	Uint8* addr = (Uint8*)memlist->texinfo.texaddr;
 	while (1)
 	{
-		int value = *(int*)addr;
+		Uint32 value = *(int*)addr;
 
 		if (value == 'TRVG')
 		{
@@ -93,7 +99,7 @@ void gjLoadTextureTexMemListAnalize(NJS_TEXMEMLIST* memlist)
 		}
 		else if (value == 'XIBG')
 		{
-			memlist->globalIndex = _byteswap_ulong(*(int*)(addr + 4));
+			memlist->globalIndex = _byteswap_ulong(*(Uint32*)(addr + 4));
 		}
 		if (!value)
 		{
@@ -103,228 +109,180 @@ void gjLoadTextureTexMemListAnalize(NJS_TEXMEMLIST* memlist)
 	}
 }
 
-int GetLockedTexelAddress(int format, int a2, int a3, int a4, int a5)
+// Gets texel offset based on D3D format
+int GetLockedTexelAddress(D3DFORMAT format, int start, int x, int y)
 {
 	int result; // eax
 	signed int offset = 0;
 
 	switch (format)
 	{
-	case 1:
-		offset = 24;
-		break;
-	case 2:
-	case 3:
-	case 9:
-	case 10:
-	case 11:
-	case 20:
-	case 21:
-	case 22:
-	case 24:
-	case 26:
-	case 28:
+	case D3DFMT_R8G8B8:
+	case D3DFMT_A8R8G8B8:
+	case D3DFMT_X8R8G8B8:
+	case D3DFMT_X1R5G5B5:
+	case D3DFMT_A4R4G4B4:
+	case D3DFMT_A8:
 		offset = 32;
 		break;
-	case 4:
-	case 5:
-	case 6:
-	case 7:
-	case 19:
-	case 23:
-	case 25:
+	case D3DFMT_R5G6B5:
+	case D3DFMT_A1R5G5B5:
 		offset = 16;
 		break;
-	case 8:
-	case 13:
-	case 15:
-	case 16:
-	case 17:
-	case 18:
-		offset = 8;
-		break;
-	case 12:
-	case 27:
-	case 29:
+	case D3DFMT_R3G3B2:
+	case D3DFMT_A8R3G3B2:
 		offset = 64;
 		break;
-	case 14:
-		offset = 4;
-		break;
-	case 30:
+	case D3DFMT_X4R4G4B4:
 		offset = 128;
 		break;
 	}
 	if (offset > 4)
 	{
-		result = a2 * ((offset + 7) / 8);
+		result = start * ((offset + 7) / 8);
 	}
 	else
 	{
-		result = a2 * offset / 8;
+		result = start * offset / 8;
 	}
-	return a4 * a3 + result;
+	return y * x + result;
 }
 
 // Decodes RGB555 or ARGB4333 pixels
-int GvrDecodePixelArgb5a3(__int16 a1)
+int GvrDecodePixelArgb5a3(Uint16 bytes)
 {
-	unsigned __int16 v1; // ax
-	unsigned int result; // eax
+	Uint16 data = _byteswap_ushort(bytes);
+	Uint32 result; // eax
 
-	v1 = _byteswap_ushort(a1);
 	// ARGB3444
-	if ((a1 & 0x80u) == 0)
+	if ((bytes & 0x80u) == 0)
 	{
-		((uint8_t*)&result)[3] = (uint8_t)(((v1 >> 12) & 0x07) * 0xFF / 0x07);
-		((uint8_t*)&result)[2] = (uint8_t)(((v1 >> 8) & 0x0F) * 0xFF / 0x0F);
-		((uint8_t*)&result)[1] = (uint8_t)(((v1 >> 4) & 0x0F) * 0xFF / 0x0F);
-		((uint8_t*)&result)[0] = (uint8_t)(((v1 >> 0) & 0x0F) * 0xFF / 0x0F);
+		((uint8_t*)&result)[3] = (uint8_t)(((data >> 12) & 0x07) * 0xFF / 0x07);
+		((uint8_t*)&result)[2] = (uint8_t)(((data >> 8) & 0x0F) * 0xFF / 0x0F);
+		((uint8_t*)&result)[1] = (uint8_t)(((data >> 4) & 0x0F) * 0xFF / 0x0F);
+		((uint8_t*)&result)[0] = (uint8_t)(((data >> 0) & 0x0F) * 0xFF / 0x0F);
 		//result = (unsigned __int8)((char)-(v1 & 0xF) / 15) | (((unsigned __int8)((char)-((unsigned __int8)v1 >> 4) / 15) | (((unsigned __int8)((char)-(HIBYTE(v1) & 0xF) / 15) | ((unsigned __int8)((char)-((v1 >> 12) & 7) / 7) << 8)) << 8)) << 8);
 	}
 	// RGB555
 	else
 	{
 		((uint8_t*)&result)[3] = 0xFF;
-		((uint8_t*)&result)[2] = (uint8_t)(((v1 >> 10) & 0x1F) * 0xFF / 0x1F);
-		((uint8_t*)&result)[1] = (uint8_t)(((v1 >> 5) & 0x1F) * 0xFF / 0x1F);
-		((uint8_t*)&result)[0] = (uint8_t)(((v1 >> 0) & 0x1F) * 0xFF / 0x1F);
+		((uint8_t*)&result)[2] = (uint8_t)(((data >> 10) & 0x1F) * 0xFF / 0x1F);
+		((uint8_t*)&result)[1] = (uint8_t)(((data >> 5) & 0x1F) * 0xFF / 0x1F);
+		((uint8_t*)&result)[0] = (uint8_t)(((data >> 0) & 0x1F) * 0xFF / 0x1F);
 		//result = (unsigned __int8)((char)-(v1 & 0x1F) / 31) | (((unsigned __int8)((char)-((v1 >> 5) & 0x1F) / 31) | ((((char)-((v1 >> 10) & 0x1F) / 31) | 0xFFFFFF00) << 8)) << 8);
 	}
 	return result;
 }
 
-// Pixel decoding functions
-
-void GvrDecodeArgb5a3(int format, signed int a1, __int16* a2, int a3, signed int a4)
+// Pixel decoding function: ARGB5A3
+void GvrDecodeArgb5a3(D3DFORMAT format, Uint16* data, Sint32 width, Sint32 height, void* pBaseAddr, Sint32 mPitch)
 {
-	int result; // eax
-	int v7; // ebx
-	int i; // ebp
-	int v9; // eax
-	int j; // ebp
-	int v11; // eax
-	int k; // ebp
-	int v13; // eax
-	int l; // ebp
-	int v15; // eax
-	int v16; // [esp+50h] [ebp-14h]
-	int v17; // [esp+54h] [ebp-10h]
-	int v18; // [esp+58h] [ebp-Ch]
-	int v19; // [esp+5Ch] [ebp-8h]
-	int v20; // [esp+5Ch] [ebp-8h]
-	int v21; // [esp+5Ch] [ebp-8h]
-	int v22; // [esp+5Ch] [ebp-8h]
-
-	result = ((a1 >> 31) & 3) + a1;
-	if (a1 / 4 > 0)
+	int xpos; // ebx
+	int ypos; // [esp+50h] [ebp-14h]
+	int texelAddr; // [esp+5Ch] [ebp-8h]
+	int pixel; // eax
+	int tex_x; // eax
+	int tex_y; // [esp+58h] [ebp-Ch]
+	int tex_x_cur; // [esp+54h] [ebp-10h]
+	
+	// Must be divisible by 4
+	if (height / 4 > 0)
 	{
-		result = a4 / 4;
-		v16 = 2;
-		v18 = a1 / 4;
+		tex_x = width / 4;
+		tex_y = height / 4;
+		ypos = 2;
 		do
 		{
-			if (result > 0)
+			if (tex_x > 0)
 			{
-				v7 = 0;
-				v17 = result;
+				xpos = 0;
+				tex_x_cur = tex_x;
 				do
 				{
-					for (i = 0; i < 4; ++i)
+					for (int i = 0; i < 4; ++i)
 					{
-						v19 = GetLockedTexelAddress(
+						texelAddr = GetLockedTexelAddress(
 							format,
-							v7 + i,
-							v16 - 2,
-							*(uint32_t*)(a3 + 4),
-							*(uint32_t*)(a3 + 12));
-						v9 = GvrDecodePixelArgb5a3(*a2++);
-						*(uint32_t*)(v19 + *(uint32_t*)a3) = v9;
+							xpos + i,
+							ypos - 2,
+							mPitch);
+						pixel = GvrDecodePixelArgb5a3(*data++);
+						*(uint32_t*)((char*)pBaseAddr + texelAddr) = pixel;
 					}
-					for (j = 0; j < 4; ++j)
+					for (int j = 0; j < 4; ++j)
 					{
-						v20 = GetLockedTexelAddress(
+						texelAddr = GetLockedTexelAddress(
 							format,
-							v7 + j,
-							v16 - 1,
-							*(uint32_t*)(a3 + 4),
-							*(uint32_t*)(a3 + 12));
-						v11 = GvrDecodePixelArgb5a3(*a2++);
-						*(uint32_t*)(v20 + *(uint32_t*)a3) = v11;
+							xpos + j,
+							ypos - 1,
+							mPitch);
+						pixel = GvrDecodePixelArgb5a3(*data++);
+						*(uint32_t*)((char*)pBaseAddr + texelAddr) = pixel;
 					}
-					for (k = 0; k < 4; ++k)
+					for (int k = 0; k < 4; ++k)
 					{
-						v21 = GetLockedTexelAddress(
+						texelAddr = GetLockedTexelAddress(
 							format,
-							v7 + k,
-							v16,
-							*(uint32_t*)(a3 + 4),
-							*(uint32_t*)(a3 + 12));
-						v13 = GvrDecodePixelArgb5a3(*a2++);
-						*(uint32_t*)(v21 + *(uint32_t*)a3) = v13;
+							xpos + k,
+							ypos,
+							mPitch);
+						pixel = GvrDecodePixelArgb5a3(*data++);
+						*(uint32_t*)((char*)pBaseAddr + texelAddr) = pixel;
 					}
-					for (l = 0; l < 4; ++l)
+					for (int l = 0; l < 4; ++l)
 					{
-						v22 = GetLockedTexelAddress(
+						texelAddr = GetLockedTexelAddress(
 							format,
-							v7 + l,
-							v16 + 1,
-							*(uint32_t*)(a3 + 4),
-							*(uint32_t*)(a3 + 12));
-						v15 = GvrDecodePixelArgb5a3(*a2++);
-						*(uint32_t*)(v22 + *(uint32_t*)a3) = v15;
+							xpos + l,
+							ypos + 1,
+							mPitch);
+						pixel = GvrDecodePixelArgb5a3(*data++);
+						*(uint32_t*)((char*)pBaseAddr + texelAddr) = pixel;
 					}
-					v7 += 4;
-					--v17;
-				} while (v17);
-				result = a4 / 4;
+					xpos += 4;
+					--tex_x_cur;
+				} while (tex_x_cur);
 			}
-			v16 += 4;
-			--v18;
-		} while (v18);
+			ypos += 4;
+			--tex_y;
+		} while (tex_y);
 	}
 	//return result;
 }
 
-void GvrDecodeDXT1(int format, signed int a1, void* pp, LockedSurface* a3, signed int a4)
+// Pixel decoding function: DXT1
+void GvrDecodeDXT1(D3DFORMAT format, void* data, Sint32 width, Sint32 height, void* pBaseAddr, Sint32 mPitch)
 {
-	LockedSurface* v4; // ebx
 	int result; // eax
 	unsigned __int8* v7; // ebp
 	unsigned __int8* v8; // edi
-	int v9; // ecx
 	unsigned __int8* v10; // ebp
-	int v11; // ecx
 	unsigned __int8* v12; // edi
-	int v13; // [esp+28h] [ebp-10h]
-	int v14; // [esp+2Ch] [ebp-Ch]
+	Uint32 pos = 0; // [esp+28h] [ebp-10h]
 	int i; // [esp+34h] [ebp-4h]
-	int a2 = (int)pp;
-	v4 = a3;
-	result = a1 / 8;
-	v13 = 0;
-	for (i = result; v13 < i; ++v13)
+	int a2 = (int)data;
+	result = height / 8;
+	for (i = result; pos < i; ++pos)
 	{
-		v7 = (unsigned char*)v4->m_pBaseAddr
+		v7 = (unsigned char*)pBaseAddr
 			+ GetLockedTexelAddress(
 				format,
 				0,
-				2 * v13,
-				v4->m_Pitch,
-				v4->m_MipmapLevel);
-		v8 = (unsigned char*)v4->m_pBaseAddr
+				2 * pos,
+				mPitch);
+		v8 = (unsigned char*)pBaseAddr
 			+ GetLockedTexelAddress(
 				format,
 				0,
-				2 * v13 + 1,
-				v4->m_Pitch,
-				v4->m_MipmapLevel);
-		if (a4 / 8 > 0)
+				2 * pos + 1,
+				mPitch);
+		if (width / 8 > 0)
 		{
-			v14 = a4 / 8;
+			int v14 = width / 8;
 			do
 			{
-				v9 = 2;
+				int v9 = 2;
 				do
 				{
 					*v7 = *(unsigned __int8*)(a2 + 1);
@@ -341,7 +299,7 @@ void GvrDecodeDXT1(int format, signed int a1, void* pp, LockedSurface* a3, signe
 					a2 += 8;
 					--v9;
 				} while (v9);
-				v11 = 2;
+				int v11 = 2;
 				do
 				{
 					*v8 = *(unsigned __int8*)(a2 + 1);
@@ -360,33 +318,32 @@ void GvrDecodeDXT1(int format, signed int a1, void* pp, LockedSurface* a3, signe
 				} while (v11);
 				--v14;
 			} while (v14);
-			v4 = a3;
 		}
-		result = v13 + 1;
+		result = pos + 1;
 	}
 	//return result;
 }
 
-void GvrDecodeArgb8888(char* a2, char* result, unsigned int a3, char* a1, int a5)
+// Pixel decoding function: ARGB8888
+void GvrDecodeArgb8888(char* data, Sint32 width, Sint32 height, char* bits, unsigned int pitch)
 {
-	int v5; // ebp
-	int v8; // [esp+14h] [ebp+8h]
-
-	v5 = a5;
-	if (a5 > 0)
+	int x;
+	int y = height;
+	if (height > 0)
 	{
-		v8 = 4 * (_DWORD)result;
+		x = 4 * width;
 		do
 		{
-			memcpy(a1, a2, a3);
-			a2 += v8;
-			a1 += a3;
-			--v5;
-		} while (v5);
+			memcpy(bits, data, pitch);
+			data += x;
+			bits += pitch;
+			--y;
+		} while (y);
 	}
 }
 
-void GvrDecodeIndex4(signed int a1, int a2, int a3, int a4, signed int a5)
+// Pixel decoding function: Indexed4
+void GvrDecodeIndex4(int data, signed int width, signed int height, int pBits, int pitch)
 {
 	int v7; // eax
 	unsigned char* v8; // ecx
@@ -396,11 +353,11 @@ void GvrDecodeIndex4(signed int a1, int a2, int a3, int a4, signed int a5)
 	int v12; // [esp+Ch] [ebp-Ch]
 	int v13; // [esp+10h] [ebp-8h]
 
-	if (a1 / 8 > 0)
+	if (height / 8 > 0)
 	{
-		v7 = a5 / 8;
-		v11 = a4 + 6;
-		v13 = a1 / 8;
+		v7 = width / 8;
+		v11 = pBits + 6;
+		v13 = height / 8;
 		do
 		{
 			if (v7 > 0)
@@ -413,39 +370,37 @@ void GvrDecodeIndex4(signed int a1, int a2, int a3, int a4, signed int a5)
 					v9 = 8;
 					do
 					{
-						*(v8 - 6) = (unsigned char)-(*(unsigned __int8*)a2 >> 4) / 15;
-						*(v8 - 5) = (unsigned char)-(*(unsigned __int8*)a2 & 0xF) / 15;
-						*(v8 - 4) = (unsigned char)-(*(unsigned __int8*)(a2 + 1) >> 4) / 15;
-						*(v8 - 3) = (unsigned char)-(*(unsigned __int8*)(a2 + 1) & 0xF) / 15;
-						*(v8 - 2) = (unsigned char)-(*(unsigned __int8*)(a2 + 2) >> 4) / 15;
-						*(v8 - 1) = (unsigned char)-(*(unsigned __int8*)(a2 + 2) & 0xF) / 15;
-						*v8 = (unsigned char)-(*(unsigned __int8*)(a2 + 3) >> 4) / 15;
-						v8[1] = 255 * (*(unsigned __int8*)(a2 + 3) & 0xF) / 15;
-						a2 += 4;
-						v8 += a3;
+						*(v8 - 6) = (unsigned char)-(*(unsigned __int8*)data >> 4) / 15;
+						*(v8 - 5) = (unsigned char)-(*(unsigned __int8*)data & 0xF) / 15;
+						*(v8 - 4) = (unsigned char)-(*(unsigned __int8*)(data + 1) >> 4) / 15;
+						*(v8 - 3) = (unsigned char)-(*(unsigned __int8*)(data + 1) & 0xF) / 15;
+						*(v8 - 2) = (unsigned char)-(*(unsigned __int8*)(data + 2) >> 4) / 15;
+						*(v8 - 1) = (unsigned char)-(*(unsigned __int8*)(data + 2) & 0xF) / 15;
+						*v8 = (unsigned char)-(*(unsigned __int8*)(data + 3) >> 4) / 15;
+						v8[1] = 255 * (*(unsigned __int8*)(data + 3) & 0xF) / 15;
+						data += 4;
+						v8 += pitch;
 						--v9;
 					} while (v9);
 					v10 += 8;
 					--v12;
 				} while (v12);
-				v7 = a5 / 8;
+				v7 = width / 8;
 			}
-			v11 += 8 * a3;
+			v11 += 8 * pitch;
 			--v13;
 		} while (v13);
 	}
 }
 
-DataPointer(IDirect3DDevice8*, _st_d3d_device_, 0x3D128B0); // Direct3D device
-
+// Decodes a GVR texture
 IDirect3DTexture8* __cdecl stConvertSurfaceGvr(NJS_TEXMEMLIST* tex, int data, int pixelformat, D3DFORMAT dataformatmaybe)
 {
 	NJS_TEXSURFACE* pTexSurface = &tex->texinfo.texsurface;
 	IDirect3DTexture8* d3dtex = (IDirect3DTexture8*)pTexSurface->pSurface;
 	Sint32 width = pTexSurface->nWidth;
 	Sint32 height = pTexSurface->nHeight;
-	D3DFORMAT formatmaybe = (D3DFORMAT)0;
-	LockedSurface surface; // [esp+48h] [ebp-1Ch] BYREF
+	D3DFORMAT fmt = (D3DFORMAT)0;
 	if (!pTexSurface->pSurface)
 	{
 		if (width > 0 && height > 0)
@@ -458,54 +413,32 @@ IDirect3DTexture8* __cdecl stConvertSurfaceGvr(NJS_TEXMEMLIST* tex, int data, in
 			}
 			D3DSURFACE_DESC desc;
 			d3dtex->GetLevelDesc(0, &desc);
-			formatmaybe = desc.Format;
-
-			int v25 = 0;
-			int* v26 = (int*)PAKFormatLookupTable + 1;
-			while (formatmaybe != *v26)
-			{
-				++v25;
-				v26 += 2;
-				if (v25 >= 0x1F)
-				{
-					break;
-				}
-			}
-			formatmaybe = ((D3DFORMAT*)PAKFormatLookupTable)[2 * v25];
-			//PrintDebug("PLEASE GIVE ME FORMAT %d \n", formatmaybe);
+			fmt = desc.Format;
 		}
 	}
-	surface.m_pBaseAddr = 0;
-	surface.m_Pitch = 0;
-	surface.m_pLockedTexture = 0;
 	D3DLOCKED_RECT rect;
 	if (IDirect3DTexture8_LockRect(d3dtex, 0, &rect, 0, 0) != D3D_OK)
 	{
 		Exit();
 	}
-	surface.m_pLockedTexture = d3dtex;
-	surface.m_pBaseAddr = rect.pBits;
-	surface.m_Pitch = rect.Pitch;
-	surface.m_MipmapLevel = 0;
-	//PrintDebug("locked rect\n");
 	switch (pixelformat)
 	{
 	case GJD_TEXFMT_DXT1:
-		GvrDecodeDXT1(formatmaybe, height, (void*)data, &surface, width);
+		GvrDecodeDXT1(fmt, (void*)data, width, height, rect.pBits, rect.Pitch);
 		break;
 	case GJD_TEXFMT_ARGB_5A3:
-		GvrDecodeArgb5a3(formatmaybe, height, (__int16*)data, (int)&surface, width);
+		GvrDecodeArgb5a3(fmt, (Uint16*)data, width, height, rect.pBits, rect.Pitch);
 		break;
 	case GJD_TEXFMT_ARGB_8888:
-		GvrDecodeArgb8888((char*)data, (char*)width, surface.m_Pitch, (char*)surface.m_pBaseAddr, height);
+		GvrDecodeArgb8888((char*)data, width, height, (char*)rect.pBits, rect.Pitch);
 		break;
 	case GJD_TEXFMT_PALETTIZE4:
-		GvrDecodeIndex4(height, data, surface.m_Pitch, (int)surface.m_pBaseAddr, width);
+		GvrDecodeIndex4(data, width, height, (int)rect.pBits, rect.Pitch);
 		break;
 	}
 
 	d3dtex->UnlockRect(0);
-	if ((pTexSurface->fSurfaceFlags & 0x80000000) != 0)
+	if ((pTexSurface->fSurfaceFlags & GJD_SURFACEFLAGS_MIPMAPED) != 0)
 	{
 		D3DXFilterTexture(d3dtex, 0, 0, -1);
 	}
