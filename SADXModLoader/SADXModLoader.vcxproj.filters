@@ -105,6 +105,9 @@
     <ClCompile Include="BasicWeights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gvm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MediaFns.hpp">
