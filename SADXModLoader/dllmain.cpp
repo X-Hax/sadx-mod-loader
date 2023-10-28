@@ -1242,12 +1242,6 @@ static void __cdecl InitMods()
 		WriteData<5>(reinterpret_cast<void*>(0x00401939), 0x90u);
 		WriteData<5>(reinterpret_cast<void*>(0x00401920), 0x90u);
 	}
-	else
-	{
-		// Pause music and sounds when the window is inactive
-		WriteCall(reinterpret_cast<void*>(0x00401939), PauseMusicWithSound);
-		WriteCall(reinterpret_cast<void*>(0x00401920), ResumeMusicWithSound);
-	}
 
 	if (loaderSettings.AutoMipmap)
 		mipmap::enable_auto_mipmaps();
