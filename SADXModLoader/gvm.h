@@ -8,10 +8,15 @@
 #define GJD_TEXFMT_RGB_565            (0x04)
 #define GJD_TEXFMT_ARGB_5A3           (0x05)
 #define GJD_TEXFMT_ARGB_8888		  (0x06)
-
 #define GJD_TEXFMT_PALETTIZE4		  (0x08)
 #define GJD_TEXFMT_PALETTIZE8		  (0x09)
 #define GJD_TEXFMT_DXT1				  (0x0E)
+
+// GVR pixel formats
+#define GJD_PIXELFORMAT_PAL_4BPP	  (0x28000000) // Same as NJD_PIXELFORMAT_PALETTIZED_4BPP for compatibility with stApplyPalette
+#define GJD_PIXELFORMAT_PAL_8BPP	  (0x30000000) // Same as NJD_PIXELFORMAT_PALETTIZED_8BPP
+#define GJD_PIXELFORMAT_OTHER		  (0x0E000000) // RGB5A3 or ARGB8888
+#define GJD_PIXELFORMAT_DXT1		  (0xFF000000) // Whatever
 
 // GVM flags
 #define GVMH_NAMES					  (0x1)

@@ -31,6 +31,7 @@ typedef bool _BOOL1;
 FunctionPointer(int, InitGame, (), 0x413C00);
 FunctionPointer(bool, ChkPause, (), 0x414D70); // Check if the game is paused
 FunctionPointer(Bool, ChkGameMode, (), 0x414D90); // Check if in game
+FunctionPointer(void*, MAlloc, (int size), 0x40B220); // Allocate memory
 FunctionPointer(void*, CAlloc, (int count, int size), 0x0040B2D0); // Allocate memory
 VoidFunc(Clear, 0x0040BF30);
 VoidFunc(Reset, 0x0040BF40);
@@ -128,6 +129,8 @@ FunctionPointer(void, njCloseBinary, (LPVOID lpMem), 0x792A70);
 FunctionPointer(NJS_TEXMEMLIST*, njLoadTexturePVRTAnalize, (NJS_TEXINFO* texinfo, Uint32 gbix), 0x77F7F0);
 FunctionPointer(NJS_TEXMEMLIST*, njSearchEmptyTexMemList, (Uint32 gbix), 0x0077F5B0);
 FunctionPointer(NJS_TEXMEMLIST*, njLoadTextureTexMemList, (void* data, int gbix), 0x77FBD0);
+FunctionPointer(void, _stTwiddledToLinear4bpp, (void* out, void* in, Uint32 w, Uint32 h, Uint32 bpp), 0x0078C480);
+FunctionPointer(void, _stTwiddledToLinear, (void* out, void* in, Uint32 w, Uint32 h, Uint32 bpp), 0x0078BC30);
 ThiscallFunctionPointer(void, stSetPaletteBank, (NJS_TEXPALETTE* p), 0x78CF80);
 
 // Debug
