@@ -1016,12 +1016,15 @@ static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
 	{
 		return -1;
 	}
-
 	bool mipmap = mipmap::auto_mipmaps_enabled() && !mipmap::is_blacklisted_pvm(filename);
-
 	const std::string replaced = get_replaced_path(filename, ".PVM");
-	const std::string replaced_g = get_replaced_path(filename, ".GVM");
+
+	// GVM check
+	std::string filename_noext = filename;
+	StripExtension(filename_noext);
+	const std::string replaced_g = get_replaced_path(filename_noext, ".GVM");
 	bool gvm = Exists(replaced_g);
+
 	const std::string replaced_extension = gvm ? GetExtension(replaced_g) : GetExtension(replaced);
 
 	unordered_map<string, TexReplaceData> replacements;
@@ -1047,12 +1050,12 @@ static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
 		return result;
 	}
 
-	std::string name = filename;
+	std::string name = gvm ? filename_noext + ".GVM" : filename;
 	const std::string extension = GetExtension(name);
 
 	if (extension.empty())
 	{
-		name += gvm ? ".GVM" : ".PVM";
+		name += ".PVM";
 	}
 
 	Uint8* data = (Uint8*)njOpenBinary(name.c_str());
