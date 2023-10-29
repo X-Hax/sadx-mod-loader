@@ -77,15 +77,14 @@ void gjLoadTextureGVRTAnalize(NJS_TEXMEMLIST* texmemlist, Uint8* addr)
 		break;
 	}
 	result->fSurfaceFlags = 0;
-	if ((flags & GVR_FLAG_PALETTE) != 0)
+	if (flags & GVR_FLAG_PALETTE)
 	{
 		result->fSurfaceFlags |= GJD_SURFACEFLAGS_PALETTIZED;
 	}
-	// Looks like this needs to be on always? Otherwise non-mipmapped textures fade to black
-	//if ((flags & GVR_FLAG_MIPMAP) != 0) 
-	//{
+	if (flags & GVR_FLAG_MIPMAP) 
+	{
 		result->fSurfaceFlags |= GJD_SURFACEFLAGS_MIPMAPED;
-	//}
+	}
 	result->nWidth = _byteswap_ushort(*(Uint16*)(addr + 0xC));
 	result->nHeight = _byteswap_ushort(*(Uint16*)(addr + 14));
 	result->pSurface = (Uint32*)(addr + 16);
@@ -411,6 +410,70 @@ void GvrDecodeIndex4(void* ptr, Sint32 width, Sint32 height, void* pBits, Sint32
 	}
 }
 
+// Pixel decoding function: ARGB5A3
+void GvrDecodeArgb5a3_MM(void* ptr, Sint32 width, Sint32 height, void* pBaseAddr, Sint32 mPitch, Uint32 level)
+{
+	Uint8* offset = (Uint8*)ptr;
+
+	// Get to proper mipmap texture address
+	for (int i = 0; i < level; ++i)
+	{
+		offset += width * height * 2;
+		width >>= 1;
+		height >>= 1;
+	}
+	
+	GvrDecodeArgb5a3(offset, width, height, pBaseAddr, mPitch);
+}
+
+// Pixel decoding function: DXT1
+void GvrDecodeDXT1_MM(void* data, Sint32 width, Sint32 height, void* pBaseAddr, Sint32 mPitch, Uint32 level)
+{
+	Uint8* offset = (Uint8*)data;
+
+	// Get to proper mipmap texture address
+	for (int i = 0; i < level; ++i)
+	{
+		offset += width * height / 2;
+		width >>= 1;
+		height >>= 1;
+	}
+
+	GvrDecodeDXT1(offset, width, height, pBaseAddr, mPitch);
+}
+
+// Pixel decoding function: ARGB8888
+void GvrDecodeArgb8888_MM(void* ptr, Sint32 width, Sint32 height, void* pBits, Sint32 pitch, Uint32 level)
+{
+	Uint8* offset = (Uint8*)ptr;
+
+	// Get to proper mipmap texture address
+	for (int i = 0; i < level; ++i)
+	{
+		offset += width * height * 4;
+		width >>= 1;
+		height >>= 1;
+	}
+
+	GvrDecodeArgb8888(offset, width, height, pBits, pitch);
+}
+
+// Pixel decoding function: Indexed4
+void GvrDecodeIndex4_MM(void* ptr, Sint32 width, Sint32 height, void* pBits, Sint32 pitch, Uint32 level)
+{
+	Uint8* offset = (Uint8*)ptr;
+
+	// Get to proper mipmap texture address
+	for (int i = 0; i < level; ++i)
+	{
+		offset += width * height * 2;
+		width >>= 1;
+		height >>= 1;
+	}
+
+	GvrDecodeIndex4(offset, width, height, pBits, pitch);
+}
+
 // GVR texture format array (for retrieving the decoding function index)
 Uint32 TEX_LOAD_FUNC_INDEX_GVR[] = {
 	0,
@@ -429,6 +492,17 @@ void (*TEX_LOAD_FUNC_GVR[6])(void* ptr, Sint32 width, Sint32 height, void* pBase
 	GvrDecodeArgb5a3,
 	GvrDecodeArgb8888,
 	GvrDecodeIndex4,
+	NULL // GvrDecodeIndex8 unimplemented
+};
+
+// GVR pixel decoding func array
+void (*TEX_LOAD_FUNC_GVR_MM[6])(void* ptr, Sint32 width, Sint32 bpp, void* pBaseAddr, Sint32 mPitch, Uint32 level) =
+{
+	NULL,
+	GvrDecodeDXT1_MM,
+	GvrDecodeArgb5a3_MM,
+	GvrDecodeArgb8888_MM,
+	GvrDecodeIndex4_MM,
 	NULL // GvrDecodeIndex8 unimplemented
 };
 
@@ -500,66 +574,10 @@ IDirect3DTexture8* __cdecl stConvertSurfaceGvr(NJS_TEXMEMLIST* tex, void* data, 
 // Converts NJS_TEXMEMLIST to a D3D texture (mipmap)
 IDirect3DTexture8* __cdecl stConvertSurfaceGvrMM(NJS_TEXMEMLIST* tex, void* data, D3DFORMAT format, Uint32 njfmt, Uint32 bpp)
 {
-	// Hack: Do the same stuff as stConvertSurfaceGvr but generate mip level 0 instead of 1 + apply filter. 
-	// The correct implementation should load the texture's built-in mipmaps instead.
 	NJS_TEXSURFACE* pTexSurface = &tex->texinfo.texsurface;
 	IDirect3DTexture8* d3dtex = (IDirect3DTexture8*)pTexSurface->pSurface;
 
-	if (!d3dtex)
-	{
-		if (IDirect3DDevice8_CreateTexture(_st_d3d_device_, pTexSurface->nWidth, pTexSurface->nHeight,
-			0, 0, format, D3DPOOL_MANAGED, &d3dtex) != D3D_OK) // Level 0
-		{
-			Exit();
-		}
-	}
-
-	Sint32 index = GetLoadFuncIndexGvr(njfmt);
-
-	D3DLOCKED_RECT rect;
-	if (IDirect3DTexture8_LockRect(d3dtex, 0, &rect, 0, 0) != D3D_OK)
-	{
-		Exit();
-	}
-
-	void (*load_func)(void* data, Sint32 width, Sint32 height, void* pBaseAddr, Sint32 mPitch) = NULL;
-
-	load_func = TEX_LOAD_FUNC_GVR[index];
-
-	if (load_func == NULL)
-	{
-		//PrintDebug("Index: %d, format: %X\n", index, njfmt);
-		//MessageBox(NULL, L"No func", L"F", 0);
-		Exit();
-	}
-
-	load_func(data, pTexSurface->nWidth, pTexSurface->nHeight, rect.pBits, rect.Pitch);
-	IDirect3DTexture8_UnlockRect(d3dtex, 0);
-
-	// Apply the mipmap filter, otherwise the textures will fade out in the distance. Remove if internal mipmaps are loaded.
-	if ((pTexSurface->fSurfaceFlags & 0x80000000) != 0)
-	{
-		D3DXFilterTexture(d3dtex, 0, 0, -1);
-	}
-	return d3dtex;
-
-	// Leftovers from the attempt to read built-in mipmaps
-	/*
-	NJS_TEXSURFACE* pTexSurface = &tex->texinfo.texsurface;
-	IDirect3DTexture8* d3dtex = (IDirect3DTexture8*)pTexSurface->pSurface;
-
-	if (!d3dtex)
-	{
-		if (IDirect3DDevice8_CreateTexture(_st_d3d_device_, pTexSurface->nWidth, pTexSurface->nHeight,
-			0, 0, format, D3DPOOL_MANAGED, &d3dtex) != D3D_OK)
-		{
-			Exit();
-		}
-	}
-
-	Sint32 index = GetLoadFuncIndexGvr(pixelfmt);
-
-	Uint32 mipmapcount = 0;
+	Sint32 mipmapcount = 0;
 	for (Int i = 0; i < 11; ++i)
 	{
 		const Uint32* m = &MIPMAP_LEVEL_TBL[i * 2];
@@ -570,50 +588,70 @@ IDirect3DTexture8* __cdecl stConvertSurfaceGvrMM(NJS_TEXMEMLIST* tex, void* data
 		}
 	}
 
+	switch (njfmt)
+	{
+	case GJD_TEXFMT_DXT1:
+	case GJD_TEXFMT_ARGB_5A3:
+		mipmapcount -= 3;
+		break;
+	case GJD_TEXFMT_PALETTIZE4:
+		mipmapcount -= 4;
+		break;
+	}
+
+	if (mipmapcount < 1)
+	{
+		Exit();
+	}
+
+	if (!d3dtex)
+	{
+		if (IDirect3DDevice8_CreateTexture(_st_d3d_device_, pTexSurface->nWidth, pTexSurface->nHeight,
+			mipmapcount, 0, format, D3DPOOL_MANAGED, &d3dtex) != D3D_OK)
+		{
+			Exit();
+		}
+	}
+
+	Sint32 index = GetLoadFuncIndexGvr(njfmt);
+
 	void (*load_func)(void* ptr, Sint32 width, Sint32 height, void* pBaseAddr, Sint32 mPitch, Uint32 level) = NULL;
 
 	load_func = TEX_LOAD_FUNC_GVR_MM[index];
 
 	if (load_func == NULL)
 	{
-		MessageBox(NULL, L"No func", L"A", 0);
 		Exit();
 	}
 
-	for (Uint32 i = 1; i <= mipmapcount; ++i)
+	for (Uint32 i = 0; i < mipmapcount; ++i)
 	{
 		LPDIRECT3DSURFACE8 d3dsurface;
 
-		IDirect3DTexture8_GetSurfaceLevel(d3dtex, i - 1, &d3dsurface);
+		IDirect3DTexture8_GetSurfaceLevel(d3dtex, i, &d3dsurface);
 		if (!d3dsurface)
 		{
-			MessageBox(NULL, L"No surface", L"A", 0);
 			Exit();
 		}
+
 		D3DLOCKED_RECT rect;
 		if (IDirect3DSurface8_LockRect(d3dsurface, &rect, 0, 0) != D3D_OK)
 		{
-			MessageBox(NULL, L"No rect", L"A", 0);
 			Exit();
 		}
-		if (pixelfmt == GJD_TEXFMT_DXT1)
-		{
-			PrintDebug("TEX");
-			load_func(data, pTexSurface->nWidth, pTexSurface->nHeight, rect.pBits, bpp, mipmapcount - i);
-		}
+
+		load_func(data, pTexSurface->nWidth, pTexSurface->nHeight, rect.pBits, rect.Pitch, i);
+
 		IDirect3DSurface8_UnlockRect(d3dsurface);
 		IDirect3DSurface8_Release(d3dsurface);
 	}
 
 	return d3dtex;
-	*/
 }
 
 // Checks texture format and starts D3D texture conversion
 void stLoadTextureGvr(NJS_TEXMEMLIST* tex, void* surface)
 {
-	float sizeMultiplier = 0.0f; // [esp+10h] [ebp-8h]
-
 	if (tex)
 	{
 		NJS_TEXSURFACE* pTexSurface = &tex->texinfo.texsurface;
@@ -660,19 +698,17 @@ void stLoadTextureGvr(NJS_TEXMEMLIST* tex, void* surface)
 					return;
 				}
 
-				bool mipmap = true; // Since all of them can have mipmaps
-				sizeMultiplier = p[2];
-				if (p[1] == D3DFMT_DXT1) // Special case for DXT1
-					sizeMultiplier = 0.5f;
-
 				void* surface_d3d;
-				if (mipmap)
+				if (pTexSurface->fSurfaceFlags & GJD_SURFACEFLAGS_MIPMAPED)
 					surface_d3d = stConvertSurfaceGvrMM(tex, surface, (D3DFORMAT)p[1], fmt, p[2]);
 				else
 					surface_d3d = stConvertSurfaceGvr(tex, surface, (D3DFORMAT)p[1], fmt, p[2]);
 
 				tex->texinfo.texsurface.pSurface = (Uint32*)surface_d3d;
-				tex->texinfo.texsurface.TextureSize = pTexSurface->nWidth * pTexSurface->nHeight * sizeMultiplier;
+				tex->texinfo.texsurface.TextureSize = pTexSurface->nWidth * pTexSurface->nHeight;
+
+				if (p[1] == D3DFMT_DXT1) // Special case for DXT1
+					tex->texinfo.texsurface.TextureSize /= 2;
 
 				break;
 			}
