@@ -361,52 +361,57 @@ void GvrDecodeArgb8888(void* ptr, Sint32 width, Sint32 height, void* pBits, Sint
 // Pixel decoding function: Indexed4
 void GvrDecodeIndex4(void* ptr, Sint32 width, Sint32 height, void* pBits, Sint32 pitch)
 {
-	int data = (int)ptr;
-	int v7; // eax
-	unsigned char* v8; // ecx
-	int v9; // ebp
-	unsigned char* v10; // [esp+4h] [ebp-14h]
-	int v11; // [esp+8h] [ebp-10h]
-	int v12; // [esp+Ch] [ebp-Ch]
-	int v13; // [esp+10h] [ebp-8h]
+	Uint8* input = (Uint8*)ptr;
+	Uint8* output = (Uint8*)pBits;
 
-	if (height / 8 > 0)
+	for (int y = 0; y < height; y += 8)
 	{
-		v7 = width / 8;
-		v11 = (int)pBits + 6;
-		v13 = height / 8;
-		do
+		for (int x = 0; x < width; x += 8)
 		{
-			if (v7 > 0)
+			for (int y2 = 0; y2 < 8; y2++)
 			{
-				v10 = (unsigned __int8*)v11;
-				v12 = v7;
-				do
+				for (int x2 = 0; x2 < 8; x2++)
 				{
-					v8 = v10;
-					v9 = 8;
-					do
-					{
-						*(v8 - 6) = (unsigned char)-(*(unsigned __int8*)data >> 4) / 15;
-						*(v8 - 5) = (unsigned char)-(*(unsigned __int8*)data & 0xF) / 15;
-						*(v8 - 4) = (unsigned char)-(*(unsigned __int8*)(data + 1) >> 4) / 15;
-						*(v8 - 3) = (unsigned char)-(*(unsigned __int8*)(data + 1) & 0xF) / 15;
-						*(v8 - 2) = (unsigned char)-(*(unsigned __int8*)(data + 2) >> 4) / 15;
-						*(v8 - 1) = (unsigned char)-(*(unsigned __int8*)(data + 2) & 0xF) / 15;
-						*v8 = (unsigned char)-(*(unsigned __int8*)(data + 3) >> 4) / 15;
-						v8[1] = 255 * (*(unsigned __int8*)(data + 3) & 0xF) / 15;
-						data += 4;
-						v8 += pitch;
-						--v9;
-					} while (v9);
-					v10 += 8;
-					--v12;
-				} while (v12);
-				v7 = width / 8;
+					byte entry = (byte)((*input >> ((~x2 & 0x01) * 4)) & 0x0F);
+
+					output[((((y + y2) * width) + (x + x2)) * 4) + 3] = 0xFF;
+					output[((((y + y2) * width) + (x + x2)) * 4) + 2] = 0xFF * entry / 15;
+					output[((((y + y2) * width) + (x + x2)) * 4) + 1] = 0xFF * entry / 15;
+					output[((((y + y2) * width) + (x + x2)) * 4) + 0] = 0xFF * entry / 15;
+
+					if ((x2 & 0x01) != 0)
+						input++;
+				}
 			}
-			v11 += 8 * pitch;
-			--v13;
-		} while (v13);
+		}
+	}
+}
+
+// Pixel decoding function: Indexed8
+void GvrDecodeIndex8(void* ptr, Sint32 width, Sint32 height, void* pBits, Sint32 pitch)
+{
+	Uint8* input = (Uint8*)ptr;
+	Uint8* output = (Uint8*)pBits;
+
+	for (int y = 0; y < height; y += 4)
+	{
+		for (int x = 0; x < width; x += 8)
+		{
+			for (int y2 = 0; y2 < 4; y2++)
+			{
+				for (int x2 = 0; x2 < 8; x2++)
+				{
+					byte entry = *input;
+
+					output[((((y + y2) * width) + (x + x2)) * 4) + 3] = 0xFF;
+					output[((((y + y2) * width) + (x + x2)) * 4) + 2] = 0xFF * entry / 255;
+					output[((((y + y2) * width) + (x + x2)) * 4) + 1] = 0xFF * entry / 255;
+					output[((((y + y2) * width) + (x + x2)) * 4) + 0] = 0xFF * entry / 255;
+
+					input++;
+				}
+			}
+		}
 	}
 }
 
@@ -458,22 +463,6 @@ void GvrDecodeArgb8888_MM(void* ptr, Sint32 width, Sint32 height, void* pBits, S
 	GvrDecodeArgb8888(offset, width, height, pBits, pitch);
 }
 
-// Pixel decoding function: Indexed4
-void GvrDecodeIndex4_MM(void* ptr, Sint32 width, Sint32 height, void* pBits, Sint32 pitch, Uint32 level)
-{
-	Uint8* offset = (Uint8*)ptr;
-
-	// Get to proper mipmap texture address
-	for (int i = 0; i < level; ++i)
-	{
-		offset += width * height * 2;
-		width >>= 1;
-		height >>= 1;
-	}
-
-	GvrDecodeIndex4(offset, width, height, pBits, pitch);
-}
-
 // GVR texture format array (for retrieving the decoding function index)
 Uint32 TEX_LOAD_FUNC_INDEX_GVR[] = {
 	0,
@@ -492,7 +481,7 @@ void (*TEX_LOAD_FUNC_GVR[6])(void* ptr, Sint32 width, Sint32 height, void* pBase
 	GvrDecodeArgb5a3,
 	GvrDecodeArgb8888,
 	GvrDecodeIndex4,
-	NULL // GvrDecodeIndex8 unimplemented
+	GvrDecodeIndex8
 };
 
 // GVR pixel decoding func array
@@ -502,16 +491,16 @@ void (*TEX_LOAD_FUNC_GVR_MM[6])(void* ptr, Sint32 width, Sint32 bpp, void* pBase
 	GvrDecodeDXT1_MM,
 	GvrDecodeArgb5a3_MM,
 	GvrDecodeArgb8888_MM,
-	GvrDecodeIndex4_MM,
-	NULL // GvrDecodeIndex8 unimplemented
+	NULL,
+	NULL
 };
 
 // GVR pixel format array (for converting to D3D formats and setting bytes per pixel to calculate texture size)
 Uint32 PIXEL_FORMAT_TBL_GVR[] = {
 	GJD_PIXELFORMAT_DXT1, D3DFMT_DXT1, 0,
 	GJD_PIXELFORMAT_OTHER, D3DFMT_A8R8G8B8, 4, // RGBA8888 and RGB5A3
-	GJD_PIXELFORMAT_PAL_4BPP, D3DFMT_P8, 1,
-	GJD_PIXELFORMAT_PAL_8BPP, D3DFMT_P8, 1
+	GJD_PIXELFORMAT_PAL_4BPP, D3DFMT_A8R8G8B8, 1,
+	GJD_PIXELFORMAT_PAL_8BPP, D3DFMT_A8R8G8B8, 1
 };
 
 // Retrieves the decoding function index for the specified texture format
@@ -523,7 +512,7 @@ Sint32 GetLoadFuncIndexGvr(Sint32 fmt)
 	{
 		++i;
 		++index;
-		if (i == 9)
+		if (i == LengthOfArray(TEX_LOAD_FUNC_INDEX_GVR))
 		{
 			return 0;
 		}
@@ -659,29 +648,55 @@ void stLoadTextureGvr(NJS_TEXMEMLIST* tex, void* surface)
 		// Paletted
 		if (pTexSurface->PixelFormat == GJD_PIXELFORMAT_PAL_4BPP || pTexSurface->PixelFormat == GJD_PIXELFORMAT_PAL_8BPP)
 		{
-
 			Uint32 height = tex->texinfo.texsurface.nHeight;
 			Uint32 width = tex->texinfo.texsurface.nWidth;
 
-			// This creates an empty surface to apply the palette to.
-			void* mem = MAlloc(width * height);
+			// Create index array
+			Uint8* indices = (Uint8*)MAlloc(width * height);
 			if (pTexSurface->PixelFormat == GJD_PIXELFORMAT_PAL_4BPP)
 			{
-				_stTwiddledToLinear4bpp(mem, surface, width, height, 1);
+				Uint8* input = (Uint8*)surface;
+				for (int y = 0; y < height; y += 8)
+				{
+					for (int x = 0; x < width; x += 8)
+					{
+						for (int y2 = 0; y2 < 8; y2++)
+						{
+							for (int x2 = 0; x2 < 8; x2++)
+							{
+								indices[((y + y2) * width) + (x + x2)] = (byte)((*input >> ((~x2 & 0x01) * 4)) & 0x0F);
+
+								if ((x2 & 0x01) != 0)
+									input++;
+							}
+						}
+					}
+				}
 			}
 			else
 			{
-				_stTwiddledToLinear(mem, surface, width, height, 1);
+				Uint8* input = (Uint8*)surface;
+				for (int y = 0; y < height; y += 4)
+				{
+					for (int x = 0; x < width; x += 8)
+					{
+						for (int y2 = 0; y2 < 4; y2++)
+						{
+							for (int x2 = 0; x2 < 8; x2++)
+							{
+								indices[((y + y2) * width) + (x + x2)] = *input;
+								input++;
+							}
+						}
+					}
+				}
 			}
 
-			tex->texinfo.texsurface.pPhysical = (Uint32*)mem;
+			tex->texinfo.texsurface.pPhysical = (Uint32*)indices;
 
-			// Decode the indexed texture
-			void* surface_d3d = stConvertSurfaceGvr(tex, surface, D3DFMT_A8R8G8B8, fmt, 1);
-			if (!surface_d3d)
-				surface_d3d = stConvertSurfaceGvr(tex, surface, D3DFMT_A4R4G4B4, fmt, 1);
-			pTexSurface->pSurface = (Uint32*)surface_d3d;
-			pTexSurface->TextureSize = pTexSurface->nWidth * pTexSurface->nHeight * 1;
+			// Create surface and decode texture with grayscale
+			pTexSurface->pSurface = (Uint32*)stConvertSurfaceGvr(tex, surface, D3DFMT_A8R8G8B8, fmt, 1);
+			pTexSurface->TextureSize = pTexSurface->nWidth * pTexSurface->nHeight;
 		}
 		// Non-paletted
 		else
