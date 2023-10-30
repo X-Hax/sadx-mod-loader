@@ -135,6 +135,9 @@
     <ClCompile Include="SDL2.cpp">
       <Filter>Source Files\SDL2</Filter>
     </ClCompile>
+    <ClCompile Include="gvm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MediaFns.hpp">
@@ -313,6 +316,9 @@
     </ClInclude>
     <ClInclude Include="MinorPatches.h">
       <Filter>Header Files\Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="gvm.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
