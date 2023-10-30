@@ -556,6 +556,21 @@ BasicWeightFuncs weightFuncs = {
 	DeInitWeights
 };
 
+uint16_t voicenum = 2049;
+uint16_t RegisterVoice(const char* fileJP, const char* fileEN, uint16_t durationJP, uint16_t durationEN)
+{
+	if (voicenum == UINT16_MAX)
+		return 0;
+	char buf[MAX_PATH];
+	sprintf_s(buf, "system\\sounddata\\voice_jp\\wma\\%d.wma", voicenum);
+	_ReplaceFile(buf, fileJP);
+	sprintf_s(buf, "system\\sounddata\\voice_us\\wma\\%d.wma", voicenum);
+	_ReplaceFile(buf, fileEN);
+	RegisterJapaneseVoiceDuration(voicenum, durationJP);
+	RegisterEnglishVoiceDuration(voicenum, durationEN);
+	return voicenum++;
+}
+
 extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
@@ -596,5 +611,6 @@ HelperFunctions helperFunctions =
 	&RegisterCharacterWelds,
 	&loaderSettings,
 	&modList,
-	&weightFuncs
+	&weightFuncs,
+	&RegisterVoice
 };

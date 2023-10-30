@@ -51,14 +51,16 @@ static unordered_map<string, vector<pvmx::DictionaryEntry>> archive_cache;
 static unordered_map<string, unordered_map<string, TexReplaceData>*> replace_cache;
 static bool was_loading = false;
 
-DataArray(NJS_TEXPALETTE*, unk_3CFC000, 0x3CFC000, 0);
-
 static Sint32 njLoadTexture_Wrapper_r(NJS_TEXLIST* texlist);
 static Sint32 njLoadTexture_r(NJS_TEXLIST* texlist);
 static int __cdecl LoadSystemPVM_r(const char* filename, NJS_TEXLIST* texlist);
 static void __cdecl LoadPVM_r(const char* filename, NJS_TEXLIST* texlist);
 static Sint32 __cdecl LoadPvmMEM2_r(const char* filename, NJS_TEXLIST* texlist);
 static Sint32 __cdecl njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList);
+
+// GVR/GVM stuff
+signed int njLoadTextureGvmMemory(void* data, NJS_TEXLIST* texList);
+NJS_TEXMEMLIST* gjLoadTextureTexMemList(void* pFile, int globalindex);
 
 void texpack::init()
 {
@@ -803,6 +805,9 @@ static void GetReplaceTextures(const char* filename, unordered_map<string, TexRe
 		}
 
 	auto replaced = GetBaseName(get_replaced_path(filename, ".PVM"));
+	auto ext = GetExtension(replaced);
+	if (!_stricmp(ext.c_str(), "prs"))
+		StripExtension(replaced);
 	StripExtension(replaced);
 
 	transform(replaced.begin(), replaced.end(), replaced.begin(), ::tolower);
@@ -1011,37 +1016,41 @@ static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
 	{
 		return -1;
 	}
-
 	bool mipmap = mipmap::auto_mipmaps_enabled() && !mipmap::is_blacklisted_pvm(filename);
-
 	const std::string replaced = get_replaced_path(filename, ".PVM");
-	const std::string replaced_extension = GetExtension(replaced);
+
+	// GVM check
+	std::string filename_noext = filename;
+	StripExtension(filename_noext);
+	const std::string replaced_g = get_replaced_path(filename_noext, ".GVM");
+	bool gvm = Exists(replaced_g);
+
+	const std::string replaced_extension = gvm ? GetExtension(replaced_g) : GetExtension(replaced);
 
 	unordered_map<string, TexReplaceData> replacements;
 	GetReplaceTextures(filename, replacements);
 
 	if (!_stricmp(replaced_extension.c_str(), "prs"))
 	{
-		//PrintDebug("Loading PRS'd PVM: %s\n", filename);
+		//PrintDebug("Loading PRS'd PVM/GVM: %s\n", filename);
 
-		auto out_buf = get_prs_data(replaced);
+		auto out_buf = get_prs_data(gvm ? replaced_g : replaced);
 
 		if (out_buf.empty())
 		{
 			return -1;
 		}
-
-		Sint32 result = njLoadTexturePvmMemory(out_buf.data(), texList);
+		Sint32 result = gvm ? njLoadTextureGvmMemory((int*)out_buf.data(), texList) : njLoadTexturePvmMemory(out_buf.data(), texList);
 		if (result == 1)
 		{
-			string pvmname = replaced;
+			string pvmname = gvm ? replaced_g : replaced;
 			StripExtension(pvmname);
 			ReplacePVMTexs(pvmname, texList, out_buf.data(), replacements, mipmap);
 		}
 		return result;
 	}
 
-	std::string name = filename;
+	std::string name = gvm ? filename_noext + ".GVM" : filename;
 	const std::string extension = GetExtension(name);
 
 	if (extension.empty())
@@ -1049,11 +1058,11 @@ static Sint32 njLoadTexturePvmFile_r(const char* filename, NJS_TEXLIST* texList)
 		name += ".PVM";
 	}
 
-	Uint8* data = LoadPVx(name.c_str());
-	Sint32 result = njLoadTexturePvmMemory(data, texList);
+	Uint8* data = (Uint8*)njOpenBinary(name.c_str());
+	Sint32 result = gvm ? njLoadTextureGvmMemory(data, texList) : njLoadTexturePvmMemory(data, texList);
 	if (result == 1)
-		ReplacePVMTexs(replaced, texList, data, replacements, mipmap);
-	j__HeapFree_0(data);
+		ReplacePVMTexs(gvm ? replaced_g : replaced, texList, data, replacements, mipmap);
+	njCloseBinary(data);
 	return result;
 }
 
@@ -1166,7 +1175,7 @@ static Sint32 __cdecl njLoadTexture_r(NJS_TEXLIST* texlist)
 			gbix = entries->texaddr;
 		}
 
-		DoSomethingWithPalette(unk_3CFC000[i]);
+		stSetPaletteBank(texpalette_buffer[i]);
 		Uint32 attr = entries->attr;
 
 		// If already loaded, grab from memory. Otherwise, load from disk.
@@ -1175,11 +1184,11 @@ static Sint32 __cdecl njLoadTexture_r(NJS_TEXLIST* texlist)
 		{
 			if (attr & NJD_TEXATTR_GLOBALINDEX)
 			{
-				memlist = TexMemList_PixelFormat(static_cast<NJS_TEXINFO*>(entries->filename), gbix);
+				memlist = njLoadTexturePVRTAnalize(static_cast<NJS_TEXINFO*>(entries->filename), gbix);
 			}
 			else
 			{
-				memlist = LoadPVR(*static_cast<void**>(entries->filename), gbix);
+				memlist = njLoadTextureTexMemList(*static_cast<void**>(entries->filename), gbix);
 			}
 		}
 		else
@@ -1193,26 +1202,29 @@ static Sint32 __cdecl njLoadTexture_r(NJS_TEXLIST* texlist)
 			}
 
 			const string replaced = get_replaced_path(filename, ".PVR");
+			const string replaced_g = get_replaced_path(filename, ".GVR");
 
-			if (!_stricmp(GetExtension(replaced).c_str(), "prs"))
+			bool gvr = FileExists(replaced_g);
+
+			if (!_stricmp(GetExtension(gvr ? replaced_g : replaced).c_str(), "prs"))
 			{
-				//PrintDebug("Loading PRS'd PVR: %s\n", filename.c_str());
+				//PrintDebug("Loading PRS'd PVR/GVR: %s\n", filename.c_str());
 
-				auto out_buf = get_prs_data(replaced);
+				auto out_buf = get_prs_data(gvr ? replaced_g : replaced);
 
 				if (out_buf.empty())
 				{
 					return -1;
 				}
 
-				memlist = LoadPVR(out_buf.data(), gbix);
+				memlist = gvr ? gjLoadTextureTexMemList(out_buf.data(), gbix) : njLoadTextureTexMemList(out_buf.data(), gbix);
 			}
 			else
 			{
-				filename += ".pvr";
-				void* data = LoadPVx(filename.c_str());
-				memlist = LoadPVR(data, gbix);
-				j__HeapFree_0(data);
+				filename += gvr ? ".gvr" : ".pvr";
+				void* data = njOpenBinary(filename.c_str());
+				memlist = gvr ? gjLoadTextureTexMemList(data, gbix) : njLoadTextureTexMemList(data, gbix);
+				njCloseBinary(data);
 			}
 
 			if (_guard.is_blacklisted() && memlist != nullptr)

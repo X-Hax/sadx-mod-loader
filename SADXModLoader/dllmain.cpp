@@ -1442,12 +1442,6 @@ static void __cdecl InitMods()
 		WriteData<5>(reinterpret_cast<void*>(0x00401939), 0x90u);
 		WriteData<5>(reinterpret_cast<void*>(0x00401920), 0x90u);
 	}
-	else
-	{
-		// Pause music and sounds when the window is inactive
-		WriteCall(reinterpret_cast<void*>(0x00401939), PauseMusicWithSound);
-		WriteCall(reinterpret_cast<void*>(0x00401920), ResumeMusicWithSound);
-	}
 
 	if (loaderSettings.AutoMipmap)
 		mipmap::enable_auto_mipmaps();
@@ -2194,7 +2188,11 @@ static void __cdecl LoadChrmodels()
 			L"SADX Mod Loader", MB_ICONERROR);
 		ExitProcess(1);
 	}
-	SetChrmodelsDLLHandle(chrmodelshandle);
+	SetDLLHandle(L"CHRMODELS", chrmodelshandle);
+	SetDLLHandle(L"CHRMODELS_orig", chrmodelshandle);
+	SetDLLHandle(L"CHAOSTGGARDEN02MR_DAYTIME", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_DAYTIME.DLL"));
+	SetDLLHandle(L"CHAOSTGGARDEN02MR_EVENING", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_EVENING.DLL"));
+	SetDLLHandle(L"CHAOSTGGARDEN02MR_NIGHT", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_NIGHT.DLL"));
 	WriteCall((void*)0x402513, (void*)InitMods);
 }
 

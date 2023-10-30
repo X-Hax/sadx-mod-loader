@@ -4308,4 +4308,13 @@ struct SAVE_DATA
 	Sint32 M_emblem;
 };
 
+// Textures
+
+struct sStChunkPVMH {
+	char magic[4];
+	Sint32 offset;
+	Sint16 flag;
+	Uint16 nbTexture;
+};
+
 #endif /* SADXMODLOADER_SADXSTRUCTSNEW_H */

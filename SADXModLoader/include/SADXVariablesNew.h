@@ -69,6 +69,7 @@ DataPointer(bool, PvrAlphaFlag, 0x03B2C650); // Global transparency flag for UI 
 DataPointer(NJS_ARGB, default_argb, 0x038CD514);
 DataPointer(int, IsChaoGarden, 0x03B22E80);
 DataArray(SAVE_DATA, SaveData, 0x3B2B3A8, 3);
+DataArray(Uint32, MIPMAP_LEVEL_TBL, 0x389D4F8, 22);
 
 // Event
 DataPointer(EVINFO2, evInfo, 0x03B2C568); // Current cutscene struct

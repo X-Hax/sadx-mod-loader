@@ -3,4 +3,4 @@
 
 void ProcessDLLData(const wchar_t* filename, const std::wstring& mod_dir);
 
-void SetChrmodelsDLLHandle(HMODULE handle);
+void SetDLLHandle(const wchar_t* name, HMODULE handle);
