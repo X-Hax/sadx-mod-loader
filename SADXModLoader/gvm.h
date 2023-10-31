@@ -15,7 +15,7 @@
 // GVR pixel formats
 #define GJD_PIXELFORMAT_PAL_4BPP	  (0x28000000) // Same as NJD_PIXELFORMAT_PALETTIZED_4BPP for compatibility with stApplyPalette
 #define GJD_PIXELFORMAT_PAL_8BPP	  (0x30000000) // Same as NJD_PIXELFORMAT_PALETTIZED_8BPP
-#define GJD_PIXELFORMAT_OTHER		  (0x0E000000) // RGB5A3 or ARGB8888
+#define GJD_PIXELFORMAT_OTHER		  (0x10000000) // Same as NJD_PIXELFORMAT_ARGB4444 for compatibility with "draw texture" functions
 #define GJD_PIXELFORMAT_DXT1		  (0xFF000000) // Whatever
 
 // GVM flags
