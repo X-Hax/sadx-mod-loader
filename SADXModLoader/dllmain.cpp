@@ -56,6 +56,7 @@ using std::vector;
 #include "InterpolationFixes.h"
 #include "MinorPatches.h"
 #include "jvList.h"
+#include "gvm.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 
@@ -2032,6 +2033,7 @@ static void __cdecl InitMods()
 	WriteData(reinterpret_cast<float*>(0x87CBAC), 0.0f);
 
 	ApplyTestSpawn();
+	GVR_Init();
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);

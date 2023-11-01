@@ -1,5 +1,7 @@
 #pragma once
 
+void __cdecl GVR_Init();
+
 // GVR data formats
 #define GJD_TEXFMT_ARGB_I4            (0x00)
 #define GJD_TEXFMT_ARGB_I8            (0x01)
