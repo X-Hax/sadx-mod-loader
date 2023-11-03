@@ -247,8 +247,8 @@ namespace SADXModManager
 			for (int i = 0; i < Screen.AllScreens.Length; i++)
 			{
 				Screen s = Screen.AllScreens[i];
-				screenNumComboBox.Items.Add($"{ i + 1 } { s.DeviceName } ({ s.Bounds.Location.X },{ s.Bounds.Y })"
-					+ $" { s.Bounds.Width }x{ s.Bounds.Height } { s.BitsPerPixel } bpp { (s.Primary ? "Primary" : "") }");
+				screenNumComboBox.Items.Add($"{i + 1} {s.DeviceName} ({s.Bounds.Location.X},{s.Bounds.Y})"
+					+ $" {s.Bounds.Width}x{s.Bounds.Height} {s.BitsPerPixel} bpp {(s.Primary ? "Primary" : "")}");
 			}
 
 			comboBoxTestSpawnTime.SelectedIndex = 0;
@@ -863,7 +863,7 @@ namespace SADXModManager
 					ModDependency dependency = new ModDependency(sDependency);
 					if (dependency.ID == "" && dependency.Folder == "")
 						return false;
-					
+
 					string depName = dependency.GetDependencyName();
 
 					bool modExists = false;
@@ -1129,11 +1129,11 @@ namespace SADXModManager
 				catch (Exception ex)
 				{
 					result = MessageBox.Show(this,
-					                         "Failed to create temporary update directory:\n" +
-					                         ex.Message +
-					                         "\n\nWould you like to retry?",
-					                         "Directory Creation Failed",
-					                         MessageBoxButtons.RetryCancel);
+											 "Failed to create temporary update directory:\n" +
+											 ex.Message +
+											 "\n\nWould you like to retry?",
+											 "Directory Creation Failed",
+											 MessageBoxButtons.RetryCancel);
 				}
 			} while (result == DialogResult.Retry);
 
@@ -1171,11 +1171,11 @@ namespace SADXModManager
 				catch (Exception ex)
 				{
 					result = MessageBox.Show(this,
-					                         "Failed to remove temporary update directory:\n" +
-					                         ex.Message +
-					                         "\n\nWould you like to retry? You can remove the directory manually later.",
-					                         "Directory Deletion Failed",
-					                         MessageBoxButtons.RetryCancel);
+											 "Failed to remove temporary update directory:\n" +
+											 ex.Message +
+											 "\n\nWould you like to retry? You can remove the directory manually later.",
+											 "Directory Deletion Failed",
+											 MessageBoxButtons.RetryCancel);
 				}
 			} while (result == DialogResult.Retry);
 
@@ -1197,6 +1197,7 @@ namespace SADXModManager
 
 		private bool CheckForUpdates(bool force = false)
 		{
+
 			if (!force && !loaderini.UpdateCheck)
 			{
 				return false;
@@ -1210,48 +1211,46 @@ namespace SADXModManager
 			checkedForUpdates = true;
 			loaderini.UpdateTime = DateTime.UtcNow.ToFileTimeUtc();
 
-			if (!File.Exists("sadxmlver.txt"))
-			{
-				return false;
-			}
-
 			using (var wc = new WebClient())
 			{
 				try
 				{
-					string msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
 
-					if (msg.Length > 0)
+					using (var dlg = new UpdateMessageDialog("New", "This will download and Install the new Mod Manager.\n Do you want to continue?\r"))
 					{
-						using (var dlg = new UpdateMessageDialog("SADX", msg.Replace("\n", "\r\n")))
+						if (dlg.ShowDialog(this) == DialogResult.Yes)
 						{
-							if (dlg.ShowDialog(this) == DialogResult.Yes)
+							DialogResult result = DialogResult.OK;
+							do
 							{
-								DialogResult result = DialogResult.OK;
-								do
+								try
 								{
-									try
+									if (!Directory.Exists(updatePath))
 									{
-										if (!Directory.Exists(updatePath))
-										{
-											Directory.CreateDirectory(updatePath);
-										}
+										Directory.CreateDirectory(updatePath);
 									}
-									catch (Exception ex)
+								}
+								catch (Exception ex)
+								{
+									result = MessageBox.Show(this, "Failed to create temporary update directory:\n" + ex.Message
+																   + "\n\nWould you like to retry?", "Directory Creation Failed", MessageBoxButtons.RetryCancel);
+									if (result == DialogResult.Cancel)
+										return false;
+								}
+							} while (result == DialogResult.Retry);
+						
+							string dlLINK = Environment.Is64BitOperatingSystem ? "https://github.com/X-Hax/SA-Mod-Manager/releases/download/v1.0.0/ModManagerWPF-Release-x64.zip" : "https://github.com/X-Hax/SA-Mod-Manager/releases/download/v1.0.0/ModManagerWPF-Release-x86.zip";
+							using (var dlg2 = new WPFDownloadDialog(dlLINK, updatePath))
+								if (dlg2.ShowDialog(this) == DialogResult.OK)
+								{
+									if (installed) //remove the mod loader since we will use a new one.
 									{
-										result = MessageBox.Show(this, "Failed to create temporary update directory:\n" + ex.Message
-																	   + "\n\nWould you like to retry?", "Directory Creation Failed", MessageBoxButtons.RetryCancel);
-										if (result == DialogResult.Cancel) return false;
+										File.Delete(datadllpath);
+										File.Move(datadllorigpath, datadllpath);
 									}
-								} while (result == DialogResult.Retry);
-
-								using (var dlg2 = new LoaderDownloadDialog("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z", updatePath))
-									if (dlg2.ShowDialog(this) == DialogResult.OK)
-									{
-										Close();
-										return true;
-									}
-							}
+									Close();
+									return true;
+								}
 						}
 					}
 				}
@@ -1480,7 +1479,7 @@ namespace SADXModManager
 					{
 						if (string.IsNullOrEmpty(mod.GitHubAsset))
 						{
-							errors.Add($"[{ mod.Name }] GitHubRepo specified, but GitHubAsset is missing.");
+							errors.Add($"[{mod.Name}] GitHubRepo specified, but GitHubAsset is missing.");
 							continue;
 						}
 
@@ -1565,7 +1564,7 @@ namespace SADXModManager
 					{
 						if (result == DialogResult.Yes)
 						{
-							var retain = MessageBox.Show(this, $"The mod \"{ mods[dir].Name }\" (\"mods\\{ dir }\") does not have a manifest, so mod user data cannot be retained."
+							var retain = MessageBox.Show(this, $"The mod \"{mods[dir].Name}\" (\"mods\\{dir}\") does not have a manifest, so mod user data cannot be retained."
 								+ " Do you want to uninstall it anyway?", "Cannot Retain User Data", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
 							if (retain == DialogResult.No)
@@ -1579,7 +1578,7 @@ namespace SADXModManager
 				}
 				catch (Exception ex)
 				{
-					MessageBox.Show(this, $"Failed to uninstall mod \"{ mods[dir].Name }\" from \"{ dir }\": { ex.Message }", "Failed",
+					MessageBox.Show(this, $"Failed to uninstall mod \"{mods[dir].Name}\" from \"{dir}\": {ex.Message}", "Failed",
 						MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
 			}
@@ -2064,18 +2063,18 @@ namespace SADXModManager
 
 			if (checkBoxTestSpawnGameMode.Checked)
 			{
-					uint gm = 0;
-					uint gm_result = 0;
-					foreach (var item in TestSpawnGameModeList)
+				uint gm = 0;
+				uint gm_result = 0;
+				foreach (var item in TestSpawnGameModeList)
+				{
+					if (gm == comboBoxTestSpawnGameMode.SelectedIndex)
 					{
-						if (gm == comboBoxTestSpawnGameMode.SelectedIndex)
-						{
-							gm_result = item.Key;
-							break;
-						}
-						gm++;
+						gm_result = item.Key;
+						break;
 					}
-					cmdline.Add("-g " + gm_result.ToString());			
+					gm++;
+				}
+				cmdline.Add("-g " + gm_result.ToString());
 			}
 			if (checkBoxTestSpawnSave.Checked)
 				cmdline.Add("-s " + numericUpDownTestSpawnSaveID.Value.ToString());
@@ -2699,7 +2698,7 @@ namespace SADXModManager
 			}
 			catch (Exception)
 			{
-				
+
 			}
 		}
 
