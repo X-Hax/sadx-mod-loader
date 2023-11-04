@@ -56,6 +56,10 @@ using std::vector;
 #include "InterpolationFixes.h"
 #include "MinorPatches.h"
 #include "jvList.h"
+#include "Gbix.h"
+#include "input.h"
+#include <ShlObj.h>
+#include "gvm.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 
