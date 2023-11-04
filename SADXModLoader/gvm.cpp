@@ -842,15 +842,11 @@ LABEL_11:
 	return 1;
 }
 
-// Removed for now
-/*
-void (*TEX_LOAD_FUNC_GVR_MM[6])(void* ptr, Sint32 width, void* pBaseAddr, Sint32 mPitch, Uint32 level) =
+void __cdecl GVR_Init()
 {
-	NULL,
-	GvrDecodeDXT1_MM,
-	GvrDecodeArgb5a3_MM, //GvrDecodeArgb5a3,//GvrDecodeArgb5a3_MM,
-	GvrDecodeArgb8888_MM, //GvrDecodeArgb8888,//GvrDecodeArgb8888_MM,
-	GvrDecodeIndex4_MM, //GvrDecodeIndex4,//GvrDecodeIndex4_MM,
-	GvrDecodeIndex8_MM, //GvrDecodeIndex8,//GvrDecodeIndex8_MM
-};
-*/
+	// Remove the pixel format check for enabling the "use alpha" flag for 2D textures (ghDrawPvrTexture related)
+	WriteData<1>((char*)0x0043434A, 0i8);
+	WriteData<1>((char*)0x0043389E, 0i8);
+	WriteData<1>((char*)0x00433C56, 0i8);
+	WriteData<1>((char*)0x00433F4D, 0i8);
+}
