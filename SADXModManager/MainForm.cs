@@ -18,6 +18,8 @@ using SADXModManager.Forms;
 using SADXModManager.Properties;
 using SADXModManager.Controls;
 using SharpDX.DirectInput;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace SADXModManager
 {
@@ -380,9 +382,9 @@ namespace SADXModManager
 			numericUpDownTestSpawnSaveID.Value = Math.Max(1, loaderini.TestSpawnSaveID);
 		}
 
-		private void MainForm_Shown(object sender, EventArgs e)
+		private async void MainForm_Shown(object sender, EventArgs e)
 		{
-			if (CheckForUpdates())
+			if (await CheckForUpdates())
 				return;
 
 			if (!File.Exists(datadllpath))
@@ -1195,9 +1197,41 @@ namespace SADXModManager
 			HandleUri(args.Uri);
 		}
 
-		private bool CheckForUpdates(bool force = false)
+		public static async Task<GitHubAsset> GetLatestReleaseNewManager(HttpClient httpClient)
 		{
+			try
+			{
 
+				httpClient.DefaultRequestHeaders.Add("User-Agent", "SADXModLoader");
+				string apiUrl = "https://api.github.com/repos/X-Hax/SA-Mod-manager/releases/latest";
+
+				HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
+
+				if (response.IsSuccessStatusCode)
+				{
+					string responseBody = await response.Content.ReadAsStringAsync();
+					var release = JsonConvert.DeserializeObject<GitHubRelease>(responseBody);
+					if (release != null && release.Assets != null)
+					{
+						var targetAsset = release.Assets.FirstOrDefault(asset => asset.Name.Contains(Environment.Is64BitOperatingSystem ? "x64" : "x86"));
+
+						if (targetAsset != null)
+						{
+							return targetAsset;
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Error fetching latest release: " + ex.Message);
+			}
+
+			return null;
+		}
+
+		private async Task<bool> CheckForUpdates(bool force = false)
+		{
 			if (!force && !loaderini.UpdateCheck)
 			{
 				return false;
@@ -1211,46 +1245,51 @@ namespace SADXModManager
 			checkedForUpdates = true;
 			loaderini.UpdateTime = DateTime.UtcNow.ToFileTimeUtc();
 
-			using (var wc = new WebClient())
+			using (var wc = new HttpClient())
 			{
 				try
 				{
+					var release = await GetLatestReleaseNewManager(wc);
 
-					using (var dlg = new UpdateMessageDialog("New", "This will download and Install the new Mod Manager.\n Do you want to continue?\r"))
-					{
-						if (dlg.ShowDialog(this) == DialogResult.Yes)
+					if (release != null) 
+					{ 
+						using (var dlg = new UpdateMessageDialog("New", "This will download and Install the new Mod Manager.\n Do you want to continue?\r"))
 						{
-							DialogResult result = DialogResult.OK;
-							do
+							if (dlg.ShowDialog(this) == DialogResult.Yes)
 							{
-								try
+								DialogResult result = DialogResult.OK;
+								do
 								{
-									if (!Directory.Exists(updatePath))
+									try
 									{
-										Directory.CreateDirectory(updatePath);
+										if (!Directory.Exists(updatePath))
+										{
+											Directory.CreateDirectory(updatePath);
+										}
 									}
-								}
-								catch (Exception ex)
-								{
-									result = MessageBox.Show(this, "Failed to create temporary update directory:\n" + ex.Message
-																   + "\n\nWould you like to retry?", "Directory Creation Failed", MessageBoxButtons.RetryCancel);
-									if (result == DialogResult.Cancel)
-										return false;
-								}
-							} while (result == DialogResult.Retry);
-						
-							string dlLINK = Environment.Is64BitOperatingSystem ? "https://github.com/X-Hax/SA-Mod-Manager/releases/download/v1.0.0/ModManagerWPF-Release-x64.zip" : "https://github.com/X-Hax/SA-Mod-Manager/releases/download/v1.0.0/ModManagerWPF-Release-x86.zip";
-							using (var dlg2 = new WPFDownloadDialog(dlLINK, updatePath))
-								if (dlg2.ShowDialog(this) == DialogResult.OK)
-								{
-									if (installed) //remove the mod loader since we will use a new one.
+									catch (Exception ex)
 									{
-										File.Delete(datadllpath);
-										File.Move(datadllorigpath, datadllpath);
+										result = MessageBox.Show(this, "Failed to create temporary update directory:\n" + ex.Message
+																	   + "\n\nWould you like to retry?", "Directory Creation Failed", MessageBoxButtons.RetryCancel);
+										if (result == DialogResult.Cancel)
+											return false;
 									}
-									Close();
-									return true;
-								}
+								} while (result == DialogResult.Retry);
+
+								string dlLINK = release.DownloadUrl;
+
+								using (var dlg2 = new WPFDownloadDialog(dlLINK, updatePath))
+									if (dlg2.ShowDialog(this) == DialogResult.OK)
+									{
+										if (installed) //remove the mod loader since we will use a new one.
+										{
+											File.Delete(datadllpath);
+											File.Move(datadllorigpath, datadllpath);
+										}
+										Close();
+										return true;
+									}
+							}
 						}
 					}
 				}
@@ -1733,11 +1772,11 @@ namespace SADXModManager
 			numericUpdateFrequency.Enabled = comboUpdateFrequency.SelectedIndex > 0;
 		}
 
-		private void buttonCheckForUpdates_Click(object sender, EventArgs e)
+		private async void buttonCheckForUpdates_Click(object sender, EventArgs e)
 		{
 			buttonCheckForUpdates.Enabled = false;
 
-			if (CheckForUpdates(true))
+			if (await CheckForUpdates(true))
 			{
 				return;
 			}
