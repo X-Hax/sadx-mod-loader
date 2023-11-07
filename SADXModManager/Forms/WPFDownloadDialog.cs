@@ -132,11 +132,16 @@ namespace ModManagerCommon.Forms
 
 							Process.Start(new ProcessStartInfo("7z.exe", $"x -aoa -o\"{dataDir}\" \"{filePath}\"") { UseShellExecute = false, CreateNoWindow = true }).WaitForExit();
 							string NewManagerPath = Path.Combine(dataDir, "SAModManager.exe");
-
+							string dest = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SAModManager.exe");
 
 							if (File.Exists(NewManagerPath))
 							{
-								File.Move(NewManagerPath, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SAModManager.exe"));
+								if (File.Exists(dest)) //just in case
+								{
+									File.Delete(dest);
+								}
+
+								File.Move(NewManagerPath, dest);
 							}
 
 
