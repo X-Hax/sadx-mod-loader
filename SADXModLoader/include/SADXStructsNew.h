@@ -777,11 +777,11 @@ struct HintMessageTable
 struct PL_ACTION
 {
 	NJS_ACTION* actptr;
-	char objnum;
-	char mtnmode;
-	unsigned __int16 next;
-	float frame;
-	float racio;
+	Uint8 objnum;
+	Sint8 mtnmode;
+	Uint16 next;
+	Float frame;
+	Float racio;
 };
 
 struct PL_JOIN_VERTEX
@@ -789,12 +789,12 @@ struct PL_JOIN_VERTEX
 	NJS_OBJECT* objptr;
 	NJS_OBJECT* srcobj;
 	NJS_OBJECT* dstobj;
-	char numVertex;
-	char inpmode;
-	char srcdepth;
-	char dstdepth;
+	Uint8 numVertex;
+	Sint8 inpmode;
+	Uint8 srcdepth;
+	Uint8 dstdepth;
 	NJS_POINT3* org;
-	unsigned __int16* pnum;
+	Uint16* pnum;
 };
 
 struct bosswk

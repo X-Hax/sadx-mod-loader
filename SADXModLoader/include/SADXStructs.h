@@ -213,11 +213,11 @@ struct LoopHead
 struct AnimData_t
 {
 	NJS_ACTION *Animation;
-	char Instance;
-	char Property;
-	short NextAnim;
-	float TransitionSpeed;
-	float AnimationSpeed;
+	Uint8 Instance;
+	Sint8 Property;
+	Uint16 NextAnim;
+	Float TransitionSpeed;
+	Float AnimationSpeed;
 };
 
 struct PhysicsData_t
