@@ -195,10 +195,20 @@ namespace SADXModManager
 			if ((os.Platform == PlatformID.Win32NT || os.Platform == PlatformID.Win32Windows) &&
 				(os.Version.Major < 6 || (os.Version.Major == 6 && os.Version.Minor < 2)))
 			{
-				// Windows 7 or earlier.
-				// TODO: Make sure this font exists.
-				// NOTE: U+2912 and U+2913 are missing in Bold, so use Regular.
-				boldFont = new Font("Cambria", this.Font.Size * 1.25f, FontStyle.Regular);
+				// Windows XP.
+				if (os.Version.Major <= 5)
+				{
+					boldFont = new Font("Lucida Sans Unicode", this.Font.Size * 1.25f, FontStyle.Regular);
+					modTopButton.Text = "⇈";
+					modBottomButton.Text = "⇊";
+				}
+				else
+				{
+					// Windows 7 or earlier.
+					// TODO: Make sure this font exists.
+					// NOTE: U+2912 and U+2913 are missing in Bold, so use Regular.
+					boldFont = new Font("Cambria", this.Font.Size * 1.25f, FontStyle.Regular);
+				}
 			}
 			else
 			{
