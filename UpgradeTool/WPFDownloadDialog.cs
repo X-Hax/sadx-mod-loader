@@ -132,6 +132,17 @@ namespace ModManagerCommon.Forms
 							Process.Start(new ProcessStartInfo("7z.exe", $"x -aoa -o\"{dataDir}\" \"{filePath}\"") { UseShellExecute = false, CreateNoWindow = true }).WaitForExit();
 							string NewManagerPath = Path.Combine(dataDir, "SAModManager.exe");
 							string dest = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SAModManager.exe");
+							bool first = dest.ToLower().Contains("mods/.updates");
+							bool second = dest.ToLower().Contains("mods\\.updates");
+
+							if (first)
+							{
+								dest = dest.Replace("mods/.updates/SADXModLoader", "");
+							}
+							else if (second)
+							{
+								dest = dest.Replace("mods\\.updates\\SADXModLoader", "");
+							}
 
 							if (File.Exists(NewManagerPath))
 							{
@@ -143,8 +154,18 @@ namespace ModManagerCommon.Forms
 								File.Move(NewManagerPath, dest);
 							}
 
-
-							Process.Start("SAModManager.exe", $"vanillaUpdate \"{dataDir}\"");
+							if (File.Exists("SAModManager.exe"))
+							{
+								Process.Start("SAModManager.exe", $"vanillaUpdate \"{dataDir}\"");
+							}
+							else if (File.Exists(dest))
+							{
+								Process.Start(dest, $"vanillaUpdate \"{dataDir}\"");
+							}
+							else
+							{
+								MessageBox.Show("Failed to open the new manager\nplease download the update manually.");
+							}
 						}, token))
 						{
 							task.Start();
