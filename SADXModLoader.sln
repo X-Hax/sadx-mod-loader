@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2026
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33529.622
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SADXModLoader", "SADXModLoader\SADXModLoader.vcxproj", "{B537B54A-67A7-4CD8-9679-457E498E592F}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -15,6 +15,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModLoaderCommon", "mod-loader-common\ModLoaderCommon\ModLoaderCommon.vcxproj", "{EC0293F5-4BCF-46B2-8133-18CAEA141C5B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModManagerCommon", "mod-loader-common\ModManagerCommon\ModManagerCommon.csproj", "{4A480502-79B5-4E1E-8D67-16C514BB13CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpgradeTool", "UpgradeTool\UpgradeTool.csproj", "{B4DBF215-E2C5-4179-8974-8A62DAAEADF3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +44,10 @@ Global
 		{4A480502-79B5-4E1E-8D67-16C514BB13CD}.Debug|x86.Build.0 = Debug|Any CPU
 		{4A480502-79B5-4E1E-8D67-16C514BB13CD}.Release|x86.ActiveCfg = Release|Any CPU
 		{4A480502-79B5-4E1E-8D67-16C514BB13CD}.Release|x86.Build.0 = Release|Any CPU
+		{B4DBF215-E2C5-4179-8974-8A62DAAEADF3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B4DBF215-E2C5-4179-8974-8A62DAAEADF3}.Debug|x86.Build.0 = Debug|Any CPU
+		{B4DBF215-E2C5-4179-8974-8A62DAAEADF3}.Release|x86.ActiveCfg = Release|Any CPU
+		{B4DBF215-E2C5-4179-8974-8A62DAAEADF3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

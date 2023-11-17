@@ -195,10 +195,20 @@ namespace SADXModManager
 			if ((os.Platform == PlatformID.Win32NT || os.Platform == PlatformID.Win32Windows) &&
 				(os.Version.Major < 6 || (os.Version.Major == 6 && os.Version.Minor < 2)))
 			{
-				// Windows 7 or earlier.
-				// TODO: Make sure this font exists.
-				// NOTE: U+2912 and U+2913 are missing in Bold, so use Regular.
-				boldFont = new Font("Cambria", this.Font.Size * 1.25f, FontStyle.Regular);
+				// Windows XP.
+				if (os.Version.Major <= 5)
+				{
+					boldFont = new Font("Lucida Sans Unicode", this.Font.Size * 1.25f, FontStyle.Regular);
+					modTopButton.Text = "⇈";
+					modBottomButton.Text = "⇊";
+				}
+				else
+				{
+					// Windows 7 or earlier.
+					// TODO: Make sure this font exists.
+					// NOTE: U+2912 and U+2913 are missing in Bold, so use Regular.
+					boldFont = new Font("Cambria", this.Font.Size * 1.25f, FontStyle.Regular);
+				}
 			}
 			else
 			{
@@ -382,9 +392,6 @@ namespace SADXModManager
 
 		private void MainForm_Shown(object sender, EventArgs e)
 		{
-			if (CheckForUpdates())
-				return;
-
 			if (!File.Exists(datadllpath))
 			{
 				MessageBox.Show(this, "CHRMODELS.dll could not be found.\n\n" +
@@ -1195,75 +1202,6 @@ namespace SADXModManager
 			HandleUri(args.Uri);
 		}
 
-		private bool CheckForUpdates(bool force = false)
-		{
-			if (!force && !loaderini.UpdateCheck)
-			{
-				return false;
-			}
-
-			if (!force && !UpdateTimeElapsed(loaderini.UpdateUnit, loaderini.UpdateFrequency, DateTime.FromFileTimeUtc(loaderini.UpdateTime)))
-			{
-				return false;
-			}
-
-			checkedForUpdates = true;
-			loaderini.UpdateTime = DateTime.UtcNow.ToFileTimeUtc();
-
-			if (!File.Exists("sadxmlver.txt"))
-			{
-				return false;
-			}
-
-			using (var wc = new WebClient())
-			{
-				try
-				{
-					string msg = wc.DownloadString("http://mm.reimuhakurei.net/toolchangelog.php?tool=sadxml&rev=" + File.ReadAllText("sadxmlver.txt"));
-
-					if (msg.Length > 0)
-					{
-						using (var dlg = new UpdateMessageDialog("SADX", msg.Replace("\n", "\r\n")))
-						{
-							if (dlg.ShowDialog(this) == DialogResult.Yes)
-							{
-								DialogResult result = DialogResult.OK;
-								do
-								{
-									try
-									{
-										if (!Directory.Exists(updatePath))
-										{
-											Directory.CreateDirectory(updatePath);
-										}
-									}
-									catch (Exception ex)
-									{
-										result = MessageBox.Show(this, "Failed to create temporary update directory:\n" + ex.Message
-																	   + "\n\nWould you like to retry?", "Directory Creation Failed", MessageBoxButtons.RetryCancel);
-										if (result == DialogResult.Cancel) return false;
-									}
-								} while (result == DialogResult.Retry);
-
-								using (var dlg2 = new LoaderDownloadDialog("http://mm.reimuhakurei.net/sadxmods/SADXModLoader.7z", updatePath))
-									if (dlg2.ShowDialog(this) == DialogResult.OK)
-									{
-										Close();
-										return true;
-									}
-							}
-						}
-					}
-				}
-				catch
-				{
-					MessageBox.Show(this, "Unable to retrieve update information.", "SADX Mod Manager");
-				}
-			}
-
-			return false;
-		}
-
 		private void InitializeWorker()
 		{
 			if (updateChecker != null)
@@ -1737,11 +1675,6 @@ namespace SADXModManager
 		private void buttonCheckForUpdates_Click(object sender, EventArgs e)
 		{
 			buttonCheckForUpdates.Enabled = false;
-
-			if (CheckForUpdates(true))
-			{
-				return;
-			}
 
 			manualModUpdate = true;
 			CheckForModUpdates(true);
