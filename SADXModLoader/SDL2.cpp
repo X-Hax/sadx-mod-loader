@@ -125,21 +125,21 @@ void SDL2_OnInput()
 
 void SDL2_Init()
 {
-	if (GetModuleHandleA("sadx-input-mod") != nullptr)
+	if (GetModuleHandle(L"sadx-input-mod") != nullptr)
 	{
 		isInputMod = true;
 		return;
 	}
 
-	std::string sdlFolderPath = appPath + "extlib/SDL2/";
+	std::wstring sdlFolderPath = appPath + L"extlib\\SDL2\\";
 
 	//if path doesn't exist, assume the dll is in the game folder directly
-	if (!FileExists(sdlFolderPath + "SDL2.dll"))
-		sdlFolderPath = "extlib/SDL2/";
+	if (!FileExists(sdlFolderPath + L"SDL2.dll"))
+		sdlFolderPath = L"extlib\\SDL2\\";
 
-	std::string dll = sdlFolderPath + "SDL2.dll";
+	std::wstring dll = sdlFolderPath + L"SDL2.dll";
 
-	const auto handle = LoadLibraryA(dll.c_str());
+	const auto handle = LoadLibrary(dll.c_str());
 
 	if (handle == nullptr)
 	{
@@ -195,11 +195,14 @@ void SDL2_Init()
 	input::controller_enabled[0] = true;
 	input::controller_enabled[1] = true;
 
-	std::string dbpath = sdlFolderPath + "gamecontrollerdb.txt";
+	std::wstring dbpath = sdlFolderPath + L"gamecontrollerdb.txt";
 
 	if (FileExists(dbpath))
 	{
-		int result = SDL_GameControllerAddMappingsFromFile(dbpath.c_str());
+		char pathbuf[MAX_PATH];
+		sprintf(pathbuf, "%ws", dbpath.c_str());
+
+		int result = SDL_GameControllerAddMappingsFromFile(pathbuf);
 
 		if (result == -1)
 		{
@@ -211,7 +214,7 @@ void SDL2_Init()
 		}
 	}
 
-	const std::string config_path = sdlFolderPath + "SDLconfig.ini";
+	const std::wstring config_path = sdlFolderPath + L"SDLconfig.ini";
 
 #ifdef _DEBUG
 	const bool debug_default = true;
@@ -249,7 +252,7 @@ void SDL2_Init()
 	input::keys.DPad_Left = config.getInt("Keyboard", "dpleft", 100);
 	input::keys.DPad_Right = config.getInt("Keyboard", "dpright", 102);
 	// This defaults RadialR to enabled if smooth-cam is detected.
-	const bool smooth_cam = GetModuleHandleA("smooth-cam.dll") != nullptr;
+	const bool smooth_cam = GetModuleHandle(L"smooth-cam.dll") != nullptr;
 
 	for (ushort i = 0; i < GAMEPAD_COUNT; i++)
 	{

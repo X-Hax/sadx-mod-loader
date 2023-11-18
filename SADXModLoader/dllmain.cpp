@@ -241,19 +241,18 @@ static void __cdecl ProcessCodes()
 }
 
 //used to get external lib location and extra config
-std::string appPath = "";
-std::string extLibPath = "";
+std::wstring appPath;
+std::wstring extLibPath;
 
 void SetAppPathConfig()
 {
-	TCHAR appDataLocalPath[MAX_PATH];
+	WCHAR appDataLocalPath[MAX_PATH];
 
 	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalPath)))
 	{
-		std::wstring wStr = appDataLocalPath;
-		appPath = std::string(wStr.begin(), wStr.end());
-		appPath += "/SAManager/";
-		extLibPath = appPath + "extlib/";
+		appPath = appDataLocalPath;
+		appPath += L"\\SAManager\\";
+		extLibPath = appPath + L"extlib\\";
 	}
 }
 
@@ -1040,22 +1039,22 @@ void ProcessVoiceDurationRegisters()
 }
 
 //Following order for the BASS dlls is REALLY important, NEVER touch it or BASS will FAIL to load.
-const std::string bassDLLs[] =
+const std::wstring bassDLLs[] =
 {
-	"bass.dll",
-	"libatrac9.dll",
-	"libcelt-0061.dll",
-	"libcelt-0110.dll",
-	"libg719_decode.dll",
-	"libmpg123-0.dll",
-	"libspeex-1.dll",
-	"libvorbis.dll",
-	"avutil-vgmstream-57.dll",
-	"avcodec-vgmstream-59.dll",
-	"avformat-vgmstream-59.dll",
-	"jansson.dll",
-	"swresample-vgmstream-4.dll",
-	"bass_vgmstream.dll",
+	L"bass.dll",
+	L"libatrac9.dll",
+	L"libcelt-0061.dll",
+	L"libcelt-0110.dll",
+	L"libg719_decode.dll",
+	L"libmpg123-0.dll",
+	L"libspeex-1.dll",
+	L"libvorbis.dll",
+	L"avutil-vgmstream-57.dll",
+	L"avcodec-vgmstream-59.dll",
+	L"avformat-vgmstream-59.dll",
+	L"jansson.dll",
+	L"swresample-vgmstream-4.dll",
+	L"bass_vgmstream.dll",
 };
 
 static void __cdecl InitAudio()
@@ -1063,17 +1062,17 @@ static void __cdecl InitAudio()
 
 	if (loaderSettings.EnableBassMusic)
 	{
-		string bassFolder = extLibPath + "BASS/";
+		wstring bassFolder = extLibPath + L"BASS\\";
 
-		if (!FileExists(bassFolder + "bass.dll"))
-			bassFolder = "BASS/";
+		if (!FileExists(bassFolder + L"bass.dll"))
+			bassFolder = L"BASS\\";
 
 		bool bassDLL = false;
 
 		for (uint8_t i = 0; i < LengthOfArray(bassDLLs); i++)
 		{
-			string fullPath = bassFolder + bassDLLs[i];
-			bassDLL = LoadLibraryA(fullPath.c_str());
+			wstring fullPath = bassFolder + bassDLLs[i];
+			bassDLL = LoadLibrary(fullPath.c_str());
 		}
 
 		if (bassDLL)

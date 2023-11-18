@@ -1,4 +1,4 @@
 #pragma once
 
-extern std::string appPath;
+extern std::wstring appPath;
 extern LoaderSettings loaderSettings;
