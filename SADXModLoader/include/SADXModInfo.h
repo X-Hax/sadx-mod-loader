@@ -44,7 +44,6 @@ struct LoaderSettings
 	bool DebugScreen;
 	bool DebugFile;
 	bool DebugCrashLog;
-	bool DisableCDCheck;
 	int HorizontalResolution;
 	int VerticalResolution;
 	bool ForceAspectRatio;
@@ -65,11 +64,9 @@ struct LoaderSettings
 	bool ScaleHud;
 	int BackgroundFillMode;
 	int FmvFillMode;
-	bool DisablePolyBuff;
+	bool EnableBassMusic;
 	bool EnableBassSFX;
 	int SEVolume;
-	bool DisableMaterialColorFix;
-	bool DisableInterpolationFix;
 	int TestSpawnLevel;
 	int TestSpawnAct;
 	int TestSpawnCharacter;
@@ -81,6 +78,22 @@ struct LoaderSettings
 	int TestSpawnEvent;
 	int TestSpawnGameMode;
 	int TestSpawnSaveID;
+	//Patches
+	bool HRTFSound;
+	bool CCEF;
+	bool PolyBuff;
+	bool MaterialColorFix;
+	bool InterpolationFix;
+	bool FovFix;
+	bool SCFix;
+	bool Chaos2CrashFix;
+	bool ChunkSpecFix;
+	bool E102PolyFix;
+	bool ChaoPanelFix;
+	bool PixelOffsetFix;
+	bool LightFix;
+	bool KillGbix;
+	bool DisableCDCheck;
 };
 
 struct ModDependency

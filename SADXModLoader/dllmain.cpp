@@ -56,6 +56,9 @@ using std::vector;
 #include "InterpolationFixes.h"
 #include "MinorPatches.h"
 #include "jvList.h"
+#include "Gbix.h"
+#include "input.h"
+#include <ShlObj.h>
 #include "gvm.h"
 
 static HINSTANCE g_hinstDll = nullptr;
@@ -237,6 +240,21 @@ static void __cdecl ProcessCodes()
 	}
 }
 
+//used to get external lib location and extra config
+std::wstring appPath;
+std::wstring extLibPath;
+
+void SetAppPathConfig()
+{
+	WCHAR appDataLocalPath[MAX_PATH];
+
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalPath)))
+	{
+		appPath = appDataLocalPath;
+		appPath += L"\\SAManager\\";
+		extLibPath = appPath + L"extlib\\";
+	}
+}
 
 static bool dbgConsole, dbgScreen;
 static bool pauseWhenInactive;
@@ -911,6 +929,7 @@ vector<MusicInfo> _MusicList;
 vector<__int16> _USVoiceDurationList;
 vector<__int16> _JPVoiceDurationList;
 extern HelperFunctions helperFunctions;
+LoaderSettings loaderSettings = {};
 
 static const char* const dlldatakeys[] = {
 	"CHRMODELSData",
@@ -934,6 +953,19 @@ void __cdecl SetLanguage()
 Bool __cdecl FixEKey(int i)
 {
 	return IsFreeCameraAllowed() == TRUE && GetKey(i) == TRUE;
+}
+
+const auto loc_794566 = (void*)0x00794566;
+
+void __declspec(naked) PolyBuff_Init_FixVBuffParams()
+{
+	__asm
+	{
+		push D3DPOOL_MANAGED
+		push ecx
+		push D3DUSAGE_WRITEONLY
+		jmp loc_794566
+	}
 }
 
 void __cdecl Direct3D_TextureFilterPoint_ForceLinear()
@@ -1006,6 +1038,153 @@ void ProcessVoiceDurationRegisters()
 	_JPVoiceDurationList.clear();
 }
 
+//Following order for the BASS dlls is REALLY important, NEVER touch it or BASS will FAIL to load.
+const std::wstring bassDLLs[] =
+{
+	L"bass.dll",
+	L"libatrac9.dll",
+	L"libcelt-0061.dll",
+	L"libcelt-0110.dll",
+	L"libg719_decode.dll",
+	L"libmpg123-0.dll",
+	L"libspeex-1.dll",
+	L"libvorbis.dll",
+	L"avutil-vgmstream-57.dll",
+	L"avcodec-vgmstream-59.dll",
+	L"avformat-vgmstream-59.dll",
+	L"jansson.dll",
+	L"swresample-vgmstream-4.dll",
+	L"bass_vgmstream.dll",
+};
+
+static void __cdecl InitAudio()
+{
+
+	if (loaderSettings.EnableBassMusic)
+	{
+		wstring bassFolder = extLibPath + L"BASS\\";
+
+		if (!FileExists(bassFolder + L"bass.dll"))
+			bassFolder = L"BASS\\";
+
+		bool bassDLL = false;
+
+		for (uint8_t i = 0; i < LengthOfArray(bassDLLs); i++)
+		{
+			wstring fullPath = bassFolder + bassDLLs[i];
+			bassDLL = LoadLibrary(fullPath.c_str());
+		}
+
+		if (bassDLL)
+		{
+			WriteCall((void*)0x42544C, PlayMusicFile_r);
+			WriteCall((void*)0x4254F4, PlayVoiceFile_r);
+			WriteCall((void*)0x425569, PlayVoiceFile_r);
+			WriteCall((void*)0x513187, PlayVideoFile_r);
+			WriteCall((void*)0x425488, PlayMusicFile_CD_r);
+			WriteCall((void*)0x425591, PlayVoiceFile_CD_r);
+			WriteCall((void*)0x42551D, PlayVoiceFile_CD_r);
+			WriteJump((void*)0x40D1EA, WMPInit_r);
+			WriteJump((void*)0x40CF50, WMPRestartMusic_r);
+			WriteJump((void*)0x40D060, PauseMusic_r);
+			WriteJump((void*)0x40D0A0, ResumeMusic_r);
+			WriteJump((void*)0x40CFF0, WMPClose_r);
+			WriteJump((void*)0x40D28A, WMPRelease_r);
+			WriteJump((void*)0x40CF20, sub_40CF20_r);
+			PrintDebug("Loaded Bass DLLs dependencies\n");
+		}
+		else
+		{
+			PrintDebug("Failed to load bass DLL dependencies\n");
+		}
+	}
+
+	if (loaderSettings.HRTFSound)
+	{
+		// allow HRTF 3D sound
+		WriteData<uint8_t>(reinterpret_cast<uint8_t*>(0x00402773), 0xEBu);
+	}
+}
+
+void InitPatches()
+{
+	//Fix the game not saving camera setting properly 
+	if (loaderSettings.CCEF)
+	{
+		WriteData((int16_t*)0x438330, (int16_t)0x0D81);
+		WriteData((int16_t*)0x434870, (int16_t)0x0D81);
+	}
+
+	// Fixes N-sided polygons (Gamma's headlight) by using
+	// triangle strip vertex buffer initializers.
+
+	if (loaderSettings.E102PolyFix)
+	{
+		for (size_t i = 0; i < MeshSetInitFunctions.size(); ++i)
+		{
+			auto& a = MeshSetInitFunctions[i];
+			a[NJD_MESHSET_N >> 14] = a[NJD_MESHSET_TRIMESH >> 14];
+		}
+
+		for (size_t i = 0; i < PolyBuffDraw_VertexColor.size(); ++i)
+		{
+			auto& a = PolyBuffDraw_VertexColor[i];
+			a[NJD_MESHSET_N >> 14] = a[NJD_MESHSET_TRIMESH >> 14];
+		}
+
+		for (size_t i = 0; i < PolyBuffDraw_NoVertexColor.size(); ++i)
+		{
+			auto& a = PolyBuffDraw_NoVertexColor[i];
+			a[NJD_MESHSET_N >> 14] = a[NJD_MESHSET_TRIMESH >> 14];
+		}
+	}
+
+	if (loaderSettings.PixelOffsetFix)
+	{
+		// Replaces half-pixel offset addition with subtraction
+		WriteData((uint8_t*)0x0077DE1E, (uint8_t)0x25); // njDrawQuadTextureEx
+		WriteData((uint8_t*)0x0077DE33, (uint8_t)0x25); // njDrawQuadTextureEx
+		WriteData((uint8_t*)0x0078E822, (uint8_t)0x25); // DrawRect_TextureVertexTriangleStrip
+		WriteData((uint8_t*)0x0078E83C, (uint8_t)0x25); // DrawRect_TextureVertexTriangleStrip
+		WriteData((uint8_t*)0x0078E991, (uint8_t)0x25); // njDrawTriangle2D_List
+		WriteData((uint8_t*)0x0078E9AE, (uint8_t)0x25); // njDrawTriangle2D_List
+		WriteData((uint8_t*)0x0078EA41, (uint8_t)0x25); // Direct3D_DrawTriangleFan2D
+		WriteData((uint8_t*)0x0078EA5E, (uint8_t)0x25); // Direct3D_DrawTriangleFan2D
+		WriteData((uint8_t*)0x0078EAE1, (uint8_t)0x25); // njDrawTriangle2D_Strip
+		WriteData((uint8_t*)0x0078EAFE, (uint8_t)0x25); // njDrawTriangle2D_Strip
+		WriteData((uint8_t*)0x0077DBFC, (uint8_t)0x25); // njDrawPolygon
+		WriteData((uint8_t*)0x0077DC16, (uint8_t)0x25); // njDrawPolygon
+		WriteData((uint8_t*)0x0078E8F1, (uint8_t)0x25); // njDrawLine2D_Direct3D
+		WriteData((uint8_t*)0x0078E90E, (uint8_t)0x25); // njDrawLine2D_Direct3D
+	}
+
+	if (loaderSettings.ChaoPanelFix)
+	{
+		// Chao stat panel screen dimensions fix
+		WriteData((float**)0x007377FE, (float*)&_nj_screen_.w);
+	}
+
+	if (loaderSettings.LightFix)
+	{
+		// Fix light incorrectly being applied on LandTables
+		WriteCall(reinterpret_cast<void*>(0x0043A6D5), FixLandTableLightType);
+
+		// Enable light type preservation in the draw queue
+		WriteCall(reinterpret_cast<void*>(0x004088B1), PreserveLightType);
+
+		// Do not reset light type for queued models
+		WriteData<2>(reinterpret_cast<void*>(0x004088A6), 0x90i8);
+	}
+
+	if (loaderSettings.ChunkSpecFix)
+		ChunkSpecularFix_Init();
+
+
+	if (loaderSettings.KillGbix)
+		Init_NOGbixHack();
+}
+
+
 static vector<string>& split(const string& s, char delim, vector<string>& elems)
 {
 	std::stringstream ss(s);
@@ -1069,8 +1248,27 @@ static uint8_t ParseCharacter(const string& str)
 }
 extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath);
 
-LoaderSettings loaderSettings = {};
+
 std::vector<Mod> modlist;
+
+bool IsWindowsVistaOrGreater()
+{
+	// Taken from https://stackoverflow.com/questions/1963992/check-windows-version
+	OSVERSIONINFOEXW osvi = {};
+	osvi.dwOSVersionInfoSize = sizeof(osvi);
+	DWORDLONG const dwlConditionMask = VerSetConditionMask(
+		VerSetConditionMask(
+			VerSetConditionMask(
+				0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+			VER_MINORVERSION, VER_GREATER_EQUAL),
+		VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
+	osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_VISTA);
+	osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_VISTA);
+	osvi.wServicePackMajor = 0;
+
+	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
+}
+
 static void __cdecl InitMods()
 {
 	// Hook present function to handle device lost/reset states
@@ -1084,6 +1282,8 @@ static void __cdecl InitMods()
 	}
 	unique_ptr<IniFile> ini(new IniFile(f_ini));
 	fclose(f_ini);
+
+	SetAppPathConfig();
 
 	// Get sonic.exe's path and filename.
 	wchar_t pathbuf[MAX_PATH];
@@ -1108,11 +1308,10 @@ static void __cdecl InitMods()
 	loaderSettings.DebugScreen = setgrp->getBool("DebugScreen");
 	loaderSettings.DebugFile = setgrp->getBool("DebugFile");
 	loaderSettings.DebugCrashLog = setgrp->getBool("DebugCrashLog", true);
-	loaderSettings.DisableCDCheck = setgrp->getBool("DisableCDCheck");
 	loaderSettings.HorizontalResolution = setgrp->getInt("HorizontalResolution", 640);
 	loaderSettings.VerticalResolution = setgrp->getInt("VerticalResolution", 480);
 	loaderSettings.ForceAspectRatio = setgrp->getBool("ForceAspectRatio");
-	loaderSettings.WindowedFullscreen = setgrp->getBool("WindowedFullscreen");
+	loaderSettings.WindowedFullscreen = setgrp->getBool("Borderless");
 	loaderSettings.EnableVsync = setgrp->getBool("EnableVsync", true);
 	loaderSettings.AutoMipmap = setgrp->getBool("AutoMipmap", true);
 	loaderSettings.TextureFilter = setgrp->getBool("TextureFilter", true);
@@ -1126,14 +1325,13 @@ static void __cdecl InitMods()
 	loaderSettings.WindowHeight = setgrp->getInt("WindowHeight", 480);
 	loaderSettings.MaintainWindowAspectRatio = setgrp->getBool("MaintainWindowAspectRatio");
 	loaderSettings.ResizableWindow = setgrp->getBool("ResizableWindow");
-	loaderSettings.ScaleHud = setgrp->getBool("ScaleHud", false);
+	loaderSettings.ScaleHud = setgrp->getBool("ScaleHud", true);
 	loaderSettings.BackgroundFillMode = setgrp->getInt("BackgroundFillMode", uiscale::FillMode_Fill);
 	loaderSettings.FmvFillMode = setgrp->getInt("FmvFillMode", uiscale::FillMode_Fit);
-	loaderSettings.DisablePolyBuff = setgrp->getBool("DisablePolyBuff", false);
+	loaderSettings.EnableBassMusic = setgrp->getBool("EnableBassMusic", true);
 	loaderSettings.EnableBassSFX = setgrp->getBool("EnableBassSFX", false);
 	loaderSettings.SEVolume = setgrp->getInt("SEVolume", 100);
-	loaderSettings.DisableMaterialColorFix = setgrp->getBool("DisableMaterialColorFix", false);
-	loaderSettings.DisableInterpolationFix = setgrp->getBool("DisableInterpolationFix", false);
+
 	loaderSettings.TestSpawnLevel = setgrp->getInt("TestSpawnLevel");
 	loaderSettings.TestSpawnAct = setgrp->getInt("TestSpawnAct");
 	loaderSettings.TestSpawnCharacter = setgrp->getInt("TestSpawnCharacter");
@@ -1145,6 +1343,23 @@ static void __cdecl InitMods()
 	loaderSettings.TestSpawnEvent = setgrp->getInt("TestSpawnEvent");
 	loaderSettings.TestSpawnGameMode = setgrp->getInt("TestSpawnGameMode");
 	loaderSettings.TestSpawnSaveID = setgrp->getInt("TestSpawnSaveID");
+
+	//Patches
+	loaderSettings.HRTFSound = setgrp->getBool("HRTFSound", true);
+	loaderSettings.CCEF  = setgrp->getBool("CCEF", true);
+	loaderSettings.PolyBuff  = setgrp->getBool("PolyBuff", true);
+	loaderSettings.MaterialColorFix = setgrp->getBool("MaterialColorFix", true);
+	loaderSettings.InterpolationFix = setgrp->getBool("InterpolationFix", true);
+	loaderSettings.FovFix = setgrp->getBool("FovFix", true);
+	loaderSettings.SCFix = setgrp->getBool("SCFix", true);
+	loaderSettings.Chaos2CrashFix = setgrp->getBool("Chaos2CrashFix", true);
+	loaderSettings.ChunkSpecFix = setgrp->getBool("ChunkSpecFix", true);
+	loaderSettings.E102PolyFix = setgrp->getBool("E102PolyFix", true);
+	loaderSettings.ChaoPanelFix = setgrp->getBool("ChaoPanelFix ", true);
+	loaderSettings.PixelOffsetFix = setgrp->getBool("PixelOffsetFix ", true);
+	loaderSettings.LightFix = setgrp->getBool("LightFix", true);
+	loaderSettings.KillGbix = setgrp->getBool("KillGbix", true);
+	loaderSettings.DisableCDCheck = setgrp->getBool("DisableCDCheck", false);
 
 	if (loaderSettings.DebugConsole)
 	{
@@ -1181,6 +1396,13 @@ static void __cdecl InitMods()
 #endif /* MODLOADER_GIT_VERSION */
 	}
 
+	// Set process DPI awareness for window resize on Vista and above
+	if (IsWindowsVistaOrGreater())
+	{
+		if (!SetProcessDPIAware())
+			PrintDebug("Unable to set process DPI awareness.\n");
+	}
+
 	WriteJump((void*)0x789E50, CreateSADXWindow_asm); // override window creation function
 	// Other various settings.
 	if (loaderSettings.DisableCDCheck)
@@ -1203,7 +1425,8 @@ static void __cdecl InitMods()
 		VerticalStretch = static_cast<float>(VerticalResolution) / 480.0f;
 	}
 
-	fov::initialize();
+	if (loaderSettings.FovFix)
+		fov::initialize();
 
 	voiceLanguage = loaderSettings.VoiceLanguage;
 	textLanguage = loaderSettings.TextLanguage;
@@ -1233,6 +1456,8 @@ static void __cdecl InitMods()
 		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
 		// MeshSetBuffer_CreateVertexBuffer: Remove D3DUSAGE_DYNAMIC
 		WriteData((short*)0x007853F6, (short)D3DUSAGE_WRITEONLY);
+		// PolyBuff_Init: Remove D3DUSAGE_DYNAMIC and set pool to D3DPOOL_MANAGED
+		WriteJump((void*)0x0079455F, PolyBuff_Init_FixVBuffParams);
 	}
 
 	pauseWhenInactive = loaderSettings.PauseWhenInactive;
@@ -1251,75 +1476,12 @@ static void __cdecl InitMods()
 	*(void**)0x38A5DB8 = (void*)0x38A5D94; // depth buffer fix
 	WriteCall((void*)0x402614, SetLanguage);
 	WriteCall((void*)0x437547, FixEKey);
-	WriteCall((void*)0x42544C, PlayMusicFile_r);
-	WriteCall((void*)0x4254F4, PlayVoiceFile_r);
-	WriteCall((void*)0x425569, PlayVoiceFile_r);
-	WriteCall((void*)0x513187, PlayVideoFile_r);
-	WriteCall((void*)0x425488, PlayMusicFile_CD_r);
-	WriteCall((void*)0x425591, PlayVoiceFile_CD_r);
-	WriteCall((void*)0x42551D, PlayVoiceFile_CD_r);
-	WriteJump((void*)0x40D1EA, WMPInit_r);
-	WriteJump((void*)0x40CF50, WMPRestartMusic_r);
-	WriteJump((void*)0x40D060, PauseMusic_r);
-	WriteJump((void*)0x40D0A0, ResumeMusic_r);
-	WriteJump((void*)0x40CFF0, WMPClose_r);
-	WriteJump((void*)0x40D28A, WMPRelease_r);
+
+	InitAudio();
+
 	WriteJump(LoadSoundList, LoadSoundList_r);
-	WriteJump((void*)0x40CF20, sub_40CF20_r);
 
-	// allow HRTF 3D sound
-	WriteData<uint8_t>(reinterpret_cast<uint8_t*>(0x00402773), 0xEBu);
-
-	// Fixes N-sided polygons (Gamma's headlight) by using
-	// triangle strip vertex buffer initializers.
-
-	for (size_t i = 0; i < MeshSetInitFunctions.size(); ++i)
-	{
-		auto& a = MeshSetInitFunctions[i];
-		a[NJD_MESHSET_N >> 14] = a[NJD_MESHSET_TRIMESH >> 14];
-	}
-
-	for (size_t i = 0; i < PolyBuffDraw_VertexColor.size(); ++i)
-	{
-		auto& a = PolyBuffDraw_VertexColor[i];
-		a[NJD_MESHSET_N >> 14] = a[NJD_MESHSET_TRIMESH >> 14];
-	}
-
-	for (size_t i = 0; i < PolyBuffDraw_NoVertexColor.size(); ++i)
-	{
-		auto& a = PolyBuffDraw_NoVertexColor[i];
-		a[NJD_MESHSET_N >> 14] = a[NJD_MESHSET_TRIMESH >> 14];
-	}
-
-	// Replaces half-pixel offset addition with subtraction
-	WriteData((uint8_t*)0x0077DE1E, (uint8_t)0x25); // njDrawQuadTextureEx
-	WriteData((uint8_t*)0x0077DE33, (uint8_t)0x25); // njDrawQuadTextureEx
-	WriteData((uint8_t*)0x0078E822, (uint8_t)0x25); // DrawRect_TextureVertexTriangleStrip
-	WriteData((uint8_t*)0x0078E83C, (uint8_t)0x25); // DrawRect_TextureVertexTriangleStrip
-	WriteData((uint8_t*)0x0078E991, (uint8_t)0x25); // njDrawTriangle2D_List
-	WriteData((uint8_t*)0x0078E9AE, (uint8_t)0x25); // njDrawTriangle2D_List
-	WriteData((uint8_t*)0x0078EA41, (uint8_t)0x25); // Direct3D_DrawTriangleFan2D
-	WriteData((uint8_t*)0x0078EA5E, (uint8_t)0x25); // Direct3D_DrawTriangleFan2D
-	WriteData((uint8_t*)0x0078EAE1, (uint8_t)0x25); // njDrawTriangle2D_Strip
-	WriteData((uint8_t*)0x0078EAFE, (uint8_t)0x25); // njDrawTriangle2D_Strip
-	WriteData((uint8_t*)0x0077DBFC, (uint8_t)0x25); // njDrawPolygon
-	WriteData((uint8_t*)0x0077DC16, (uint8_t)0x25); // njDrawPolygon
-	WriteData((uint8_t*)0x0078E8F1, (uint8_t)0x25); // njDrawLine2D_Direct3D
-	WriteData((uint8_t*)0x0078E90E, (uint8_t)0x25); // njDrawLine2D_Direct3D
-
-	// Chao stat panel screen dimensions fix
-	WriteData((float**)0x007377FE, (float*)&_nj_screen_.w);
-
-	// Fix light incorrectly being applied on LandTables
-	WriteCall(reinterpret_cast<void*>(0x0043A6D5), FixLandTableLightType);
-
-	// Enable light type preservation in the draw queue
-	WriteCall(reinterpret_cast<void*>(0x004088B1), PreserveLightType);
-
-	// Do not reset light type for queued models
-	WriteData<2>(reinterpret_cast<void*>(0x004088A6), 0x90i8);
-
-	ChunkSpecularFix_Init();
+	InitPatches();
 
 	texpack::init();
 
@@ -1366,28 +1528,29 @@ static void __cdecl InitMods()
 	}
 
 	// This is different from the rewrite portion of the polybuff namespace!
-	polybuff::init();
+		polybuff::init();
 
-	if (!loaderSettings.DisablePolyBuff)
+	if (loaderSettings.PolyBuff)
 		polybuff::rewrite_init();
 
 	if (loaderSettings.DebugCrashLog)
 		initCrashDump();
 
-	if (!loaderSettings.DisableMaterialColorFix)
+	if (loaderSettings.MaterialColorFix)
 		MaterialColorFixes_Init();
 
 	if (loaderSettings.EnableBassSFX)
 		Sound_Init(loaderSettings.SEVolume);
 
-	if (!loaderSettings.DisableInterpolationFix)
+	if (loaderSettings.InterpolationFix)
 		init_interpolationAnimFixes();
 
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\bgm\\wma");
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_jp\\wma");
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_us\\wma");
 
-	MinorPatches_Init();
+	if (loaderSettings.Chaos2CrashFix)
+		MinorPatches_Init();
 
 	// Map of files to replace.
 	// This is done with a second map instead of sadx_fileMap directly
@@ -1722,6 +1885,9 @@ static void __cdecl InitMods()
 		modlist.push_back(modinf);
 	}
 
+	if (setgrp->getBool("InputModEnabled", true))
+		SDL2_Init();
+
 	if (!errors.empty())
 	{
 		std::wstringstream message;
@@ -1976,6 +2142,7 @@ static void __cdecl InitMods()
 		}
 		patches_str.close();
 	}
+
 
 	// Check for codes.
 	ifstream codes_str("mods\\Codes.dat", ifstream::binary);

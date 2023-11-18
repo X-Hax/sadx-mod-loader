@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma once
+
 namespace hudscale
 {
 	void update();

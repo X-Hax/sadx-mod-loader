@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Trampoline.h"
 #include "Events.h"
+#include "input.h"
 #include "jvList.h"
 
 std::vector<ModEvent>         modInitEndEvents;
@@ -36,6 +37,7 @@ DataPointer(short, word_3B2C464, 0x3B2C464);
 
 void OnInput()
 {
+	SDL2_OnInput();
 	RaiseEvents(modInputEvents);
 }
 
@@ -57,6 +59,7 @@ void OnControl()
 void __cdecl OnExit(UINT uExitCode, int a1, int a2)
 {
 	RaiseEvents(modExitEvents);
+	SDL2_OnExit();
 	FreeJVListIndices();
 	NonStaticFunctionPointer(void, original, (UINT, int, int), exitDetour.Target());
 	original(uExitCode, a1, a2);
