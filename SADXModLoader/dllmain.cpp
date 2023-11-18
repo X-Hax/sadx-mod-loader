@@ -1071,25 +1071,6 @@ extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath)
 
 LoaderSettings loaderSettings = {};
 std::vector<Mod> modlist;
-
-bool IsWindowsVistaOrGreater()
-{
-	// Taken from https://stackoverflow.com/questions/1963992/check-windows-version
-	OSVERSIONINFOEXW osvi = {};
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	DWORDLONG const dwlConditionMask = VerSetConditionMask(
-		VerSetConditionMask(
-			VerSetConditionMask(
-				0, VER_MAJORVERSION, VER_GREATER_EQUAL),
-			VER_MINORVERSION, VER_GREATER_EQUAL),
-		VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
-	osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_VISTA);
-	osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_VISTA);
-	osvi.wServicePackMajor = 0;
-
-	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
-}
-
 static void __cdecl InitMods()
 {
 	// Hook present function to handle device lost/reset states
@@ -1198,13 +1179,6 @@ static void __cdecl InitMods()
 		PrintDebug("%s\n", MODLOADER_GIT_VERSION);
 #endif /* MODLOADER_GIT_DESCRIBE */
 #endif /* MODLOADER_GIT_VERSION */
-	}
-
-	// Set process DPI awareness for window resize on Vista and above
-	if (IsWindowsVistaOrGreater())
-	{
-		if (!SetProcessDPIAware())
-			PrintDebug("Unable to set process DPI awareness.\n");
 	}
 
 	WriteJump((void*)0x789E50, CreateSADXWindow_asm); // override window creation function
