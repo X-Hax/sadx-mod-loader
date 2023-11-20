@@ -60,6 +60,7 @@ using std::vector;
 #include "input.h"
 #include <ShlObj.h>
 #include "gvm.h"
+#include "SteamSaveSupport.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 
@@ -2201,6 +2202,7 @@ static void __cdecl InitMods()
 
 	ApplyTestSpawn();
 	GVR_Init();
+	SteamSaveSupport_Init();
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);

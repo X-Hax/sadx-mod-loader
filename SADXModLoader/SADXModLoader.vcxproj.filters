@@ -138,6 +138,9 @@
     <ClCompile Include="gvm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SteamSaveSupport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MediaFns.hpp">
@@ -318,6 +321,9 @@
       <Filter>Header Files\Patches</Filter>
     </ClInclude>
     <ClInclude Include="gvm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamSaveSupport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

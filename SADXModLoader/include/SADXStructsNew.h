@@ -4308,6 +4308,18 @@ struct SAVE_DATA
 	Sint32 M_emblem;
 };
 
+struct LIST_DATA // Different from X360's _LIST_DATA
+{
+	char* name;
+	FILETIME time; // 8 bytes
+	LIST_DATA* next;
+	/*
+	char *name;
+	Magic::Base::SystemTime_t time; // 16 bytes
+	unsigned int *next;
+	*/
+};
+
 // Textures
 
 struct sStChunkPVMH {

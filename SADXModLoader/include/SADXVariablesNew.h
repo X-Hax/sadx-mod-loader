@@ -69,6 +69,15 @@ DataPointer(bool, PvrAlphaFlag, 0x03B2C650); // Global transparency flag for UI 
 DataPointer(NJS_ARGB, default_argb, 0x038CD514);
 DataPointer(int, IsChaoGarden, 0x03B22E80);
 DataArray(SAVE_DATA, SaveData, 0x3B2B3A8, 3);
+DataPointer(int, GB_vmsdisable, 0x03B29198); // Disable saving
+DataPointer(LIST_DATA*, listData, 0x03C5E8B8); // List of save file info
+DataPointer(Uint8, SaveRetry, 0x03ABDF7A);
+DataPointer(Uint8, SaveOK, 0x03B291B1);
+DataPointer(Uint8, SaveCount, 0x03B291B2);
+DataPointer(Uint8, SaveReady, 0x03B291AD);
+DataPointer(Uint8, SaveExecFlag, 0x03ABDF76);
+DataPointer(Uint8, FileDeleteFlag, 0x03B291B0);
+DataPointer(Uint8, FirstCreateFlag, 0x03B291B3);
 DataArray(Uint32, MIPMAP_LEVEL_TBL, 0x389D4F8, 22);
 
 // Event

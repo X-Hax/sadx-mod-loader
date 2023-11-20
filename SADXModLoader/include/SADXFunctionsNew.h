@@ -33,6 +33,8 @@ FunctionPointer(bool, ChkPause, (), 0x414D70); // Check if the game is paused
 FunctionPointer(Bool, ChkGameMode, (), 0x414D90); // Check if in game
 FunctionPointer(void*, MAlloc, (int size), 0x40B220); // Allocate memory
 FunctionPointer(void*, CAlloc, (int count, int size), 0x0040B2D0); // Allocate memory
+FunctionPointer(void*, malloc_0, (size_t Size), 0x00645002);
+ThiscallFunctionPointer(void, AsyncDoWithNowLoading, (void* param), 0x00643EA7);
 VoidFunc(Clear, 0x0040BF30);
 VoidFunc(Reset, 0x0040BF40);
 TaskFunc(LoopTaskC, 0x40B420); // Run all the children of a task
@@ -141,6 +143,12 @@ FunctionPointer(void, njPrintF, (int position, float value, signed int precision
 FunctionPointer(void, njPrint, (signed int position, const char* text, ...), 0x780B30); // Prints a formatted string
 FunctionPointer(void, njPrintSize, (unsigned __int16 size), 0x7808C0); // Sets debug font size
 
+// Saves
+FunctionPointer(Uint8, CountSaveNum, (), 0x00505050); // Builds save list
+FunctionPointer(void, AddLineList, (LPCSTR filename, _WIN32_FIND_DATAA a2), 0x00504E50); // Adds save file to the list
+FunctionPointer(void, dsVMSLoadGame_do, (), 0x00421DE0); // Loads current save file
+VoidFunc(CreateSaveData, 0x0042D630);
+
 static const void* const isTextureNGPtr = (void*)0x403250;
 static inline BOOL isTextureNG(NJS_TEXLIST* tl) // Check if the texlist is valid
 {
@@ -209,6 +217,7 @@ FunctionPointer(void, lig_setGjPaletteNo___, (int no), 0x412160);
 FunctionPointer(void, lig_resetGjPaletteNo___, (signed int no), 0x412400);
 
 // Input
+VoidFunc(input_init, 0x0040F350);
 VoidFunc(PadReadOn, 0x40EF40); // EnableControl
 VoidFunc(PadReadOff, 0x40EF50); // DisableControl
 FunctionPointer(void, PadReadOnP, (unsigned __int8 pno), 0x40EF70); // EnableController
