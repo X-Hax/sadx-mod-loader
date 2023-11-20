@@ -1564,6 +1564,8 @@ static void __cdecl InitMods()
 
 	string _mainsavepath, _chaosavepath;
 
+	bool use_redirection; // Check whether save redirection is used by any mods
+
 	// It's mod loading time!
 	PrintDebug("Loading mods...\n");
 	for (unsigned int i = 1; i <= 999; i++)
@@ -1866,6 +1868,7 @@ static void __cdecl InitMods()
 			{
 				_mkdir(_mainsavepath.c_str());
 			}
+			use_redirection = true;
 		}
 
 		if (modinfo->getBool("RedirectChaoSave")) {
@@ -2202,7 +2205,8 @@ static void __cdecl InitMods()
 
 	ApplyTestSpawn();
 	GVR_Init();
-	SteamSaveSupport_Init();
+	if (!use_redirection)
+		SteamSaveSupport_Init();
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
