@@ -2207,6 +2207,8 @@ static void __cdecl InitMods()
 	GVR_Init();
 	if (!use_redirection)
 		SteamSaveSupport_Init();
+	else
+		PrintDebug("Steam save support disabled because save file redirection is enabled.\n");
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
