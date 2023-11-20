@@ -34,6 +34,7 @@ FunctionPointer(Bool, ChkGameMode, (), 0x414D90); // Check if in game
 FunctionPointer(void*, MAlloc, (int size), 0x40B220); // Allocate memory
 FunctionPointer(void*, CAlloc, (int count, int size), 0x0040B2D0); // Allocate memory
 FunctionPointer(void*, malloc_0, (size_t Size), 0x00645002);
+FunctionPointer(void*, SOCFree, (void* pBlock), 0x00644E51);
 ThiscallFunctionPointer(void, AsyncDoWithNowLoading, (void* param), 0x00643EA7);
 VoidFunc(Clear, 0x0040BF30);
 VoidFunc(Reset, 0x0040BF40);
