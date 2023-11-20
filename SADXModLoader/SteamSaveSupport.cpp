@@ -6,34 +6,15 @@
 #include "FunctionHook.h"
 #include <time.h>
 
+// TODO: Use Unicode functions?
+
 VoidFunc(dsVMSsgcore_WriteSaveFile, 0x00421FD0);
 
 FunctionHook<Uint8> CountSaveNum_h(CountSaveNum);
 
-static bool SteamSave = false;
-static CHAR my_documents[MAX_PATH];
+static char DocumentsPath[MAX_PATH];
 static char* DeleteSavePath = nullptr;
-
-// Writes Chao save filename
-static void UpdateSavePaths()
-{
-	CHAR _chaosavepath[MAX_PATH];
-	if (SteamSave)
-	{
-		sprintf_s(_chaosavepath, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\SonicAdventureChaoGarden.snc", my_documents);
-	}
-	else
-	{
-		sprintf_s(_chaosavepath, "./SAVEDATA/SONICADVENTURE_DX_CHAOGARDEN.snc");
-	}
-	//PrintDebug("Update Chao save path: %s\n", _chaosavepath);
-	char* buf = new char[strlen(_chaosavepath) + 1];
-	strncpy(buf, _chaosavepath, strlen(_chaosavepath) + 1);
-	WriteData((char**)0x7163EF, buf);
-	WriteData((char**)0x71AA6F, buf);
-	WriteData((char**)0x71ACDB, buf);
-	WriteData((char**)0x71ADC5, buf);
-}
+static char* ChaoSavePath = nullptr;
 
 // CRC calculation function from the X360 disasm
 static Uint16 __cdecl createCRC_Steam(Uint8* c)
@@ -118,14 +99,14 @@ static Uint8 __cdecl CountSaveNum_Steam()
 	i = 0;
 	memcpy(&_FindFileData, &fileSearchData, sizeof(_FindFileData));
 
-	sprintf_s(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\SonicAdventure??.snc", my_documents);
+	sprintf_s(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\SonicAdventure??.snc", DocumentsPath);
 	handle = FindFirstFileA(fileName, &fileSearchData);
 	if ((int)handle == -1)
 	{
 		PrintDebug("Steam save support: Unable to load file %s.\n", fileName);
 		return 0;
 	}
-	sprintf_s(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", my_documents, fileSearchData.cFileName);
+	sprintf_s(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", DocumentsPath, fileSearchData.cFileName);
 	if (fileSearchData.cFileName[14] < '0'
 		|| fileSearchData.cFileName[14] > '9'
 		|| fileSearchData.cFileName[15] < '0'
@@ -156,7 +137,7 @@ static Uint8 __cdecl CountSaveNum_Steam()
 	{
 		do
 		{
-			sprintf_s(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", my_documents, fileSearchData.cFileName);
+			sprintf_s(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", DocumentsPath, fileSearchData.cFileName);
 			if (fileSearchData.cFileName[14] < '0'
 				|| fileSearchData.cFileName[14] > '9'
 				|| fileSearchData.cFileName[15] < '0'
@@ -197,8 +178,10 @@ static void __cdecl dsVMSLoadGame_do_r()
 	int v2; // eax
 	FILE* v3 = nullptr; // esi
 	char path[MAX_PATH]; // [esp+0h] [ebp-108h] BYREF
+	char path_chao[MAX_PATH]; // [esp+0h] [ebp-108h] BYREF
 	unsigned int v5; // [esp+104h] [ebp-4h]
 	unsigned int retaddr = 0; // [esp+108h] [ebp+0h]
+	bool steamsave = false;
 
 	v5 = retaddr ^ security_cookie;
 	if (GB_vmsdisable)
@@ -223,12 +206,12 @@ static void __cdecl dsVMSLoadGame_do_r()
 			}
 			if (strlen(v0->name) > 14)
 			{
-				SteamSave = true;
-				sprintf_s(path, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", my_documents, v0->name);
+				steamsave = true;
+				sprintf_s(path, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", DocumentsPath, v0->name);
 			}
 			else
 			{
-				SteamSave = false;
+				steamsave = false;
 				sprintf_s(path, "./SAVEDATA/%s", v0->name);
 			}
 		}
@@ -236,25 +219,38 @@ static void __cdecl dsVMSLoadGame_do_r()
 		{
 			if (strlen(GCMemoca_State.string) > 14)
 			{
-				SteamSave = true;
-				sprintf_s(path, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", my_documents, GCMemoca_State.string);
+				steamsave = true;
+				sprintf_s(path, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", DocumentsPath, GCMemoca_State.string);
 			}
 			else
 			{
-				SteamSave = false;
+				steamsave = false;
 				sprintf_s(path, "./SAVEDATA/%s", GCMemoca_State.string);
 			}
 		}
 		fopen_s(&v3, path, "rb");
 		fread(&SaveData, sizeof(SAVE_DATA), 1u, v3);
 		fclose(v3);
-		// Update the file delete function
+
+		// Update path pointers
 		delete DeleteSavePath;
 		DeleteSavePath = new char[strlen(path) + 1];
 		strncpy(DeleteSavePath, path, strlen(path) + 1);
-		WriteData((char**)0x421F07, DeleteSavePath); // File delete function
-		// Update Chao paths
-		UpdateSavePaths();
+		WriteData((char**)0x421F07, DeleteSavePath);
+
+		// Update path pointers (Chao)
+		delete ChaoSavePath;
+		if (steamsave)
+			sprintf_s(path_chao, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\SonicAdventureChaoGarden.snc", DocumentsPath);
+		else
+			sprintf_s(path_chao, "./SAVEDATA/SONICADVENTURE_DX_CHAOGARDEN.snc");
+		ChaoSavePath = new char[strlen(path_chao) + 1];
+		strncpy(ChaoSavePath, path_chao, strlen(path_chao) + 1);
+		WriteData((char**)0x7163EF, ChaoSavePath);
+		WriteData((char**)0x71AA6F, ChaoSavePath);
+		WriteData((char**)0x71ACDB, ChaoSavePath);
+		WriteData((char**)0x71ADC5, ChaoSavePath);
+		// Exit
 		AsyncDoWithNowLoading((void*)(retaddr ^ v5));
 	}
 }
@@ -332,7 +328,7 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 			if (lstrlenA(GCMemoca_State.string) > 14)
 			{
 				steam = true;
-				sprintf(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", my_documents, GCMemoca_State.string);
+				sprintf(fileName, "%s\\SEGA\\Sonic Adventure DX\\SAVEDATA\\%s", DocumentsPath, GCMemoca_State.string);
 			}
 			else
 			{
@@ -385,7 +381,7 @@ static Uint8 CountSaveNum_r()
 
 void SteamSaveSupport_Init()
 {
-	HRESULT docs_result = SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, my_documents);
+	HRESULT docs_result = SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, DocumentsPath);
 	if (docs_result != S_OK)
 	{
 		PrintDebug("Steam save support: Unable to get the path to the Documents folder.\n");
