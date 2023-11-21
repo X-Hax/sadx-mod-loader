@@ -752,12 +752,6 @@ class _##NAME##_t \
 public: \
 	typedef RETURN_TYPE(*PointerType)ARGS; \
  \
-	~_##NAME##_t() \
-	{ \
-		if (ishooked) \
-			Unhook(); \
-	} \
- \
 	RETURN_TYPE operator()ARGS \
 	{ \
 		return wrapper##ARGNAMES; \
@@ -778,18 +772,8 @@ public: \
 		if (ishooked) \
 			throw new std::exception("Attempted to hook already hooked function!"); \
 		memcpy(origdata, getptr(), 5); \
-		DWORD oldprot; \
-		VirtualProtect(getptr(), 5, PAGE_EXECUTE_WRITECOPY, &oldprot); \
 		GenerateUsercallHook<PointerType>(hookfunc, RETURN_LOC, ADDRESS, __VA_ARGS__); \
 		ishooked = true; \
-	} \
- \
-	void Unhook() \
-	{ \
-		if (!ishooked) \
-			throw new std::exception("Attempted to unhook function that wasn't hooked!"); \
-		memcpy(getptr(), origdata, 5); \
-		ishooked = false; \
 	} \
  \
 	RETURN_TYPE Original##ARGS \
@@ -825,12 +809,6 @@ class _##NAME##_t \
 public: \
 	typedef void (*PointerType)ARGS; \
  \
-	~_##NAME##_t() \
-	{ \
-		if (ishooked) \
-			Unhook(); \
-	} \
- \
 	void operator()ARGS \
 	{ \
 		wrapper##ARGNAMES; \
@@ -851,18 +829,8 @@ public: \
 		if (ishooked) \
 			throw new std::exception("Attempted to hook already hooked function!"); \
 		memcpy(origdata, getptr(), 5); \
-		DWORD oldprot; \
-		VirtualProtect(getptr(), 5, PAGE_EXECUTE_WRITECOPY, &oldprot); \
 		GenerateUsercallHook<PointerType>(hookfunc, noret, ADDRESS, __VA_ARGS__); \
 		ishooked = true; \
-	} \
- \
-	void Unhook() \
-	{ \
-		if (!ishooked) \
-			throw new std::exception("Attempted to unhook function that wasn't hooked!"); \
-		memcpy(getptr(), origdata, 5); \
-		ishooked = false; \
 	} \
  \
 	void Original##ARGS \

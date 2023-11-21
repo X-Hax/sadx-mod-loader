@@ -51,58 +51,30 @@ static constexpr Tret SizeOfArray(const T(&)[N]) noexcept
 #endif
 #include <Windows.h>
 
-static HANDLE curproc;
-static bool curprocinitialized = false;
-
-static inline BOOL WriteData(void *writeaddress, const void *data, SIZE_T datasize, SIZE_T *byteswritten)
-{
-	if (!curprocinitialized)
-	{
-		curproc = GetCurrentProcess();
-		curprocinitialized = true;
-	}
-	return WriteProcessMemory(curproc, writeaddress, data, datasize, byteswritten);
-}
-
 static inline BOOL WriteData(void *writeaddress, const void *data, SIZE_T datasize)
 {
-	return WriteData(writeaddress, data, datasize, nullptr);
-}
-
-template<typename T>
-static inline BOOL WriteData(T const *writeaddress, const T data, SIZE_T *byteswritten)
-{
-	return WriteData((void*)writeaddress, (void*)&data, (SIZE_T)sizeof(data), byteswritten);
+	DWORD oldprot;
+	VirtualProtect(writeaddress, datasize, PAGE_EXECUTE_WRITECOPY, &oldprot);
+	memcpy(writeaddress, data, datasize);
+	return true;
 }
 
 template<typename T>
 static inline BOOL WriteData(T const *writeaddress, const T data)
 {
-	return WriteData(writeaddress, data, nullptr);
-}
-
-template<typename T>
-static inline BOOL WriteData(T *writeaddress, const T &data, SIZE_T *byteswritten)
-{
-	return WriteData(writeaddress, &data, sizeof(data), byteswritten);
+	return WriteData((void*)writeaddress, (void*)&data, (SIZE_T)sizeof(data));
 }
 
 template<typename T>
 static inline BOOL WriteData(T *writeaddress, const T &data)
 {
-	return WriteData(writeaddress, data, nullptr);
-}
-
-template <typename T, size_t N>
-static inline BOOL WriteData(void *writeaddress, const T(&data)[N], SIZE_T *byteswritten)
-{
-	return WriteData(writeaddress, data, SizeOfArray(data), byteswritten);
+	return WriteData(writeaddress, &data, sizeof(data));
 }
 
 template <typename T, size_t N>
 static inline BOOL WriteData(void *writeaddress, const T(&data)[N])
 {
-	return WriteData(writeaddress, data, nullptr);
+	return WriteData(writeaddress, data, SizeOfArray(data));
 }
 
 /**
@@ -113,24 +85,12 @@ static inline BOOL WriteData(void *writeaddress, const T(&data)[N])
  * @return Nonzero on success; 0 on error (check GetLastError()).
  */
 template <SIZE_T count>
-static inline BOOL WriteData(void *address, uint8_t data, SIZE_T *byteswritten)
-{
-	uint8_t buf[count];
-	memset(buf, data, count);
-	int result = WriteData(address, buf, count, byteswritten);
-	return result;
-}
-
-/**
- * Write a repeated byte to an arbitrary address.
- * @param address	[in] Address.
- * @param data		[in] Byte to write.
- * @return Nonzero on success; 0 on error (check GetLastError()).
- */
-template <SIZE_T count>
 static inline BOOL WriteData(void *address, uint8_t data)
 {
-	return WriteData<count>(address, data, nullptr);
+	DWORD oldprot;
+	VirtualProtect(address, count, PAGE_EXECUTE_WRITECOPY, &oldprot);
+	memset(address, data, count);
+	return true;
 }
 
 #if (defined(__i386__) || defined(_M_IX86)) && \
@@ -169,9 +129,7 @@ union JmpCallDwordRel {
  */
 static inline BOOL WriteJump(void *writeaddress, void *funcaddress)
 {
-	JmpCallDwordRel data;
-	data.opcode = 0xE9; // JMP DWORD (relative)
-	data.address = static_cast<int32_t>((intptr_t)funcaddress - ((intptr_t)writeaddress + 5));
+	JmpCallDwordRel data(false, writeaddress, funcaddress);
 	return WriteData(writeaddress, data.u8);
 }
 
@@ -183,9 +141,7 @@ static inline BOOL WriteJump(void *writeaddress, void *funcaddress)
  */
 static inline BOOL WriteCall(void *writeaddress, void *funcaddress)
 {
-	JmpCallDwordRel data;
-	data.opcode = 0xE8;	// CALL DWORD (relative)
-	data.address = static_cast<int32_t>((intptr_t)funcaddress - ((intptr_t)writeaddress + 5));
+	JmpCallDwordRel data(true, writeaddress, funcaddress);
 	return WriteData(writeaddress, data.u8);
 }
 
