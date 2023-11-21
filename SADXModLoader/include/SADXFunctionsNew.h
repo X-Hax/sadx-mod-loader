@@ -35,7 +35,6 @@ FunctionPointer(void*, MAlloc, (int size), 0x40B220); // Allocate memory
 FunctionPointer(void*, CAlloc, (int count, int size), 0x0040B2D0); // Allocate memory
 FunctionPointer(void*, malloc_0, (size_t Size), 0x00645002);
 FunctionPointer(void*, SOCFree, (void* pBlock), 0x00644E51);
-ThiscallFunctionPointer(void, AsyncDoWithNowLoading, (void* param), 0x00643EA7);
 VoidFunc(Clear, 0x0040BF30);
 VoidFunc(Reset, 0x0040BF40);
 TaskFunc(LoopTaskC, 0x40B420); // Run all the children of a task
@@ -149,6 +148,7 @@ FunctionPointer(Uint8, CountSaveNum, (), 0x00505050); // Builds save list
 FunctionPointer(void, AddLineList, (LPCSTR filename, _WIN32_FIND_DATAA a2), 0x00504E50); // Adds save file to the list
 FunctionPointer(void, dsVMSLoadGame_do, (), 0x00421DE0); // Loads current save file
 VoidFunc(CreateSaveData, 0x0042D630);
+FunctionPointer(Uint16, createCRC, (Uint8* data), 0x0042CF90);
 
 static const void* const isTextureNGPtr = (void*)0x403250;
 static inline BOOL isTextureNG(NJS_TEXLIST* tl) // Check if the texlist is valid
