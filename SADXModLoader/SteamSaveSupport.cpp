@@ -329,14 +329,14 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 			tm* timeinfo = localtime(&rawtime);
 			Uint16 year = (Uint16)timeinfo->tm_year + 1900;
 			Uint16 month = (Uint16)timeinfo->tm_mon + 1;
+			Uint16 dayweek = (Uint16)timeinfo->tm_wday;
 			Uint16 day = (Uint16)timeinfo->tm_mday;
 			Uint16 hour = (Uint16)timeinfo->tm_hour;
 			Uint16 minute = (Uint16)timeinfo->tm_min;
 			Uint16 second = (Uint16)timeinfo->tm_sec;
-			Uint16 whatever = 1;
 			memcpy(savedata + 0x570, &year, 2);
 			memcpy(savedata + 0x572, &month, 2);
-			memcpy(savedata + 0x574, &whatever, 2);
+			memcpy(savedata + 0x574, &dayweek, 2);
 			memcpy(savedata + 0x576, &day, 2);
 			memcpy(savedata + 0x578, &hour, 2);
 			memcpy(savedata + 0x57A, &minute, 2);
