@@ -1564,7 +1564,7 @@ static void __cdecl InitMods()
 
 	string _mainsavepath, _chaosavepath;
 
-	bool use_redirection; // Check whether save redirection is used by any mods
+	bool use_redirection = false; // Check whether save redirection is used by any mods
 
 	// It's mod loading time!
 	PrintDebug("Loading mods...\n");
@@ -1879,6 +1879,7 @@ static void __cdecl InitMods()
 			{
 				_mkdir(_chaosavepath.c_str());
 			}
+			use_redirection = true;
 		}
 
 		if (modinfo->hasKeyNonEmpty("WindowTitle"))
