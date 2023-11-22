@@ -432,4 +432,5 @@ void SteamSaveSupport_Init()
 	WriteCall((void*)0x0071ADC9, ChaoFileOpenHook); // al_confirmload
 	WriteCall((void*)0x0071ACE2, ChaoCreateFileHook); // al_confirmload
 	WriteData<1>((char*)0x0071ACE7, 0x90u); // al_confirmload (extra nop because the original call is 6 bytes)
+	PrintDebug("Steam save support enabled.\n");
 }
