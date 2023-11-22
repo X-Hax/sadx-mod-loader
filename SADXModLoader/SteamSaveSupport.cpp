@@ -33,7 +33,7 @@ static void dsVMSEraseGame_do_r()
 }
 
 // Edited CRC calculation function from the X360 disasm
-static Uint16 __cdecl createCRC_r(Uint8* c, bool steam)
+static Uint16 __cdecl createCRC_r(Uint8* c, Uint32 size)
 {
 	Sint16 v1; // r11
 	Sint32 v2; // r9
@@ -57,7 +57,7 @@ static Uint16 __cdecl createCRC_r(Uint8* c, bool steam)
 
 	v1 = -1;
 	v2 = 4;
-	v3 = steam ? 1404 : 1388;
+	v3 = size - 4;
 	do
 	{
 		v4 = c[v2] ^ v1;
@@ -99,6 +99,22 @@ static Uint16 __cdecl createCRC_r(Uint8* c, bool steam)
 	return (Uint16)~v1;
 }
 
+Uint32 GetFilesize(FILE* fp) 
+{
+	if (fp == NULL)
+		return -1;
+
+	if (fseek(fp, 0, SEEK_END) < 0) 
+	{
+		fclose(fp);
+		return -1;
+	}
+
+	long size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	return size;
+}
+
 // Adds save files from the Steam or 2004 version to the file select screen
 static Uint8 __cdecl CountSaveNum_r(bool steam)
 {	
@@ -108,7 +124,8 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 	_WIN32_FIND_DATAA _FindFileData; // [esp-140h] [ebp-3A8h] BYREF
 	_WIN32_FIND_DATAA fileSearchData; // [esp+18h] [ebp-250h] BYREF
 	char fileName[MAX_PATH]; // [esp+158h] [ebp-110h] BYREF
-	char* data = new char[steam ? 1408 : 1392]();
+	char* data;
+	Uint32 size;
 
 	memset(&fileSearchData, 0, sizeof(fileSearchData));
 	memcpy(&_FindFileData, &fileSearchData, sizeof(_FindFileData));
@@ -127,9 +144,11 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 	}
 	sprintf_s(fileName, "./SAVEDATA/%s", fileSearchData.cFileName);
 	fopen_s(&file, fileName, "rb");
-	if (fread(data, steam ? 1408u : 1392u, 1u, file))
+	size = GetFilesize(file);
+	data = new char[size];
+	if (fread(data, size, 1u, file))
 	{
-		if (createCRC_r((Uint8*)data, steam) == ((SAVE_DATA*)data)->code)
+		if (createCRC_r((Uint8*)data, size) == ((SAVE_DATA*)data)->code)
 		{
 			//PrintDebug("Adding %s\n", fileName);
 			strncpy_s(fileName, fileSearchData.cFileName, strlen(fileSearchData.cFileName));
@@ -139,15 +158,18 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 		}
 	}
 	fclose(file);
+	delete data;
 	if (FindNextFileA(handle, &fileSearchData))
 	{
 		do
 		{			
 			sprintf_s(fileName, "./SAVEDATA/%s", fileSearchData.cFileName);
 			fopen_s(&file, fileName, "rb");
-			if (fread(data, steam ? 1408u : 1392u, 1u, file))
+			size = GetFilesize(file);
+			data = new char[size];
+			if (fread(data, size, 1u, file))
 			{
-				if (createCRC_r((Uint8*)data, steam) == ((SAVE_DATA*)data)->code)
+				if (createCRC_r((Uint8*)data, size) == ((SAVE_DATA*)data)->code)
 				{
 					//PrintDebug("Adding %s\n", fileName);
 					strncpy_s(fileName, fileSearchData.cFileName, strlen(fileSearchData.cFileName));
@@ -157,10 +179,10 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 				}
 			}
 			fclose(file);
+			delete data;
 		} while (i <= 98u && FindNextFileA(handle, &fileSearchData));
 	}
 	FindClose(handle);
-	delete data;
 	// Reset working folder
 	_wchdir(WorkingDir2004);
 	return i;
@@ -342,7 +364,7 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 			memcpy(savedata + 0x57A, &minute, 2);
 			memcpy(savedata + 0x57C, &second, 2);
 			// Recalculate CRC with new length + time
-			Uint32 crc = createCRC_r((Uint8*)&savedata, true);
+			Uint32 crc = createCRC_r((Uint8*)&savedata, 1408);
 			memcpy(savedata, &crc, 4);
 		}
 		fwrite(&savedata, SteamSave ? 0x580u : 0x570u, 1, v4);
