@@ -28,32 +28,14 @@ public:
 	FunctionHook(FunctionHook&) = delete;
 	FunctionHook(FunctionHook&&) = delete;
 
-	~FunctionHook()
-	{
-		if (hookaddr)
-			Unhook();
-	}
-
 	// Apply a hook to the unhooked function.
 	void Hook(FuncType hook)
 	{
 		if (hookaddr)
 			throw new std::exception("Cannot apply hook to already hooked function!");
 		memcpy(origbytes, origaddr, 5);
-		DWORD oldprot;
-		VirtualProtect(origaddr, 5, PAGE_EXECUTE_WRITECOPY, &oldprot);
 		hookaddr = hook;
-		JmpCallDwordRel jmp(false, origaddr, hook);
-		memcpy(origaddr, &jmp, sizeof(jmp));
-	}
-
-	// Remove a hook from the function.
-	void Unhook()
-	{
-		if (!hookaddr)
-			throw new std::exception("Attempted to unhook non-hooked function!");
-		memcpy(origaddr, origbytes, 5);
-		hookaddr = nullptr;
+		WriteJump(origaddr, hook);
 	}
 
 	// Call the original function, bypassing the hook.
@@ -117,32 +99,14 @@ public:
 	FunctionHook(FunctionHook&) = delete;
 	FunctionHook(FunctionHook&&) = delete;
 
-	~FunctionHook()
-	{
-		if (hookaddr)
-			Unhook();
-	}
-
 	// Apply a hook to the unhooked function.
 	void Hook(FuncType hook)
 	{
 		if (hookaddr)
 			throw new std::exception("Cannot apply hook to already hooked function!");
 		memcpy(origbytes, origaddr, 5);
-		DWORD oldprot;
-		VirtualProtect(origaddr, 5, PAGE_EXECUTE_WRITECOPY, &oldprot);
 		hookaddr = hook;
-		JmpCallDwordRel jmp(false, origaddr, hook);
-		memcpy(origaddr, &jmp, sizeof(jmp));
-	}
-
-	// Remove a hook from the function.
-	void Unhook()
-	{
-		if (!hookaddr)
-			throw new std::exception("Attempted to unhook non-hooked function!");
-		memcpy(origaddr, origbytes, 5);
-		hookaddr = nullptr;
+		WriteJump(origaddr, hook);
 	}
 
 	// Call the original function, bypassing the hook.
@@ -205,32 +169,14 @@ public:
 	StdcallFunctionHook(StdcallFunctionHook&) = delete;
 	StdcallFunctionHook(StdcallFunctionHook&&) = delete;
 
-	~StdcallFunctionHook()
-	{
-		if (hookaddr)
-			Unhook();
-	}
-
 	// Apply a hook to the unhooked function.
 	void Hook(FuncType hook)
 	{
 		if (hookaddr)
 			throw new std::exception("Cannot apply hook to already hooked function!");
 		memcpy(origbytes, origaddr, 5);
-		DWORD oldprot;
-		VirtualProtect(origaddr, 5, PAGE_EXECUTE_WRITECOPY, &oldprot);
 		hookaddr = hook;
-		JmpCallDwordRel jmp(false, origaddr, hook);
-		memcpy(origaddr, &jmp, sizeof(jmp));
-	}
-
-	// Remove a hook from the function.
-	void Unhook()
-	{
-		if (!hookaddr)
-			throw new std::exception("Attempted to unhook non-hooked function!");
-		memcpy(origaddr, origbytes, 5);
-		hookaddr = nullptr;
+		WriteJump(origaddr, hook);
 	}
 
 	// Call the original function, bypassing the hook.
@@ -294,32 +240,14 @@ public:
 	StdcallFunctionHook(StdcallFunctionHook&) = delete;
 	StdcallFunctionHook(StdcallFunctionHook&&) = delete;
 
-	~StdcallFunctionHook()
-	{
-		if (hookaddr)
-			Unhook();
-	}
-
 	// Apply a hook to the unhooked function.
 	void Hook(FuncType hook)
 	{
 		if (hookaddr)
 			throw new std::exception("Cannot apply hook to already hooked function!");
 		memcpy(origbytes, origaddr, 5);
-		DWORD oldprot;
-		VirtualProtect(origaddr, 5, PAGE_EXECUTE_WRITECOPY, &oldprot);
 		hookaddr = hook;
-		JmpCallDwordRel jmp(false, origaddr, hook);
-		memcpy(origaddr, &jmp, sizeof(jmp));
-	}
-
-	// Remove a hook from the function.
-	void Unhook()
-	{
-		if (!hookaddr)
-			throw new std::exception("Attempted to unhook non-hooked function!");
-		memcpy(origaddr, origbytes, 5);
-		hookaddr = nullptr;
+		WriteJump(origaddr, hook);
 	}
 
 	// Call the original function, bypassing the hook.
@@ -382,32 +310,14 @@ public:
 	FastcallFunctionHook(FastcallFunctionHook&) = delete;
 	FastcallFunctionHook(FastcallFunctionHook&&) = delete;
 
-	~FastcallFunctionHook()
-	{
-		if (hookaddr)
-			Unhook();
-	}
-
 	// Apply a hook to the unhooked function.
 	void Hook(FuncType hook)
 	{
 		if (hookaddr)
 			throw new std::exception("Cannot apply hook to already hooked function!");
 		memcpy(origbytes, origaddr, 5);
-		DWORD oldprot;
-		VirtualProtect(origaddr, 5, PAGE_EXECUTE_WRITECOPY, &oldprot);
 		hookaddr = hook;
-		JmpCallDwordRel jmp(false, origaddr, hook);
-		memcpy(origaddr, &jmp, sizeof(jmp));
-	}
-
-	// Remove a hook from the function.
-	void Unhook()
-	{
-		if (!hookaddr)
-			throw new std::exception("Attempted to unhook non-hooked function!");
-		memcpy(origaddr, origbytes, 5);
-		hookaddr = nullptr;
+		WriteJump(origaddr, hook);
 	}
 
 	// Call the original function, bypassing the hook.
@@ -471,32 +381,14 @@ public:
 	FastcallFunctionHook(FastcallFunctionHook&) = delete;
 	FastcallFunctionHook(FastcallFunctionHook&&) = delete;
 
-	~FastcallFunctionHook()
-	{
-		if (hookaddr)
-			Unhook();
-	}
-
 	// Apply a hook to the unhooked function.
 	void Hook(FuncType hook)
 	{
 		if (hookaddr)
 			throw new std::exception("Cannot apply hook to already hooked function!");
 		memcpy(origbytes, origaddr, 5);
-		DWORD oldprot;
-		VirtualProtect(origaddr, 5, PAGE_EXECUTE_WRITECOPY, &oldprot);
 		hookaddr = hook;
-		JmpCallDwordRel jmp(false, origaddr, hook);
-		memcpy(origaddr, &jmp, sizeof(jmp));
-	}
-
-	// Remove a hook from the function.
-	void Unhook()
-	{
-		if (!hookaddr)
-			throw new std::exception("Attempted to unhook non-hooked function!");
-		memcpy(origaddr, origbytes, 5);
-		hookaddr = nullptr;
+		WriteJump(origaddr, hook);
 	}
 
 	// Call the original function, bypassing the hook.
