@@ -504,7 +504,8 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 					{
 						UnpauseAllSounds(0);
 					}
-					ResumeMusic();
+					else
+						ResumeMusic();
 				}
 				else
 					PauseAllSounds(0);
@@ -657,6 +658,21 @@ LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lPar
 }
 
 wstring borderimg = L"mods\\Border.png";
+
+static void ResumeAllSoundsPause()
+{
+	if (!IsGamePaused())
+	{
+		UnpauseAllSounds(0);
+	}
+	else
+		ResumeMusic();
+}
+
+static void PauseAllSoundsAndMusic()
+{
+	PauseAllSounds(0);
+}
 
 static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 {
@@ -894,6 +910,9 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 		SetForegroundWindow(WindowHandle);
 
 		accelWindow = WindowHandle;
+
+		WriteCall((void*)0x00401920, ResumeAllSoundsPause);
+		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);
 	}
 
 	// Hook the window message handler.
