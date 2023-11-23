@@ -78,7 +78,7 @@ struct LoaderSettings
 	int TestSpawnEvent;
 	int TestSpawnGameMode;
 	int TestSpawnSaveID;
-	//Patches
+	// Patches
 	bool HRTFSound;
 	bool CCEF;
 	bool PolyBuff;
@@ -94,6 +94,7 @@ struct LoaderSettings
 	bool LightFix;
 	bool KillGbix;
 	bool DisableCDCheck;
+	bool ExtendedSaveSupport;
 };
 
 struct ModDependency

@@ -60,7 +60,7 @@ using std::vector;
 #include "input.h"
 #include <ShlObj.h>
 #include "gvm.h"
-#include "SteamSaveSupport.h"
+#include "ExtendedSaveSupport.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 
@@ -1361,6 +1361,7 @@ static void __cdecl InitMods()
 	loaderSettings.LightFix = setgrp->getBool("LightFix", true);
 	loaderSettings.KillGbix = setgrp->getBool("KillGbix", true);
 	loaderSettings.DisableCDCheck = setgrp->getBool("DisableCDCheck", false);
+	loaderSettings.ExtendedSaveSupport = setgrp->getBool("ExtendedSaveSupport", true);
 
 	if (loaderSettings.DebugConsole)
 	{
@@ -2045,28 +2046,28 @@ static void __cdecl InitMods()
 		strncpy(buf, _mainsavepath.c_str(), _mainsavepath.size() + 1);
 		mainsavepath = buf;
 		string tmp = "./" + _mainsavepath + "/";
-		WriteData((char*)0x42213D, (char)(tmp.size() + 1));
+		WriteData((char*)0x42213D, (char)(tmp.size() + 1)); // Write
 		buf = new char[tmp.size() + 1];
 		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x422020, buf);
+		WriteData((char**)0x422020, buf); // Write
 		tmp = "./" + _mainsavepath + "/%s";
 		buf = new char[tmp.size() + 1];
 		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x421E4E, buf);
-		WriteData((char**)0x421E6A, buf);
-		WriteData((char**)0x421F07, buf);
-		WriteData((char**)0x42214E, buf);
-		WriteData((char**)0x5050E5, buf);
-		WriteData((char**)0x5051ED, buf);
+		WriteData((char**)0x421E4E, buf); // Load
+		WriteData((char**)0x421E6A, buf); // Load
+		WriteData((char**)0x421F07, buf); // Delete
+		WriteData((char**)0x42214E, buf); // Write
+		WriteData((char**)0x5050E5, buf); // Count
+		WriteData((char**)0x5051ED, buf); // Count
 		tmp = "./" + _mainsavepath + "/SonicDX%02d.snc";
-		WriteData((char*)0x422064, (char)(tmp.size() - 1));
+		WriteData((char*)0x422064, (char)(tmp.size() - 1)); // Write
 		buf = new char[tmp.size() + 1];
 		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x42210F, buf);
+		WriteData((char**)0x42210F, buf); // Write
 		tmp = "./" + _mainsavepath + "/SonicDX??.snc";
 		buf = new char[tmp.size() + 1];
 		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x5050AB, buf);
+		WriteData((char**)0x5050AB, buf); // Count
 	}
 
 	if (!_chaosavepath.empty())
@@ -2077,10 +2078,10 @@ static void __cdecl InitMods()
 		string tmp = "./" + _chaosavepath + "/SONICADVENTURE_DX_CHAOGARDEN.snc";
 		buf = new char[tmp.size() + 1];
 		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x7163EF, buf);
-		WriteData((char**)0x71AA6F, buf);
-		WriteData((char**)0x71ACDB, buf);
-		WriteData((char**)0x71ADC5, buf);
+		WriteData((char**)0x7163EF, buf); // ALMC_Read
+		WriteData((char**)0x71AA6F, buf); // al_confirmsave
+		WriteData((char**)0x71ACDB, buf); // al_confirmload
+		WriteData((char**)0x71ADC5, buf); // al_confirmload
 	}
 
 	if (!windowtitle.empty())
@@ -2206,10 +2207,8 @@ static void __cdecl InitMods()
 
 	ApplyTestSpawn();
 	GVR_Init();
-	if (!use_redirection)
-		SteamSaveSupport_Init();
-	else
-		PrintDebug("Steam save support disabled because save file redirection is enabled.\n");
+	if (loaderSettings.ExtendedSaveSupport)
+		ExtendedSaveSupport_Init();
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);

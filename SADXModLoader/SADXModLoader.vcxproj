@@ -47,7 +47,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="SteamSaveSupport.cpp" />
+    <ClCompile Include="ExtendedSaveSupport.cpp" />
     <ClCompile Include="testspawn.cpp" />
     <ClCompile Include="TextureReplacement.cpp" />
     <ClCompile Include="uiscale.cpp" />
@@ -106,7 +106,7 @@
     <ClInclude Include="SkyChaseFixes.h" />
     <ClInclude Include="sound.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="SteamSaveSupport.h" />
+    <ClInclude Include="ExtendedSaveSupport.h" />
     <ClInclude Include="testspawn.h" />
     <ClInclude Include="TextureReplacement.h" />
     <ClInclude Include="include\UsercallFunctionHandler.h" />

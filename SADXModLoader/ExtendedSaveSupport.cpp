@@ -1,32 +1,47 @@
 #include "stdafx.h"
-#include <windows.h>
-#include <shlobj.h>
-
 #include <SADXModLoader.h>
 #include "FunctionHook.h"
+#include <windows.h>
+#include <shlobj.h>
 #include <time.h>
+#include "ExtendedSaveSupport.h"
 
 // Not sure if these match X360
-ThiscallFunctionPointer(void, AsynDoWithNowLoading, (void* param), 0x00643EA7);
 VoidFunc(dsVMSsgcore_WriteSaveFile, 0x00421FD0);
 FunctionPointer(void, dsVMSEraseGame_do, (), 0x00421EC0);
 FunctionPointer(FILE*, fopen_, (LPCSTR lpFileName, const char* a2), 0x00644DE6); // SADX version of fopen
 
 FunctionHook<Uint8> CountSaveNum_h(CountSaveNum);
 FunctionHook<void> dsVMSEraseGame_do_h(dsVMSEraseGame_do);
+FunctionHook<void, task*> file_sel_disp_h(file_sel_disp);
 
 static WCHAR DocumentsPath[MAX_PATH];
-static WCHAR WorkingDirSteam[FILENAME_MAX]; // Like `C:\Users\Player\Documents\SEGA\Sonic Adventure DX`
-static WCHAR WorkingDir2004[FILENAME_MAX]; // Like `C:\Games\Sonic Adventure DX`
-static char* DeleteSavePath = nullptr; // Pointer to the string used in the file delete function
-static char* ChaoSavePath = nullptr; // Pointer to the string used in Chao file load/save functions
+static WCHAR WorkingDirSteam[FILENAME_MAX]; // Like 'C:\Users\Player\Documents\SEGA\Sonic Adventure DX'
+static WCHAR WorkingDir2004[FILENAME_MAX]; // Like 'C:\Games\Sonic Adventure DX'
+static char SaveLongFilename[48] = { 0 }; // Current save filename for cases when it doesn't fit within the button
+static char* DeleteSavePath = nullptr; // Pointer to the string (filename) used in the file delete function
+static char* ChaoSavePath = nullptr; // Pointer to the string (filename) used in Chao file load/save functions
 static bool SteamSave = false; // Global variable indicating whether the Steam version's save is being used
+static bool SteamDataPresent = false; // Global variable indicating there are Steam saves in the Steam save folder
+
+// File select screen hook to display long save filename
+void file_sel_disp_r(task* tp)
+{
+	file_sel_disp_h.Original(tp);
+	FileSelWk* v1 = (FileSelWk*)tp->awp;
+	if (v1->BaseCol && GCMemoca_State.u8FileName > 0 && SaveLongFilename[0] != 0)
+	{
+		DialogJimakuInit();
+		CurrentMsg = nullptr;
+		DialogJimakuPut(SaveLongFilename);
+	}
+}
 
 // Save delete hook
 static void dsVMSEraseGame_do_r()
 {
 	// Change the current folder (Unicode compatible) then use the game's original ANSI functions with relative paths
-	if (SteamSave)
+	if (SteamDataPresent && SteamSave)
 		_wchdir(WorkingDirSteam);
 	dsVMSEraseGame_do_h.Original(); // Also runs with patched name
 	_wchdir(WorkingDir2004); // Set working folder back to the original
@@ -127,22 +142,25 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 	char* data;
 	Uint32 size;
 
+	if (steam && !SteamDataPresent) 
+		return 0;
+
 	memset(&fileSearchData, 0, sizeof(fileSearchData));
 	memcpy(&_FindFileData, &fileSearchData, sizeof(_FindFileData));
 
 	// Change the current folder (Unicode compatible) then use the game's original ANSI functions with relative paths
 	_wchdir(steam ? WorkingDirSteam : WorkingDir2004);
-	sprintf_s(fileName, "./SAVEDATA/*.snc");
+	sprintf_s(fileName, "%s/*.snc", mainsavepath);
 	if (!steam)
 		AddLineList(0, _FindFileData); // Add first item
 
 	handle = FindFirstFileA(fileName, &fileSearchData);
 	if ((int)handle == -1)
 	{
-		PrintDebug("Steam save support: Unable to find any save files.\n", fileName);
+		PrintDebug("Extended save support: Unable to find any save files.\n", fileName);
 		return 0;
 	}
-	sprintf_s(fileName, "./SAVEDATA/%s", fileSearchData.cFileName);
+	sprintf_s(fileName, "%s/%s", mainsavepath, fileSearchData.cFileName);
 	fopen_s(&file, fileName, "rb");
 	size = GetFilesize(file);
 	data = new char[size];
@@ -150,7 +168,6 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 	{
 		if (createCRC_r((Uint8*)data, size) == ((SAVE_DATA*)data)->code)
 		{
-			//PrintDebug("Adding %s\n", fileName);
 			strncpy_s(fileName, fileSearchData.cFileName, strlen(fileSearchData.cFileName));
 			memcpy(&_FindFileData, &fileSearchData, sizeof(_FindFileData));
 			AddLineList(fileName, _FindFileData);
@@ -163,7 +180,7 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 	{
 		do
 		{			
-			sprintf_s(fileName, "./SAVEDATA/%s", fileSearchData.cFileName);
+			sprintf_s(fileName, "%s/%s", mainsavepath, fileSearchData.cFileName);
 			fopen_s(&file, fileName, "rb");
 			size = GetFilesize(file);
 			data = new char[size];
@@ -171,7 +188,6 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 			{
 				if (createCRC_r((Uint8*)data, size) == ((SAVE_DATA*)data)->code)
 				{
-					//PrintDebug("Adding %s\n", fileName);
 					strncpy_s(fileName, fileSearchData.cFileName, strlen(fileSearchData.cFileName));
 					memcpy(&_FindFileData, &fileSearchData, sizeof(_FindFileData));
 					AddLineList(fileName, _FindFileData);
@@ -197,15 +213,9 @@ static void __cdecl dsVMSLoadGame_do_r()
 	FILE* v3 = nullptr; // esi
 	char path[MAX_PATH]; // [esp+0h] [ebp-108h] BYREF
 	char path_chao[MAX_PATH]; // [esp+0h] [ebp-108h] BYREF
-	Uint32 v5; // [esp+104h] [ebp-4h]
-	Uint32 retaddr = 0; // [esp+108h] [ebp+0h]
-
-	v5 = retaddr ^ security_cookie;
-	if (GB_vmsdisable)
-	{
-		AsynDoWithNowLoading((void*)(retaddr ^ v5));
-	}
-	else
+	char longname[FILENAME_MAX];
+	
+	if (!GB_vmsdisable)
 	{
 		v0 = listData;
 		if (listData)
@@ -224,26 +234,28 @@ static void __cdecl dsVMSLoadGame_do_r()
 			// Check non-Steam version first
 			SteamSave = false;
 			_wchdir(WorkingDir2004);
-			sprintf_s(path, "./SAVEDATA/%s", v0->name);
+			sprintf_s(path, "%s/%s", mainsavepath, v0->name);
+
 			// If it doesn't exist in 2004's savedata, then it's the Steam version
 			if (!Exists(path))
 			{
 				_wchdir(WorkingDirSteam);
 				SteamSave = true;
 			}
+			sprintf_s(longname, "\t%s", v0->name);
 		}
 		else
 		{
 			SteamSave = false;
 			_wchdir(WorkingDir2004);
-			sprintf_s(path, "./SAVEDATA/%s", GCMemoca_State.string);
+			sprintf_s(path, "%s/%s", mainsavepath, GCMemoca_State.string);
 			if (!Exists(path))
 			{
 				_wchdir(WorkingDirSteam);
 				SteamSave = true;
 			}
+			sprintf_s(longname, "\t%s", GCMemoca_State.string);
 		}
-		//PrintDebug("Load: %s\n", path);
 		fopen_s(&v3, path, "rb");
 		fread(&SaveData, sizeof(SAVE_DATA), 1u, v3);
 		fclose(v3);
@@ -259,13 +271,19 @@ static void __cdecl dsVMSLoadGame_do_r()
 		if (SteamSave)
 			sprintf_s(path_chao, "./SAVEDATA/SonicAdventureChaoGarden.snc");
 		else
-			sprintf_s(path_chao, "./SAVEDATA/SONICADVENTURE_DX_CHAOGARDEN.snc");
+			sprintf_s(path_chao, "%s/SONICADVENTURE_DX_CHAOGARDEN.snc", chaosavepath);
 		ChaoSavePath = new char[strlen(path_chao) + 1]();
 		strncpy(ChaoSavePath, path_chao, strlen(path_chao) + 1);
+
+		// Update long save filename
+		memset(SaveLongFilename, 0, sizeof(SaveLongFilename));
+		if (strlen(longname) - 4 > 17) // 16 + \t
+		{
+			strncpy(SaveLongFilename, longname, strlen(longname) - 4);
+		}
+
 		// Restore working dir
 		_wchdir(WorkingDir2004);
-		// Exit
-		AsynDoWithNowLoading((void*)(retaddr ^ v5));
 	}
 }
 
@@ -294,7 +312,7 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 			SaveCount = 0;
 		}
 		// Only the 2004 savedata folder is created because Steam saves are never created from scratch
-		CreateDirectoryA("./SAVEDATA/", 0); 
+		CreateDirectoryA(mainsavepath, 0); 
 		if (!FileDeleteFlag)
 		{
 			CreateSaveData();
@@ -333,14 +351,14 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 			++GCMemoca_State.u8FileNum;
 			GCMemoca_State.u8FileName = saveNum;
 			sprintf(GCMemoca_State.string, "SonicDX%02d.snc", saveNum);
-			sprintf(fileName, "./SAVEDATA/SonicDX%02d.snc", saveNum);
+			sprintf(fileName, "%s/SonicDX%02d.snc", mainsavepath, saveNum);
 		}
 		else
 		{
-			if (SteamSave)
+			if (SteamSave && SteamDataPresent)
 				_wchdir(WorkingDirSteam);
 			v3 = lstrlenA(GCMemoca_State.string);
-			sprintf(fileName, "./SAVEDATA/%s", GCMemoca_State.string);
+			sprintf(fileName, "%s/%s", mainsavepath, GCMemoca_State.string);
 		}
 		v4 = fopen(fileName, "wb");
 		memcpy(savedata, SaveData, 0x570u);
@@ -385,8 +403,7 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 
 FILE* __cdecl ChaoFileOpenHook(LPCSTR lpFileName, const char* a2)
 {
-	//PrintDebug("1 Chao open game: %s\n", ChaoSavePath);
-	if (SteamSave)
+	if (SteamSave && SteamDataPresent)
 		_wchdir(WorkingDirSteam);
 	FILE* result = fopen_(ChaoSavePath, a2); // Using the SADX version of the function because the regular one made it write 0 bytes
 	_wchdir(WorkingDir2004);
@@ -395,8 +412,7 @@ FILE* __cdecl ChaoFileOpenHook(LPCSTR lpFileName, const char* a2)
 
 HANDLE __stdcall ChaoCreateFileHook(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
-	//PrintDebug("Steam %d Chao create game: %s\n", SteamSave, ChaoSavePath);
-	if (SteamSave)
+	if (SteamSave && SteamDataPresent)
 		_wchdir(WorkingDirSteam);
 	HANDLE result = CreateFileA(ChaoSavePath, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	_wchdir(WorkingDir2004);
@@ -411,15 +427,18 @@ static Uint8 CountSaveNum_r()
 	return res_1 + res_2;
 }
 
-void SteamSaveSupport_Init()
+void ExtendedSaveSupport_Init()
 {
 	HRESULT docs_result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, DocumentsPath);
 	if (docs_result != S_OK)
 	{
-		PrintDebug("Steam save support: Unable to get the path to the Documents folder.\n");
+		PrintDebug("Extended save support: Unable to get the path to the Documents folder\n");
 		return;
 	}
 	// Get folders
+	TCHAR SteamSaveTemp[MAX_PATH];
+	swprintf_s(SteamSaveTemp, L"%s\\SEGA\\Sonic Adventure DX\\SAVEDATA", DocumentsPath); // If this doesn't exist, Steam support isn't used
+	SteamDataPresent = Exists(SteamSaveTemp);
 	swprintf_s(WorkingDirSteam, L"%s\\SEGA\\Sonic Adventure DX", DocumentsPath); // Base folder for Steam saves
 	_wgetcwd(WorkingDir2004, FILENAME_MAX); // Original SADX folder
 	// Set up code
@@ -427,10 +446,17 @@ void SteamSaveSupport_Init()
 	WriteJump(dsVMSLoadGame_do, dsVMSLoadGame_do_r);
 	CountSaveNum_h.Hook(CountSaveNum_r);
 	dsVMSEraseGame_do_h.Hook(dsVMSEraseGame_do_r);
+	file_sel_disp_h.Hook(file_sel_disp_r);
 	WriteCall((void*)0x0071AA73, ChaoFileOpenHook); // al_confirmsave
 	WriteCall((void*)0x007163F9, ChaoFileOpenHook); // ALMC_Read
 	WriteCall((void*)0x0071ADC9, ChaoFileOpenHook); // al_confirmload
 	WriteCall((void*)0x0071ACE2, ChaoCreateFileHook); // al_confirmload
 	WriteData<1>((char*)0x0071ACE7, 0x90u); // al_confirmload (extra nop because the original call is 6 bytes)
-	PrintDebug("Steam save support enabled.\n");
+	// Update Chao save path pointer
+	char path_chao[MAX_PATH];
+	delete ChaoSavePath;
+	sprintf_s(path_chao, "%s/SONICADVENTURE_DX_CHAOGARDEN.snc", chaosavepath);
+	ChaoSavePath = new char[strlen(path_chao) + 1]();
+	strncpy(ChaoSavePath, path_chao, strlen(path_chao) + 1);
+	PrintDebug("Extended save support enabled\n");
 }

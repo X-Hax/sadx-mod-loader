@@ -138,7 +138,7 @@
     <ClCompile Include="gvm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SteamSaveSupport.cpp">
+    <ClCompile Include="ExtendedSaveSupport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -323,7 +323,7 @@
     <ClInclude Include="gvm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SteamSaveSupport.h">
+    <ClInclude Include="ExtendedSaveSupport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
