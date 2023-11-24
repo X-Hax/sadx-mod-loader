@@ -147,17 +147,23 @@ static uint8_t parse_gamemode(const std::wstring& str)
 
 static void parse_save(const std::wstring str, const HelperFunctions& helperFunctions)
 {
+	std::string savepath;
 	// To normal chars
 	std::string str_(str.begin(), str.end());
 
-	// Insert leading zero if needed
-	if (str_.size() < 2)
+	if (str.size() < 3)
 	{
-		str_.insert(0, "0");
-	}
+		// Insert leading zero if needed
+		if (str_.size() < 2)
+		{
+			str_.insert(0, "0");
+		}
 
-	// Get path to save file
-	std::string savepath = (std::string)helperFunctions.GetMainSavePath() + (std::string)"\\SonicDX" + str_ + (std::string)".snc";
+		// Get path to save file
+		savepath = (std::string)helperFunctions.GetMainSavePath() + (std::string)"\\SonicDX" + str_ + (std::string)".snc";
+	}
+	else
+		savepath = (std::string)helperFunctions.GetMainSavePath() + (std::string)"\\" + str_ + (std::string)".snc";
 
 	PrintDebug("Loading save: \"%s\"\n", savepath.c_str());
 
