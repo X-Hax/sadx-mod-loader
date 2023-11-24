@@ -11,6 +11,8 @@ VoidFunc(dsVMSsgcore_WriteSaveFile, 0x00421FD0);
 FunctionPointer(void, dsVMSEraseGame_do, (), 0x00421EC0);
 FunctionPointer(FILE*, fopen_, (LPCSTR lpFileName, const char* a2), 0x00644DE6); // SADX version of fopen
 
+DataPointer(Uint8, CheckFopenNop, 0x00422161);
+
 FunctionHook<Uint8> CountSaveNum_h(CountSaveNum);
 FunctionHook<void> dsVMSEraseGame_do_h(dsVMSEraseGame_do);
 FunctionHook<void, task*> file_sel_disp_h(file_sel_disp);
@@ -23,6 +25,7 @@ static char* DeleteSavePath = nullptr; // Pointer to the string (filename) used 
 static char* ChaoSavePath = nullptr; // Pointer to the string (filename) used in Chao file load/save functions
 static bool SteamSave = false; // Global variable indicating whether the Steam version's save is being used
 static bool SteamDataPresent = false; // Global variable indicating there are Steam saves in the Steam save folder
+static bool DisableSaving = false;
 
 // File select screen hook to display long save filename
 void file_sel_disp_r(task* tp)
@@ -360,32 +363,36 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 			v3 = lstrlenA(GCMemoca_State.string);
 			sprintf(fileName, "%s/%s", mainsavepath, GCMemoca_State.string);
 		}
-		v4 = fopen(fileName, "wb");
-		memcpy(savedata, SaveData, 0x570u);
-		// Add date/time for the Steam save
-		if (SteamSave)
+		if (!DisableSaving)
 		{
-			time(&rawtime);
-			tm* timeinfo = localtime(&rawtime);
-			Uint16 year = (Uint16)timeinfo->tm_year + 1900;
-			Uint16 month = (Uint16)timeinfo->tm_mon + 1;
-			Uint16 dayweek = (Uint16)timeinfo->tm_wday;
-			Uint16 day = (Uint16)timeinfo->tm_mday;
-			Uint16 hour = (Uint16)timeinfo->tm_hour;
-			Uint16 minute = (Uint16)timeinfo->tm_min;
-			Uint16 second = (Uint16)timeinfo->tm_sec;
-			memcpy(savedata + 0x570, &year, 2);
-			memcpy(savedata + 0x572, &month, 2);
-			memcpy(savedata + 0x574, &dayweek, 2);
-			memcpy(savedata + 0x576, &day, 2);
-			memcpy(savedata + 0x578, &hour, 2);
-			memcpy(savedata + 0x57A, &minute, 2);
-			memcpy(savedata + 0x57C, &second, 2);
-			// Recalculate CRC with new length + time
-			Uint32 crc = createCRC_r((Uint8*)&savedata, 1408);
-			memcpy(savedata, &crc, 4);
+			v4 = fopen(fileName, "wb");
+			memcpy(savedata, SaveData, 0x570u);
+			// Add date/time for the Steam save
+			if (SteamSave)
+			{
+				time(&rawtime);
+				tm* timeinfo = localtime(&rawtime);
+				Uint16 year = (Uint16)timeinfo->tm_year + 1900;
+				Uint16 month = (Uint16)timeinfo->tm_mon + 1;
+				Uint16 dayweek = (Uint16)timeinfo->tm_wday;
+				Uint16 day = (Uint16)timeinfo->tm_mday;
+				Uint16 hour = (Uint16)timeinfo->tm_hour;
+				Uint16 minute = (Uint16)timeinfo->tm_min;
+				Uint16 second = (Uint16)timeinfo->tm_sec;
+				memcpy(savedata + 0x570, &year, 2);
+				memcpy(savedata + 0x572, &month, 2);
+				memcpy(savedata + 0x574, &dayweek, 2);
+				memcpy(savedata + 0x576, &day, 2);
+				memcpy(savedata + 0x578, &hour, 2);
+				memcpy(savedata + 0x57A, &minute, 2);
+				memcpy(savedata + 0x57C, &second, 2);
+				// Recalculate CRC with new length + time
+				Uint32 crc = createCRC_r((Uint8*)&savedata, 1408);
+				memcpy(savedata, &crc, 4);
+			}
+			fwrite(&savedata, SteamSave ? 0x580u : 0x570u, 1, v4);
+			fclose(v4);
 		}
-		fwrite(&savedata, SteamSave ? 0x580u : 0x570u, 1, v4);
 		GCMemoca_State.MsgFlag = 0;
 		input_init();
 		SaveCount = 0;
@@ -394,14 +401,24 @@ static void __cdecl dsVMSsgcore_WriteSaveFile_r()
 		SaveReady = 0;
 		SaveExecFlag = 0;
 		AlertFlag = 0;
-		fclose(v4);
 		SaveOK = 1;
 		// Restore working dir
 		_wchdir(WorkingDir2004);
 	}
 }
 
-FILE* __cdecl ChaoFileOpenHook(LPCSTR lpFileName, const char* a2)
+FILE* __cdecl ChaoFileOpenHookSave(LPCSTR lpFileName, const char* a2)
+{
+	if (DisableSaving)
+		return NULL;
+	if (SteamSave && SteamDataPresent)
+		_wchdir(WorkingDirSteam);
+	FILE* result = fopen_(ChaoSavePath, a2); // Using the SADX version of the function because the regular one made it write 0 bytes
+	_wchdir(WorkingDir2004);
+	return result;
+}
+
+FILE* __cdecl ChaoFileOpenHookLoad(LPCSTR lpFileName, const char* a2)
 {
 	if (SteamSave && SteamDataPresent)
 		_wchdir(WorkingDirSteam);
@@ -435,6 +452,7 @@ void ExtendedSaveSupport_Init()
 		PrintDebug("Extended save support: Unable to get the path to the Documents folder\n");
 		return;
 	}
+	DisableSaving = (CheckFopenNop == 0x90u); // Check for "Disable Saving" code
 	// Get folders
 	TCHAR SteamSaveTemp[MAX_PATH];
 	swprintf_s(SteamSaveTemp, L"%s\\SEGA\\Sonic Adventure DX\\SAVEDATA", DocumentsPath); // If this doesn't exist, Steam support isn't used
@@ -447,11 +465,11 @@ void ExtendedSaveSupport_Init()
 	CountSaveNum_h.Hook(CountSaveNum_r);
 	dsVMSEraseGame_do_h.Hook(dsVMSEraseGame_do_r);
 	file_sel_disp_h.Hook(file_sel_disp_r);
-	WriteCall((void*)0x0071AA73, ChaoFileOpenHook); // al_confirmsave
-	WriteCall((void*)0x007163F9, ChaoFileOpenHook); // ALMC_Read
-	WriteCall((void*)0x0071ADC9, ChaoFileOpenHook); // al_confirmload
 	WriteCall((void*)0x0071ACE2, ChaoCreateFileHook); // al_confirmload
 	WriteData<1>((char*)0x0071ACE7, 0x90u); // al_confirmload (extra nop because the original call is 6 bytes)
+	WriteCall((void*)0x007163F9, ChaoFileOpenHookLoad); // ALMC_Read
+	WriteCall((void*)0x0071ADC9, ChaoFileOpenHookSave); // al_confirmload (but it saves??)
+	WriteCall((void*)0x0071AA73, ChaoFileOpenHookSave); // al_confirmsave
 	// Update Chao save path pointer
 	char path_chao[MAX_PATH];
 	delete ChaoSavePath;
