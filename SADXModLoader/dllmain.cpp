@@ -1080,7 +1080,7 @@ const std::wstring bassDLLs[] =
 static void __cdecl InitAudio()
 {
 
-	if (loaderSettings.EnableBassMusic)
+	if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\bgm"))
 	{
 		wstring bassFolder = extLibPath + L"BASS\\";
 
@@ -1560,7 +1560,7 @@ static void __cdecl InitMods()
 	if (loaderSettings.MaterialColorFix)
 		MaterialColorFixes_Init();
 
-	if (loaderSettings.EnableBassSFX)
+	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
 		Sound_Init(loaderSettings.SEVolume);
 
 	if (loaderSettings.InterpolationFix)
