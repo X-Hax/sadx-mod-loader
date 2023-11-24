@@ -23,8 +23,8 @@ NJS_TEXMEMLIST* __cdecl GetCachedTexture_r(int gbix)
 	return result;
 }
 
-
+//removed for now as it can trigger some random crash when loading too many PVM.
 void Init_NOGbixHack()
 {
-	WriteJump((void*)0x77F5B0, GetCachedTexture_r);
+	//WriteJump((void*)0x77F5B0, GetCachedTexture_r);
 }
