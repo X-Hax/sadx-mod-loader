@@ -698,6 +698,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	if (!RegisterClassA(&v8))
 	{
+		MessageBox(nullptr, L"Failed to register class A to create SADX Window, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
 		return;
 	}
 
@@ -759,6 +760,8 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	if (borderlessWindow)
 	{
+		PrintDebug("Creating SADX Window in borderless mode...\n");
+
 		if (windowResize)
 		{
 			outerSizes[windowed].style |= WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
@@ -841,6 +844,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 		if (!RegisterClassA(&w))
 		{
+			MessageBox(nullptr, L"Failed to register class A to create SADX Window with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
 			return;
 		}
 
@@ -855,6 +859,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 		if (accelWindow == nullptr)
 		{
+			MessageBox(nullptr, L"Failed to Create AccelWindow with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
 			return;
 		}
 
@@ -867,17 +872,26 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			innerSize.x, innerSize.y, innerSize.width, innerSize.height,
 			accelWindow, nullptr, hInstance, nullptr);
 
+		if (WindowHandle == nullptr)
+		{
+			MessageBox(nullptr, L"Failed to Create SADX Window with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
+			return;
+		}
+
 		SetFocus(WindowHandle);
 		ShowWindow(accelWindow, nCmdShow);
 		UpdateWindow(accelWindow);
 		SetForegroundWindow(accelWindow);
 
+		PrintDebug("Successfully created SADX Window!\n");
 		IsWindowed = true;
 
 		WriteData((void*)0x402C61, wndpatch);
 	}
 	else
 	{
+		PrintDebug("Creating SADX Window...\n");
+
 		DWORD dwStyle = WS_CAPTION | WS_SYSMENU | WS_VISIBLE;
 		DWORD dwExStyle = 0;
 
@@ -900,6 +914,13 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			x, y, w, h,
 			nullptr, nullptr, hInstance, nullptr);
 
+		if (WindowHandle == nullptr)
+		{
+			MessageBox(nullptr, L"Failed to Create SADX Window, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
+			return;
+		}
+
+
 		if (!IsWindowed)
 		{
 			enable_fullscreen_mode(WindowHandle);
@@ -913,6 +934,8 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 		WriteCall((void*)0x00401920, ResumeAllSoundsPause);
 		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);
+
+		PrintDebug("Successfully created SADX Window!\n");
 	}
 
 	// Hook the window message handler.
@@ -1331,7 +1354,7 @@ static void __cdecl InitMods()
 	loaderSettings.HorizontalResolution = setgrp->getInt("HorizontalResolution", 640);
 	loaderSettings.VerticalResolution = setgrp->getInt("VerticalResolution", 480);
 	loaderSettings.ForceAspectRatio = setgrp->getBool("ForceAspectRatio");
-	loaderSettings.WindowedFullscreen = setgrp->getBool("Borderless");
+	loaderSettings.WindowedFullscreen = (setgrp->getBool("Borderless") || setgrp->getBool("WindowedFullscreen"));
 	loaderSettings.EnableVsync = setgrp->getBool("EnableVsync", true);
 	loaderSettings.AutoMipmap = setgrp->getBool("AutoMipmap", true);
 	loaderSettings.TextureFilter = setgrp->getBool("TextureFilter", true);
