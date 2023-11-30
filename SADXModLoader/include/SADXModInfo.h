@@ -83,7 +83,7 @@ struct LoaderSettings
 	bool CCEF;
 	bool PolyBuff;
 	bool MaterialColorFix;
-	bool InterpolationFix;
+	bool NodeLimit;
 	bool FovFix;
 	bool SCFix;
 	bool Chaos2CrashFix;

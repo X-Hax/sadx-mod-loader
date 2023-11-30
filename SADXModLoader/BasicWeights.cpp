@@ -33,7 +33,7 @@ void InitWeights(WeightInfo* weights, NJS_OBJECT* object)
 
 void ApplyWeights(WeightInfo* weights, NJS_ACTION* action, float frame)
 {
-	ProcessAnimatedModelNode_Instanced(
+	CalcMMMatrix(
 		nj_unit_matrix_,
 		action,
 		frame,

@@ -35,6 +35,7 @@
     <ClCompile Include="KeyboardMouse.cpp" />
     <ClCompile Include="MaterialColorFixes.cpp" />
     <ClCompile Include="MinorPatches.cpp" />
+    <ClCompile Include="NodeLimit.cpp" />
     <ClCompile Include="polybuff.cpp" />
     <ClCompile Include="prs.cpp" />
     <ClCompile Include="MediaFns.cpp" />
@@ -89,6 +90,7 @@
     <ClInclude Include="MaterialColorFixes.h" />
     <ClInclude Include="minmax.h" />
     <ClInclude Include="MinorPatches.h" />
+    <ClInclude Include="NodeLimit.h" />
     <ClInclude Include="polybuff.h" />
     <ClInclude Include="prs.h" />
     <ClInclude Include="include\d3d8types.h" />

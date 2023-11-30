@@ -4320,6 +4320,16 @@ struct LIST_DATA // Different from X360's _LIST_DATA
 	*/
 };
 
+struct SMMparams
+{
+	void* mot;
+	NJS_MATRIX* mbp;
+	int type;
+	int motfrm;
+	float frm;
+};
+
+
 // Textures
 
 struct sStChunkPVMH {

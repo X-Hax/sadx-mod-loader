@@ -61,6 +61,7 @@ using std::vector;
 #include <ShlObj.h>
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
+#include "NodeLimit.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 
@@ -1219,6 +1220,9 @@ void InitPatches()
 		WriteData<2>(reinterpret_cast<void*>(0x004088A6), 0x90i8);
 	}
 
+	if (loaderSettings.NodeLimit)
+		IncreaseNodeLimit();
+
 	if (loaderSettings.ChunkSpecFix)
 		ChunkSpecularFix_Init();
 
@@ -1392,7 +1396,7 @@ static void __cdecl InitMods()
 	loaderSettings.CCEF  = setgrp->getBool("CCEF", true);
 	loaderSettings.PolyBuff  = setgrp->getBool("PolyBuff", true);
 	loaderSettings.MaterialColorFix = setgrp->getBool("MaterialColorFix", true);
-	//loaderSettings.InterpolationFix = setgrp->getBool("InterpolationFix", true);
+	loaderSettings.NodeLimit = setgrp->getBool("NodeLimit", true);
 	loaderSettings.FovFix = setgrp->getBool("FovFix", true);
 	loaderSettings.SCFix = setgrp->getBool("SCFix", true);
 	loaderSettings.Chaos2CrashFix = setgrp->getBool("Chaos2CrashFix", true);
