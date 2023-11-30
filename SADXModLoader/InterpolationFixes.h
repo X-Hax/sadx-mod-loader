@@ -1,3 +1,9 @@
 #pragma once
 
-void init_interpolationAnimFixes();
+namespace interpolation
+{
+	extern bool enabled;
+	void init();
+	void push();
+	void pop();
+}

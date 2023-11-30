@@ -139,7 +139,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ExtendedSaveSupport.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Patches</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -324,7 +324,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExtendedSaveSupport.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Patches</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

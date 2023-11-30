@@ -5,6 +5,7 @@
 #include "EXEData.h"
 #include "MediaFns.hpp"
 #include "BasicWeights.h"
+#include "InterpolationFixes.h"
 
 using std::vector;
 using std::unordered_map;
@@ -571,6 +572,16 @@ uint16_t RegisterVoice(const char* fileJP, const char* fileEN, uint16_t duration
 	return voicenum++;
 }
 
+void PushInterpolationFix()
+{
+	interpolation::push();
+}
+
+void PopInterpolationFix()
+{
+	interpolation::pop();
+}
+
 extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
@@ -612,5 +623,7 @@ HelperFunctions helperFunctions =
 	&loaderSettings,
 	&modList,
 	&weightFuncs,
-	&RegisterVoice
+	&RegisterVoice,
+	&PushInterpolationFix,
+	&PopInterpolationFix,
 };

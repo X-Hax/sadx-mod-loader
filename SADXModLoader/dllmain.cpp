@@ -1392,7 +1392,7 @@ static void __cdecl InitMods()
 	loaderSettings.CCEF  = setgrp->getBool("CCEF", true);
 	loaderSettings.PolyBuff  = setgrp->getBool("PolyBuff", true);
 	loaderSettings.MaterialColorFix = setgrp->getBool("MaterialColorFix", true);
-	loaderSettings.InterpolationFix = setgrp->getBool("InterpolationFix", true);
+	//loaderSettings.InterpolationFix = setgrp->getBool("InterpolationFix", true);
 	loaderSettings.FovFix = setgrp->getBool("FovFix", true);
 	loaderSettings.SCFix = setgrp->getBool("SCFix", true);
 	loaderSettings.Chaos2CrashFix = setgrp->getBool("Chaos2CrashFix", true);
@@ -1586,9 +1586,8 @@ static void __cdecl InitMods()
 	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
 		Sound_Init(loaderSettings.SEVolume);
 
-	if (loaderSettings.InterpolationFix)
-		init_interpolationAnimFixes();
-
+	//init interpol fix for helperfunctions
+	interpolation::init();
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\bgm\\wma");
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_jp\\wma");
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_us\\wma");

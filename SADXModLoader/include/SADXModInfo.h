@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 18;
+static const int ModLoaderVer = 19;
 struct PatchInfo
 {
 	void* address;
@@ -416,6 +416,19 @@ struct HelperFunctions
 	*
 	*/
 	uint16_t(__cdecl* RegisterVoice)(const char* fileJP, const char* fileEN, uint16_t durationJP, uint16_t durationEN);
+
+	/**
+	* @brief Push Interpolation fix for animations.
+	*
+	* Use this at the beginning of a display function and please disable it at the end after so it doesn't run for all animations in the game.
+	* Requires version >= 19.
+	*
+	*/
+	void(__cdecl* PushInterpolationFix)();
+
+	// Disable interpolation fix for animations, use it at the end of a display function.
+	// Requires version >= 19.
+	void(__cdecl* PopInterpolationFix)();
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);
