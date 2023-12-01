@@ -251,6 +251,7 @@ std::wstring extLibPath;
 void SetAppPathConfig(std::wstring gamepath)
 {
 	appPath = gamepath + L"\\SAManager\\"; // Account for portable
+	extLibPath = appPath + L"extlib\\";
 	WCHAR appDataLocalPath[MAX_PATH];
 	if (!Exists(appPath))
 	{
