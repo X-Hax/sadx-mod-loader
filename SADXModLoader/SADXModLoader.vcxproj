@@ -85,6 +85,7 @@
     <ClInclude Include="include\WeightInfo.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="InterpolationFixes.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="jvList.h" />
     <ClInclude Include="KeyboardMouse.h" />
     <ClInclude Include="MaterialColorFixes.h" />

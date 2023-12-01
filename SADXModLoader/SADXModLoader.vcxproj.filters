@@ -332,6 +332,9 @@
     <ClInclude Include="NodeLimit.h">
       <Filter>Header Files\Patches</Filter>
     </ClInclude>
+    <ClInclude Include="json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SADXModLoader.rc">

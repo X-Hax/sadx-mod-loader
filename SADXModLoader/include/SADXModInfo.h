@@ -78,6 +78,7 @@ struct LoaderSettings
 	int TestSpawnEvent;
 	int TestSpawnGameMode;
 	int TestSpawnSaveID;
+	bool InputMod;
 	// Patches
 	bool HRTFSound;
 	bool CCEF;
