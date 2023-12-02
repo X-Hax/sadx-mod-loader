@@ -309,8 +309,8 @@ void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 	float screen_h = 480.0f * ScreenRaitoY;
 	float screen_ratio = screen_w / screen_h;
 
-	float w = (float)max_width;
-	float h = (float)max_height;
+	float w = (float)player.Width();
+	float h = (float)player.Height();
 	float ratio = w / h;
 
 	if (ratio == screen_ratio)
