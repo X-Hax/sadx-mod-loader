@@ -1601,6 +1601,10 @@ static void __cdecl InitMods()
 	if (loaderSettings.InterpolationFix)
 		init_interpolationAnimFixes();
 
+#if 0
+	Video_Init();
+#endif
+
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\bgm\\wma");
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_jp\\wma");
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_us\\wma");
