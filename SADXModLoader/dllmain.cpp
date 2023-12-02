@@ -58,6 +58,7 @@ using std::vector;
 #include "jvList.h"
 #include "Gbix.h"
 #include "input.h"
+#include "video.h"
 #include <ShlObj.h>
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
@@ -583,19 +584,30 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 {
 	switch (Msg)
 	{
-	default:
+	case WM_ACTIVATE:
+	case WM_ACTIVATEAPP:
+		if (pauseWhenInactive && GameMode == GameModes_Movie)
+		{
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				PauseVideo();
+			}
+			else
+			{
+				ResumeVideo();
+			}
+		}
 		break;
-
 	case WM_SYSKEYDOWN:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN) return 0;
-
 	case WM_SYSKEYUP:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN) return 0;
-
+		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN)
+		{
+			return 0;
+		}
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-
 	case WM_SIZE:
 	{
 		if (customWindowSize)
@@ -619,7 +631,6 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 		direct3d::change_resolution(w, h);
 		break;
 	}
-
 	case WM_COMMAND:
 	{
 		if (wParam != MAKELONG(ID_FULLSCREEN, 1))
@@ -651,9 +662,33 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 	return DefWindowProcA(handle, Msg, wParam, lParam);
 }
 
-LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if ((Msg == WM_SYSKEYDOWN || Msg == WM_SYSKEYUP) && ((wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN))) return 0;
+	switch (Msg)
+	{
+	case WM_ACTIVATE:
+	case WM_ACTIVATEAPP:
+		if (pauseWhenInactive && GameMode == GameModes_Movie)
+		{
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				PauseVideo();
+			}
+			else
+			{
+				ResumeVideo();
+			}
+		}
+		break;
+	case WM_SYSKEYDOWN:
+	case WM_SYSKEYUP:
+		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN)
+		{
+			return 0;
+		}
+		break;
+	}
+
 	return DefWindowProcA(handle, Msg, wParam, lParam);
 }
 

@@ -141,6 +141,9 @@
     <ClCompile Include="ExtendedSaveSupport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="video.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MediaFns.hpp">
@@ -324,6 +327,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExtendedSaveSupport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="video.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
