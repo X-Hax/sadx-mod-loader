@@ -23,3 +23,4 @@ void SDL2_OnExit();
 void SDL2_OnInput();
 
 extern bool isInputMod;
+extern bool enabledSDL;

@@ -139,7 +139,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ExtendedSaveSupport.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="NodeLimit.cpp">
+      <Filter>Source Files\Patches</Filter>
     </ClCompile>
     <ClCompile Include="video.cpp">
       <Filter>Source Files</Filter>
@@ -327,6 +330,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExtendedSaveSupport.h">
+      <Filter>Header Files\Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="NodeLimit.h">
+      <Filter>Header Files\Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="video.h">

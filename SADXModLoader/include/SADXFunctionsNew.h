@@ -460,11 +460,14 @@ FunctionPointer(BOOL, EnemyCheckDamage, (taskwk* twp, enemywk* ewp), 0x4CE030); 
 FunctionPointer(void, EnemyCheckFloor, (taskwk* twp, enemywk* ewp), 0x4CE100); // Check ground status and draw shadow
 FunctionPointer(void, EnemyCheckGroundCollision, (taskwk* twp, enemywk* ewp), 0x4CE370); // Main enemy collision and shadow routine
 TaskFunc(UniDestructor, 0x4E21D0); // Destructor task for every enemy, does nothing
+
 FunctionPointer(BOOL, CalcMMMatrix, (NJS_MATRIX_PTR impmat, NJS_ACTION* actptr, float mtnfrm, unsigned int srcnmb, NJS_MATRIX_PTR ansmat), 0x4B81F0); // Get matrix (in ansmat) of a node (srcnmb) of an animated model using impmat as base matrix; stores all matrices in a buffer for GetMMMatrix
 FunctionPointer(BOOL, GetMMMatrix, (unsigned int srcnmb, NJS_MATRIX_PTR ansmat), 0x4B82D0); // Get stored matrix (in ansmat) of node (srcnmb), use this once CalcMMMatrix has been called to speed it up
 FunctionPointer(void, clrObjFlags, (NJS_OBJECT** obj, unsigned int flag), 0x4399D0); // Set a flag in the evalflag of an object
 FunctionPointer(void, setObjFlags, (NJS_OBJECT** obj, unsigned int flag), 0x4399A0); // Unset a flag from the evalflag of an object
 FunctionPointer(void, CreateFire, (NJS_VECTOR* pos, NJS_VECTOR* velo, float scl), 0x004CB060); // Creates Unidus fire particles
+FunctionPointer(NJS_OBJECT*, ScanMotionModel, (NJS_OBJECT* a1, SMMparams* a2), 0x4B7D00);
+FunctionPointer(void, ListTheObjectTreeByTheEnd, (NJS_OBJECT* a1, NJS_OBJECT** a2), 0x439FC0);
 
 static const void* const calcAimPosPtr = (void*)0x7B1720;
 static inline void calcAimPos(taskwk* twp, enemywk* ewp)

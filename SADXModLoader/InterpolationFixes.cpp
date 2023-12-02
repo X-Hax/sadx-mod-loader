@@ -1,9 +1,17 @@
 #include "stdafx.h"
-#include "SADXStructsNew.h"
-#include "SADXVariablesNew.h"
+#include "InterpolationFixes.h"
+#include "UsercallFunctionHandler.h"
+#include "FunctionHook.h"
 
 // Euler/Quat conversions: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 // Quat lerping: https://stackoverflow.com/a/46187052
+
+static UsercallFuncVoid(LinearMotionA_t, (int keyno, NJS_MKEY_A* key, Angle3* dst, unsigned int n), (keyno, key, dst, n), 0x404C10, rEAX, rECX, rEBX, stack4);
+
+namespace interpolation
+{
+	bool enabled = false;
+}
 
 void NinjaAngleToQuaternion(NJS_QUATERNION* q, Angle3* ang)
 {
@@ -84,6 +92,11 @@ void nlerpQuaternion(NJS_QUATERNION* q, NJS_QUATERNION* a, NJS_QUATERNION* b, Fl
 
 void __cdecl LinearMotionA_r(int keyno, NJS_MKEY_A* key, Angle3* dst, unsigned int n)
 {
+	if (!interpolation::enabled)
+	{
+		return LinearMotionA_t.Original(keyno, key, dst, n);
+	}
+
 	NJS_MKEY_A* key_o = &key[keyno];
 	NJS_MKEY_A* key_n = &key[(keyno + 1) % n];
 
@@ -113,24 +126,17 @@ void __cdecl LinearMotionA_r(int keyno, NJS_MKEY_A* key, Angle3* dst, unsigned i
 	QuaternionToNinjaAngle(dst, &r);
 }
 
-static void __declspec(naked) LinearMotionA_asm()
+void interpolation::push()
 {
-	__asm
-	{
-		push[esp + 04h] // int count
-		push ebx // rot
-		push ecx // key
-		push eax // id
-		call LinearMotionA_r
-		pop eax // id
-		pop ecx // key
-		pop ebx // rot
-		add esp, 4 // int count
-		retn
-	}
+	interpolation::enabled = true;
 }
 
-void init_interpolationAnimFixes()
+void interpolation::pop()
 {
-	WriteJump((void*)0x404C10, LinearMotionA_asm);
+	interpolation::enabled = false;
+}
+
+void interpolation::init()
+{
+	LinearMotionA_t.Hook(LinearMotionA_r);
 }
