@@ -9,8 +9,7 @@ extern "C"
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
-#include <libswresample/swresample.h>
-#include <libavutil/audio_fifo.h>
+#include "libswresample/swresample.h"
 }
 
 DataPointer(IMediaControl*, g_pMC, 0x3C600F8);
@@ -25,17 +24,21 @@ static bool b_ffmpeg = false;
 class VideoPlayer
 {
 private:
+	std::thread* pVideoThread = nullptr;
+
 	AVFormatContext* pFormatContext = nullptr;
-	AVCodecContext* pVideoCodecContext = nullptr;
-	AVCodecContext* pAudioCodecContext = nullptr;
-	SwsContext* pSwsContext = nullptr;
-	SwrContext* pSwrContext = nullptr;
 	AVPacket* pPacket = nullptr;
 	AVFrame* pFrame = nullptr;
-	AVFrame* pRGBFrame = nullptr;
+
+	AVCodecContext* pVideoCodecContext = nullptr;
+	SwsContext* pSwsContext = nullptr;
+	AVFrame* pVideoFrame = nullptr;
 	uint8_t* framebuffer = nullptr;
-	std::thread* pVideoThread = nullptr;
-	AVAudioFifo* pAudioFifo = nullptr;
+
+	AVCodecContext* pAudioCodecContext = nullptr;
+	SwrContext* pSwrContext = nullptr;
+	AVFrame* pAudioFrame = nullptr;
+	HSTREAM BassHandle = NULL;
 
 	int video_stream_index = -1;
 	int audio_stream_index = -1;
@@ -62,54 +65,31 @@ private:
 			return;
 		}
 
-		// Resample the frame
-		AVFrame* pResFrame = av_frame_alloc();
-		pResFrame->sample_rate = pFrame->sample_rate;
-		pResFrame->ch_layout = pFrame->ch_layout;
-		pResFrame->format = AV_SAMPLE_FMT_FLT;
-
-		if (swr_config_frame(pSwrContext, pResFrame, pFrame) < 0)
+		if (swr_convert_frame(pSwrContext, pAudioFrame, pFrame) < 0)
 		{
-			PrintDebug("swr config fail\n");
-			av_frame_free(&pResFrame);
-			av_frame_unref(pFrame);
+			PrintDebug("[video] Failed to convert audio frame.\n");
 			return;
 		}
-		av_frame_unref(pFrame);
-
-		// Initialize Fifo
-		pAudioFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, pStream->codecpar->ch_layout.nb_channels, 1);
-		if (!pAudioFifo)
-		{
-			PrintDebug("fifo fail\n");
-			av_frame_free(&pResFrame);
-			return;
-		}
-
-		if (av_audio_fifo_write(pAudioFifo, (void**)pResFrame->data, pResFrame->nb_samples))
-		{
-			PrintDebug("Fifo write fail\n");
-			av_frame_free(&pResFrame);
-			return;
-		}
-		av_frame_free(&pResFrame);
-
-		// Pass the audio to BASS
 		
+		int size = av_samples_get_buffer_size(&pAudioFrame->linesize[0], pAudioFrame->ch_layout.nb_channels, pAudioFrame->nb_samples, AV_SAMPLE_FMT_FLT, 0);
+		if (size < 0)
+		{
+			PrintDebug("[video] Failed to send audio buffer to BASS.\n");
+			return;
+		}
 
+		BASS_StreamPutData(BassHandle, pAudioFrame->data[0], size);
 	}
 
 	void DecodeVideo(AVStream* pStream)
 	{
 		if (avcodec_send_packet(pVideoCodecContext, pPacket) < 0)
 		{
-			//PrintDebug("Video: Send packet error\n");
 			return;
 		}
 
 		if (avcodec_receive_frame(pVideoCodecContext, pFrame) < 0)
 		{
-			//PrintDebug("Video: Receive frame error\n");
 			return;
 		}
 
@@ -118,8 +98,8 @@ private:
 			pFrame->linesize,
 			0,
 			pFrame->height,
-			pRGBFrame->data,
-			pRGBFrame->linesize);
+			pVideoFrame->data,
+			pVideoFrame->linesize);
 
 		double new_time = pFrame->best_effort_timestamp * av_q2d(pStream->time_base);
 		double wait = new_time - time;
@@ -130,7 +110,7 @@ private:
 		std::this_thread::sleep_until(t);
 
 		update = false;
-		memcpy(framebuffer, pRGBFrame->data[0], width * height * 4);
+		memcpy(framebuffer, pVideoFrame->data[0], width * height * 4);
 		update = true;
 	}
 
@@ -144,21 +124,22 @@ private:
 			{
 				if (ret == AVERROR_EOF)
 				{
-					//PrintDebug("AVERROR_EOF\n");
 					finished = true;
 				}
 				break;
 			}
-
+			
 			if (pPacket->stream_index == video_stream_index)
 			{
 				DecodeVideo(pFormatContext->streams[video_stream_index]);
+				av_packet_unref(pPacket);
 				break;
 			}
 
 			if (pPacket->stream_index == audio_stream_index)
 			{
 				DecodeAudio(pFormatContext->streams[audio_stream_index]);
+				av_packet_unref(pPacket);
 				break;
 			}
 
@@ -227,20 +208,20 @@ public:
 		pFormatContext = avformat_alloc_context();
 		if (!pFormatContext)
 		{
-			PrintDebug("Context fail\n");
+			PrintDebug("[video] Failed to initialize ffmpeg.\n");
 			return false;
 		}
 
 		if (sfd)
 		{
-			PrintDebug("Using ADX audio\n");
+			PrintDebug("[video] SFD compatibility mode.\n");
 			pFormatContext->audio_codec_id = AV_CODEC_ID_ADPCM_ADX;
 		}
 
 		if (avformat_open_input(&pFormatContext, path, NULL, NULL) != 0 ||
 			avformat_find_stream_info(pFormatContext, NULL) < 0)
 		{
-			PrintDebug("avformat_open_input fail\n");
+			PrintDebug("[video] Failed to open %s.\n", path);
 			return false;
 		}
 
@@ -249,53 +230,28 @@ public:
 		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 		if (video_stream_index < 0)
 		{
-			PrintDebug("Video streams not found\n");
-			return false;
-		}
-
-		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
-		if (audio_stream_index < 0)
-		{
-			PrintDebug("Audio streams not found\n");
+			PrintDebug("[video] No video stream found.\n");
 			return false;
 		}
 
 		const AVCodec* pVideoCodec = avcodec_find_decoder(pFormatContext->streams[video_stream_index]->codecpar->codec_id);
 		pFormatContext->video_codec = pVideoCodec;
 
-		const AVCodec* pAudioCodec = avcodec_find_decoder(pFormatContext->streams[audio_stream_index]->codecpar->codec_id);
-		pFormatContext->audio_codec = pAudioCodec;
-
 		pVideoCodecContext = avcodec_alloc_context3(pVideoCodec);
 		if (!pVideoCodecContext)
 		{
-			PrintDebug("pVideoCodecContext allocation fail\n");
+			PrintDebug("[video] Failed to initialize video codec context.\n");
 			return false;
 		}
 
-		pAudioCodecContext = avcodec_alloc_context3(pAudioCodec);
-		if (!pAudioCodecContext)
-		{
-			PrintDebug("pAudioCodecContext allocation fail\n");
-			return false;
-		}
+		AVStream* pVideoStream = pFormatContext->streams[video_stream_index];
 
-		AVStream* pStream = pFormatContext->streams[video_stream_index];
-		AVStream* pStreamA = pFormatContext->streams[audio_stream_index];
+		avformat_seek_file(pFormatContext, video_stream_index, 0, 0, pVideoStream->duration, 0);
 
-		avformat_seek_file(pFormatContext, video_stream_index, 0, 0, pStream->duration, 0);
-
-		if (avcodec_parameters_to_context(pVideoCodecContext, pStream->codecpar) < 0 ||
+		if (avcodec_parameters_to_context(pVideoCodecContext, pVideoStream->codecpar) < 0 ||
 			avcodec_open2(pVideoCodecContext, pVideoCodec, NULL) < 0)
 		{
-			PrintDebug("Video: avcodec_parameters_to_context / avcodec_open2 fail\n");
-			return false;
-		}
-
-		if (avcodec_parameters_to_context(pAudioCodecContext, pStreamA->codecpar) < 0 ||
-			avcodec_open2(pAudioCodecContext, pAudioCodec, NULL) < 0)
-		{
-			PrintDebug("Audio: avcodec_parameters_to_context / avcodec_open2 fail\n");
+			PrintDebug("[video] Failed to initialize video codec.\n");
 			return false;
 		}
 
@@ -316,58 +272,100 @@ public:
 
 		if (pSwsContext == NULL)
 		{
-			PrintDebug("pSwsContext fail\n");
+			PrintDebug("[video] Failed to initialize video conversion.\n");
 			return false;
 		}
 
 		pPacket = av_packet_alloc();
 		if (!pPacket)
 		{
-			PrintDebug("Packet fail\n");
+			PrintDebug("[video] Failed to allocate packet\n");
 			return false;
 		}
 
 		pFrame = av_frame_alloc();
 		if (!pFrame)
 		{
-			PrintDebug("Frame fail\n");
+			PrintDebug("[video] Failed to allocate packet frame.\n");
 			return false;
 		}
 
-		pRGBFrame = av_frame_alloc();
-		if (!pRGBFrame)
+		pVideoFrame = av_frame_alloc();
+		if (!pVideoFrame)
 		{
-			PrintDebug("RGB Frame fail\n");
+			PrintDebug("[video] Failed to allocate video output frame.\n");
 			return false;
 		}
 
-		pRGBFrame->format = AV_PIX_FMT_BGRA;
-		pRGBFrame->width = width;
-		pRGBFrame->height = height;
+		pVideoFrame->format = AV_PIX_FMT_BGRA;
+		pVideoFrame->width = width;
+		pVideoFrame->height = height;
 
-		if (av_frame_get_buffer(pRGBFrame, 0) < 0)
+		if (av_frame_get_buffer(pVideoFrame, 0) < 0)
 		{
-			PrintDebug("av_frame_get_buffer fail\n");
+			PrintDebug("[video] Failed to allocate video output frame buffer.\n");
 			return false;
 		}
 
 		framebuffer = (uint8_t*)av_malloc(width * height * 4);
 		if (!framebuffer)
 		{
-			PrintDebug("framebuffer fail\n");
+			PrintDebug("[video] Failed to allocate frame buffer.\n");
 			return false;
 		}
 
-		time = pStream->start_time * av_q2d(pStream->time_base);
-
-		// Initialize resampler
-		if (swr_alloc_set_opts2(&pSwrContext, &pStream->codecpar->ch_layout, AV_SAMPLE_FMT_FLT, pStream->codecpar->sample_rate,
-			&pStream->codecpar->ch_layout, (AVSampleFormat)pStream->codecpar->format, pStream->codecpar->sample_rate, 0, nullptr) < 0)
+		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
+		if (audio_stream_index >= 0)
 		{
-			PrintDebug("resampler fail\n");
-			return false;
+			const AVCodec* pAudioCodec = avcodec_find_decoder(pFormatContext->streams[audio_stream_index]->codecpar->codec_id);
+			pFormatContext->audio_codec = pAudioCodec;
+
+			pAudioCodecContext = avcodec_alloc_context3(pAudioCodec);
+			if (!pAudioCodecContext)
+			{
+				PrintDebug("[video] Failed to initialize audio codec context.\n");
+				return false;
+			}
+
+			AVStream* pAudoStream = pFormatContext->streams[audio_stream_index];
+
+			if (avcodec_parameters_to_context(pAudioCodecContext, pAudoStream->codecpar) < 0 ||
+				avcodec_open2(pAudioCodecContext, pAudioCodec, NULL) < 0)
+			{
+				PrintDebug("[video] failed to initialize audio codec.\n");
+				return false;
+			}
+
+			// Initialize resampler
+			if (swr_alloc_set_opts2(&pSwrContext, &pAudoStream->codecpar->ch_layout, AV_SAMPLE_FMT_FLT, pAudoStream->codecpar->sample_rate,
+				&pAudoStream->codecpar->ch_layout, (AVSampleFormat)pAudoStream->codecpar->format, pAudoStream->codecpar->sample_rate, 0, nullptr) < 0)
+			{
+				PrintDebug("[video] Failed to initialize audio conversion.\n");
+				return false;
+			}
+
+			pAudioFrame = av_frame_alloc();
+			if (!pAudioFrame)
+			{
+				PrintDebug("[video] Failed to allocate audio output frame.\n");
+				return false;
+			}
+
+			pAudioFrame->sample_rate = pAudioCodecContext->sample_rate;
+			pAudioFrame->ch_layout = pAudioCodecContext->ch_layout;
+			pAudioFrame->format = AV_SAMPLE_FMT_FLT;
+
+			BassHandle = BASS_StreamCreate(pAudioCodecContext->sample_rate, pAudioCodecContext->ch_layout.nb_channels, BASS_SAMPLE_FLOAT, STREAMPROC_PUSH, NULL);
+			if (!BassHandle)
+			{
+				PrintDebug("[video] Failed to initialize audio library.");
+				return false;
+			}
+			
+			BASS_ChannelPlay(BassHandle, FALSE);
 		}
 
+		time = pVideoStream->start_time * av_q2d(pVideoStream->time_base);
 		opened = true;
 
 		pVideoThread = new std::thread(VideoThread, this);
@@ -390,15 +388,18 @@ public:
 			}
 
 			if (pFormatContext) avformat_close_input(&pFormatContext);
-			if (pVideoCodecContext) avcodec_free_context(&pVideoCodecContext);
-			if (pAudioCodecContext) avcodec_free_context(&pAudioCodecContext);
-			if (pSwsContext) sws_freeContext(pSwsContext);
-			if (pAudioFifo) av_audio_fifo_free(pAudioFifo);
-			if (pSwrContext) swr_free(&pSwrContext);
 			if (pPacket) av_packet_free(&pPacket);
 			if (pFrame) av_frame_free(&pFrame);
-			if (pRGBFrame) av_frame_free(&pRGBFrame);
+
+			if (pVideoCodecContext) avcodec_free_context(&pVideoCodecContext);
+			if (pSwsContext) sws_freeContext(pSwsContext);
+			if (pVideoFrame) av_frame_free(&pVideoFrame);
 			if (framebuffer) av_free(framebuffer);
+
+			if (pAudioCodecContext) avcodec_free_context(&pAudioCodecContext);
+			if (pSwrContext) swr_free(&pSwrContext);
+			if (pAudioFrame) av_frame_free(&pAudioFrame);
+			if (BassHandle) { BASS_StreamFree(BassHandle); BassHandle = NULL; };
 		}
 	}
 
@@ -496,16 +497,21 @@ void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 
 	// Draw border/background
 	NJS_POINT2COL border;
-	NJS_COLOR color[4]{ 0 };
-	NJS_POINT2 points[4]{ 0 };
-	points[1].x = (float)HorizontalResolution;
-	points[2].y = (float)VerticalResolution;
-	points[3] = { (float)HorizontalResolution, (float)VerticalResolution };
-	border.col = color;
+	NJS_COLOR colors[4];
+	NJS_POINT2 points[4];
+	points[0] = { 0.0f, 0.0f };
+	colors[0].color = 0xFF000000;
+	points[1] = { screen_w, 0.0f };
+	colors[1].color = 0xFF000000;
+	points[2] = { 0.0f, screen_h };
+	colors[2].color = 0xFF000000;
+	points[3] = { screen_w, screen_h };
+	colors[3].color = 0xFF000000;
+	border.col = colors;
 	border.p = points;
 	border.num = 4;
 	border.tex = NULL;
-	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
+	njColorBlendingMode(NJD_SOURCE_COLOR, NJD_COLOR_BLENDING_SRCALPHA);
 	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
 	___SAnjDrawPolygon2D(&border, 4, -1000.0f, NJD_FILL | NJD_DRAW_CONNECTED);
 
@@ -560,11 +566,11 @@ Bool LoadDShowTextureRenderer_r(const char* filename)
 		sfd = true;
 	}
 
-	PrintDebug("Playing movie: %s\n", fullpath.c_str());
+	PrintDebug("[video] Playing movie: %s.\n", fullpath.c_str());
 
 	if (!player.Open(fullpath.c_str(), sfd))
 	{
-		PrintDebug("Failed to open video file\n");
+		PrintDebug("[video] Failed to play movie.\n");
 		return FALSE;
 	}
 
