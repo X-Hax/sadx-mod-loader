@@ -352,7 +352,22 @@ void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 	quad.u2 = 1.0f;
 	quad.v2 = 1.0f;
 
-	ds_DrawBoxFill2D(0.0f, 0.0f, screen_w, screen_h, -1001.0f, 0xFF000000);
+	// Draw border/background
+	NJS_POINT2COL border;
+	NJS_COLOR color[4]{ 0 };
+	NJS_POINT2 points[4]{ 0 };
+	points[1].x = (float)HorizontalResolution;
+	points[2].y = (float)VerticalResolution;
+	points[3] = { (float)HorizontalResolution, (float)VerticalResolution };
+	border.col = color;
+	border.p = points;
+	border.num = 4;
+	border.tex = NULL;
+	njColorBlendingMode(0, NJD_COLOR_BLENDING_SRCALPHA);
+	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
+	___SAnjDrawPolygon2D(&border, 4, -1000.0f, NJD_FILL | NJD_DRAW_CONNECTED);
+
+	// Draw video
 	njSetTexture(&video_texlist);
 	njQuadTextureStart(0);
 	njSetQuadTexture(0, 0xFFFFFFFF);
