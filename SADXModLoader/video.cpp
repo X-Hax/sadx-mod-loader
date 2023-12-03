@@ -148,7 +148,7 @@ public:
 		play = false;
 	}
 
-	bool Open(const char* path)
+	bool Open(const char* path, bool sfd)
 	{
 		if (opened)
 		{
@@ -158,11 +158,19 @@ public:
 		pFormatContext = avformat_alloc_context();
 		if (!pFormatContext)
 			return false;
+		
+		if (sfd)
+		{
+			PrintDebug("Using ADX audio\n");
+			const AVCodec* pAudioCodec = avcodec_find_decoder_by_name("adpcm_adx");
+			pFormatContext->audio_codec_id = AV_CODEC_ID_ADPCM_ADX;
+			pFormatContext->audio_codec = pAudioCodec;
+		}
 
 		if (avformat_open_input(&pFormatContext, path, NULL, NULL) != 0 ||
 			avformat_find_stream_info(pFormatContext, NULL) < 0)
 			return false;
-
+	
 		const AVCodec* pVideoCodec = NULL;
 
 		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &pVideoCodec, NULL);
@@ -373,7 +381,31 @@ Bool EndDShowTextureRenderer_r()
 
 Bool LoadDShowTextureRenderer_r(const char* filename)
 {
-	if (!player.Open(filename))
+	bool sfd = false; // If the original MPG doesn't exist, use the SFD file
+	bool dlc = false; // If the file is RE-US or RE-JP (DLC folder in Steam)
+
+	std::string fullpath = filename;
+	std::string basename = GetBaseName(filename); // Filename without extension
+	StripExtension(basename);
+
+	if (!lstrcmpiA(basename.c_str(), "re-us") || !lstrcmpiA(basename.c_str(), "re-jp"))
+	{
+		dlc = true;
+	}
+
+	// If the file doesn't exist, use the SFD version
+	if (!Exists(fullpath))
+	{
+		if (dlc)
+			fullpath = "DLC\\" + basename + "2.sfd";
+		else
+			ReplaceFileExtension(fullpath, ".sfd");
+		sfd = true;
+	}
+
+	PrintDebug("Playing movie: %s\n", fullpath.c_str());
+
+	if (!player.Open(fullpath.c_str(), sfd))
 	{
 		return FALSE;
 	}
