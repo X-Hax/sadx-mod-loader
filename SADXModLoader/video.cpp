@@ -2,12 +2,15 @@
 #include <DShow.h>
 #include <chrono>
 #include <thread>
+#include "bass_vgmstream.h"
 
 extern "C"
 {
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
+#include <libswresample/swresample.h>
+#include <libavutil/audio_fifo.h>
 }
 
 DataPointer(IMediaControl*, g_pMC, 0x3C600F8);
@@ -26,6 +29,7 @@ private:
 	AVCodecContext* pVideoCodecContext = nullptr;
 	AVCodecContext* pAudioCodecContext = nullptr;
 	SwsContext* pSwsContext = nullptr;
+	SwrContext* pSwrContext = nullptr;
 	AVPacket* pPacket = nullptr;
 	AVFrame* pFrame = nullptr;
 	AVFrame* pRGBFrame = nullptr;
@@ -57,9 +61,32 @@ private:
 			return;
 		}
 
-		update = false;
-		//
-		update = true;
+		// Initialize resampler
+		swr_alloc_set_opts2(&pSwrContext, &pStream->codecpar->ch_layout, AV_SAMPLE_FMT_FLT, pStream->codecpar->sample_rate,
+			&pStream->codecpar->ch_layout, (AVSampleFormat)pStream->codecpar->format, pStream->codecpar->sample_rate, 0, nullptr);
+		
+		// Initialize Fifo
+		AVAudioFifo* pAudioFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, pStream->codecpar->ch_layout.nb_channels, 1);
+
+		// Resample the frame
+		AVFrame* pResFrame = av_frame_alloc();
+		pResFrame->sample_rate = pFrame->sample_rate;
+		pResFrame->ch_layout = pFrame->ch_layout;
+		pResFrame->format = AV_SAMPLE_FMT_FLT;
+
+		if (swr_config_frame(pSwrContext, pResFrame, pFrame) < 0)
+		{
+			av_frame_free(&pResFrame);
+			av_frame_unref(pFrame);
+			return;
+		}
+		av_frame_unref(pFrame);
+		av_audio_fifo_write(pAudioFifo, (void**)pResFrame->data, pResFrame->nb_samples);
+		av_frame_free(&pResFrame);
+
+		// Pass the audio to BASS
+		
+
 	}
 
 	void DecodeVideo(AVStream* pStream)
