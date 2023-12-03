@@ -5,6 +5,10 @@
 #include <Psapi.h>
 #include <shlwapi.h>
 #include <time.h>
+#include "util.h"
+#include <filesystem>  // For std::filesystem on C++17 and above
+#include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -85,58 +89,61 @@ void SetErrorMessage(string& fullMsg, const string address, const string dllName
 	fullMsg += "\nA minidump has been created in your SADX folder.\n";
 }
 
-void CopyAndRename_ModLoaderIni()
+void CopyAndRename_SADXLoaderProfile()
 {
-	char timeStr[255];
-	time_t t = time(NULL);
+	std::time_t t = std::time(nullptr);
 	tm tM;
 	localtime_s(&tM, &t);
-	strftime(timeStr, 255, "_%d_%m_%Y_%H_%M_%S", &tM);
-	char tmp[256];
-	string directory = getcwd(tmp, 256);
 
-	const string quote = "\"";
-	string fullLine = "xcopy " + quote + directory + "\\mods\\SADXModLoader.ini" + quote + " " + quote + directory + "\\CrashDump" + quote;
-	int copyState = system(fullLine.c_str());
+	// Format the time string
+	std::wstringstream oss;
+	oss << std::put_time(&tM, L"%m_%d_%Y_%H_%M_%S");
+	std::wstring timeStr = oss.str();
 
-	if (copyState != -1) {
-		string rename = "ren " + quote + directory + "\\CrashDump\\SADXModLoader.ini" + quote + " " + quote + "ModList" + timeStr + ".ini" + quote;
-		system(rename.c_str());
-		PrintDebug("CrashDump: Successfully copied SADXModLoader.ini to the CrashDump Folder.\n");
+	std::filesystem::path directory = std::filesystem::current_path();
+	std::filesystem::path sourcePath = currentProfilePath;
+	std::filesystem::path destinationPath = directory / L"CrashDump" / (L"ModList_" + timeStr + L".json");
+
+	try {
+		std::filesystem::copy_file(sourcePath, destinationPath, std::filesystem::copy_options::overwrite_existing);
+		PrintDebug("CrashDump: Successfully copied and renamed SADX Profile.\n");
 	}
-	else
-	{
-		PrintDebug("CrashDump: Failed to copy SADXModLoader.ini to the CrashDump Folder.\n");
+	catch (const std::exception& e) {
+		PrintDebug("CrashDump: Failed to copy and rename SADX Profile. Error: %s\n", e.what());
 	}
 }
 
-bool IsPathExist(const string& s)
+std::string convertWString(const std::wstring& s)
 {
-	struct stat buffer;
-	return (stat(s.c_str(), &buffer) == 0);
+	int bufferSize = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, nullptr, 0, nullptr, nullptr);
+	std::string narrowStr(bufferSize, '\0');
+	WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, &narrowStr[0], bufferSize, nullptr, nullptr);
+	return narrowStr;
 }
+
 
 #pragma comment(lib, "dbghelp.lib") 
 #pragma comment(lib, "Psapi.lib")
 LONG WINAPI HandleException(struct _EXCEPTION_POINTERS* apExceptionInfo)
 {
-	char timeStr[255];
+	wchar_t timeStr[255];
 	time_t t = time(NULL);
 	tm tM;
 	localtime_s(&tM, &t);
-	strftime(timeStr, 255, "CrashDump_%d_%m_%Y_%H_%M_%S.dmp", &tM);
-	string s = "CrashDump\\";
+	std::wcsftime(timeStr, 255, L"CrashDump_%d_%m_%Y_%H_%M_%S.dmp", &tM);
+
+	wstring s = L"CrashDump\\";
 	s.append(timeStr);
 
-	const char* crashFolder = "CrashDump";
+	const wchar_t* crashFolder = L"CrashDump";
 
-	if (!IsPathExist(crashFolder))
+	if (!Exists(crashFolder))
 	{
-		_mkdir(crashFolder);
+		_wmkdir(crashFolder);
 	}
 
 	//generate crash dump
-	HANDLE hFile = CreateFileA(
+	HANDLE hFile = CreateFileW(
 		s.c_str(),
 		GENERIC_WRITE | GENERIC_READ,
 		0,
@@ -196,7 +203,7 @@ LONG WINAPI HandleException(struct _EXCEPTION_POINTERS* apExceptionInfo)
 
 		string fullMsg = "";
 		SetErrorMessage(fullMsg, address, dllName, crashID);
-		CopyAndRename_ModLoaderIni(); //copy ModLoaderIni file to the Crash Dump folder so we know what mod and cheat were used
+		CopyAndRename_SADXLoaderProfile(); //copy JSON Profile file to the Crash Dump folder so we know what mods and cheats were used
 		string text = "Crash Address: " + address + "\n";
 		PrintDebug("\nFault module name: %s \n", dllName.c_str());
 		PrintDebug(text.c_str());

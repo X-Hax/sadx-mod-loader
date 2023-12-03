@@ -1322,6 +1322,8 @@ bool IsWindowsVistaOrGreater()
 	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
 }
 
+wstring currentProfilePath;
+
 static void __cdecl InitMods()
 {
 	// Hook present function to handle device lost/reset states
@@ -1364,6 +1366,7 @@ static void __cdecl InitMods()
 	MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), &profname_w[0], count);
 
 	// Load the current profile
+	currentProfilePath = appPath + L"\\SADX\\" + profname_w;
 	std::ifstream ifs_p(appPath + L"\\SADX\\" + profname_w);
 	json json_config = json::parse(ifs_p);
 	int setver = json_config.value("SettingsVersion", 0);
@@ -1957,7 +1960,7 @@ static void __cdecl InitMods()
 		if (modinfo->getBool("RedirectMainSave")) {
 			_mainsavepath = mod_dirA + "\\SAVEDATA";
 
-			if (!IsPathExist(_mainsavepath))
+			if (Exists(_mainsavepath))
 			{
 				_mkdir(_mainsavepath.c_str());
 			}
@@ -1968,7 +1971,7 @@ static void __cdecl InitMods()
 
 			_chaosavepath = mod_dirA + "\\SAVEDATA";
 
-			if (!IsPathExist(_chaosavepath))
+			if (!Exists(_chaosavepath))
 			{
 				_mkdir(_chaosavepath.c_str());
 			}
