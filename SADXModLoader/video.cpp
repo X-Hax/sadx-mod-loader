@@ -24,6 +24,7 @@ class VideoPlayer
 private:
 	AVFormatContext* pFormatContext = nullptr;
 	AVCodecContext* pVideoCodecContext = nullptr;
+	AVCodecContext* pAudioCodecContext = nullptr;
 	SwsContext* pSwsContext = nullptr;
 	AVPacket* pPacket = nullptr;
 	AVFrame* pFrame = nullptr;
@@ -32,6 +33,7 @@ private:
 	std::thread* pVideoThread = nullptr;
 
 	int video_stream_index = -1;
+	int audio_stream_index = -1;
 
 	unsigned int width = 0;
 	unsigned int height = 0;
@@ -42,6 +44,23 @@ private:
 	bool update = false;
 
 	double time = 0.0;
+
+	void DecodeAudio(AVStream* pStream)
+	{
+		if (avcodec_send_packet(pAudioCodecContext, pPacket) < 0)
+		{
+			return;
+		}
+
+		if (avcodec_receive_frame(pAudioCodecContext, pFrame) < 0)
+		{
+			return;
+		}
+
+		update = false;
+		//
+		update = true;
+	}
 
 	void DecodeVideo(AVStream* pStream)
 	{
@@ -92,6 +111,12 @@ private:
 			if (pPacket->stream_index == video_stream_index)
 			{
 				DecodeVideo(pFormatContext->streams[video_stream_index]);
+				break;
+			}
+
+			if (pPacket->stream_index == audio_stream_index)
+			{
+				DecodeAudio(pFormatContext->streams[audio_stream_index]);
 				break;
 			}
 		}
@@ -158,33 +183,48 @@ public:
 		pFormatContext = avformat_alloc_context();
 		if (!pFormatContext)
 			return false;
-		
+
 		if (sfd)
 		{
 			PrintDebug("Using ADX audio\n");
-			const AVCodec* pAudioCodec = avcodec_find_decoder_by_name("adpcm_adx");
 			pFormatContext->audio_codec_id = AV_CODEC_ID_ADPCM_ADX;
-			pFormatContext->audio_codec = pAudioCodec;
 		}
 
 		if (avformat_open_input(&pFormatContext, path, NULL, NULL) != 0 ||
 			avformat_find_stream_info(pFormatContext, NULL) < 0)
 			return false;
 	
-		const AVCodec* pVideoCodec = NULL;
-
-		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &pVideoCodec, NULL);
+		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 		if (video_stream_index < 0)
 			return false;
+
+		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
+		if (audio_stream_index < 0)
+			return false;
+
+		const AVCodec* pVideoCodec = avcodec_find_decoder(pFormatContext->streams[video_stream_index]->codecpar->codec_id);
+		pFormatContext->video_codec = pVideoCodec;
+
+		const AVCodec* pAudioCodec = avcodec_find_decoder(pFormatContext->streams[audio_stream_index]->codecpar->codec_id);
+		pFormatContext->audio_codec = pAudioCodec;
 
 		pVideoCodecContext = avcodec_alloc_context3(pVideoCodec);
 		if (!pVideoCodecContext)
 			return false;
 
+		pAudioCodecContext = avcodec_alloc_context3(pAudioCodec);
+		if (!pAudioCodecContext)
+			return false;
+
 		AVStream* pStream = pFormatContext->streams[video_stream_index];
+		AVStream* pStreamA = pFormatContext->streams[audio_stream_index];
 
 		if (avcodec_parameters_to_context(pVideoCodecContext, pStream->codecpar) < 0 ||
 			avcodec_open2(pVideoCodecContext, pVideoCodec, NULL) < 0)
+			return false;
+
+		if (avcodec_parameters_to_context(pAudioCodecContext, pStreamA->codecpar) < 0 ||
+			avcodec_open2(pAudioCodecContext, pAudioCodec, NULL) < 0)
 			return false;
 
 		width = pVideoCodecContext->width;
@@ -252,6 +292,7 @@ public:
 
 			if (pFormatContext) avformat_close_input(&pFormatContext);
 			if (pVideoCodecContext) avcodec_free_context(&pVideoCodecContext);
+			if (pAudioCodecContext) avcodec_free_context(&pAudioCodecContext);
 			if (pSwsContext) sws_freeContext(pSwsContext);
 			if (pPacket) av_packet_free(&pPacket);
 			if (pFrame) av_frame_free(&pFrame);
