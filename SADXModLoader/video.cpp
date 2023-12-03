@@ -344,10 +344,11 @@ void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 	quad.u2 = 1.0f;
 	quad.v2 = 1.0f;
 
+	ds_DrawBoxFill2D(0.0f, 0.0f, screen_w, screen_h, -1001.0f, 0xFF000000);
 	njSetTexture(&video_texlist);
 	njQuadTextureStart(0);
 	njSetQuadTexture(0, 0xFFFFFFFF);
-	njDrawQuadTexture(&quad, 1.0f);
+	njDrawQuadTexture(&quad, 1000.0f);
 	njQuadTextureEnd();
 }
 
