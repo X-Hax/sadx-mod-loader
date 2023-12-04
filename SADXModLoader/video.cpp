@@ -246,7 +246,7 @@ public:
 
 		AVStream* pVideoStream = pFormatContext->streams[video_stream_index];
 
-		avformat_seek_file(pFormatContext, video_stream_index, 0, 0, pVideoStream->duration, 0);
+		avformat_seek_file(pFormatContext, 0, 0, 0, pFormatContext->streams[0]->duration, 0);
 
 		if (avcodec_parameters_to_context(pVideoCodecContext, pVideoStream->codecpar) < 0 ||
 			avcodec_open2(pVideoCodecContext, pVideoCodec, NULL) < 0)
