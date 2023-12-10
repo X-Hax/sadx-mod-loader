@@ -1,0 +1,84 @@
+{
+  "Patches": [
+    {
+      "Name": "HRTFSound",
+      "Author": "SF94",
+      "Category": "Audio"
+    },
+    {
+      "Name": "KeepCamSettings",
+      "Author": "VeritasDL & SF94",
+      "Category": "Gameplay"
+    },
+    {
+      "Name": "FixVertexColorRendering",
+      "Author": "SF94",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "MaterialColorFix",
+      "Author": "SF94",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "NodeLimit",
+      "Author": "Sora",
+      "Category": "Miscellaneous"
+    },
+    {
+      "Name": "FOVFix",
+      "Author": "SF94",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "SkyChaseResolutionFix",
+      "Author": "PkR & SF94",
+      "Category": "Gameplay"
+    },
+    {
+      "Name": "Chaos2CrashFix",
+      "Author": "Sora",
+      "Category": "Gameplay"
+    },
+    {
+      "Name": "ChunkSpecularFix",
+      "Author": "MainMemory",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "E102NGonFix",
+      "Author": "Sora",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "ChaoPanelFix",
+      "Author": "Kell",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "PixelOffSetFix",
+      "Author": "SF94",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "LightFix",
+      "Author": "Kell & SF94",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "KillGBIX",
+      "Author": "Sora",
+      "Category": "Graphics"
+    },
+    {
+      "Name": "DisableCDCheck",
+      "Author": "MainMemory",
+      "Category": "System"
+    },
+    {
+      "Name": "ExtendedSaveSupport",
+      "Author": "PkR",
+      "Category": "System"
+    }
+  ]
+}
