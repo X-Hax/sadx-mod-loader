@@ -1,16 +1,11 @@
 #include "stdafx.h"
 #include <DShow.h>
-#include <chrono>
-#include <thread>
-#include "bass_vgmstream.h"
+#include <mutex>
 
-extern "C"
-{
-#include "libavcodec/avcodec.h"
-#include "libavformat/avformat.h"
-#include "libswscale/swscale.h"
-#include "libswresample/swresample.h"
-}
+#define ssize_t SSIZE_T
+#include <stdio.h>
+#include <stdlib.h>
+#include "vlc/vlc.h"
 
 DataPointer(IMediaControl*, g_pMC, 0x3C600F8);
 DataPointer(Sint32, nWidth, 0x10F1D68);
@@ -19,146 +14,61 @@ DataPointer(Uint8*, video_tex, 0x3C600E8);
 DataPointer(NJS_TEXNAME, video_texname, 0x3C600DC);
 DataPointer(NJS_TEXLIST, video_texlist, 0x3C60094);
 
-static bool b_ffmpeg = false;
+static bool b_libvlc = false;
+libvlc_instance_t* vlc_instance = nullptr;
 
 class VideoPlayer
 {
 private:
-	std::thread* pVideoThread = nullptr;
+	libvlc_media_player_t* vlc_mediaPlayer = nullptr;
 
-	AVFormatContext* pFormatContext = nullptr;
-	AVPacket* pPacket = nullptr;
-	AVFrame* pFrame = nullptr;
-
-	AVCodecContext* pVideoCodecContext = nullptr;
-	SwsContext* pSwsContext = nullptr;
-	AVFrame* pVideoFrame = nullptr;
+	std::mutex mutex;
 	uint8_t* framebuffer = nullptr;
-
-	AVCodecContext* pAudioCodecContext = nullptr;
-	SwrContext* pSwrContext = nullptr;
-	AVFrame* pAudioFrame = nullptr;
-	HSTREAM BassHandle = NULL;
-
-	int video_stream_index = -1;
-	int audio_stream_index = -1;
 
 	unsigned int width = 0;
 	unsigned int height = 0;
 
 	bool opened = false;
-	bool play = false;
-	bool finished = false;
 	bool update = false;
 
-	double time = 0.0;
-
-	void DecodeAudio(AVStream* pStream)
+	static void* vlcLock(void* object, void** planes)
 	{
-		if (avcodec_send_packet(pAudioCodecContext, pPacket) < 0)
-		{
-			return;
-		}
+		VideoPlayer* self = (VideoPlayer*)object;
+		self->mutex.lock();
+		planes[0] = (void*)self->framebuffer;
+		return NULL;
+	}
 
-		if (avcodec_receive_frame(pAudioCodecContext, pFrame) < 0)
-		{
-			return;
-		}
+	static void vlcUnlock(void* object, void* picture, void* const* planes)
+	{
+		VideoPlayer* self = (VideoPlayer*)object;
+		self->update = true;
+		self->mutex.unlock();
+	}
 
-		if (swr_convert_frame(pSwrContext, pAudioFrame, pFrame) < 0)
+	static unsigned vlcSetup(void** opaque, char* chroma, unsigned* width, unsigned* height, unsigned* pitches, unsigned* lines)
+	{
+		auto _this = static_cast<VideoPlayer*>(*opaque);
+		
+		if (_this->framebuffer)
 		{
-			PrintDebug("[video] Failed to convert audio frame.\n");
-			return;
+			return 0;
 		}
 		
-		int size = av_samples_get_buffer_size(&pAudioFrame->linesize[0], pAudioFrame->ch_layout.nb_channels, pAudioFrame->nb_samples, AV_SAMPLE_FMT_FLT, 0);
-		if (size < 0)
-		{
-			PrintDebug("[video] Failed to send audio buffer to BASS.\n");
-			return;
-		}
+		auto w = *width;
+		auto h = *height;
 
-		BASS_StreamPutData(BassHandle, pAudioFrame->data[0], size);
-	}
+		*pitches = w * 4;
+		*lines = h;
+		memcpy(chroma, "RV32", 4);
 
-	void DecodeVideo(AVStream* pStream)
-	{
-		if (avcodec_send_packet(pVideoCodecContext, pPacket) < 0)
-		{
-			return;
-		}
+		_this->mutex.lock();
+		_this->width = w;
+		_this->height = h;
+		_this->framebuffer = (uint8_t*)malloc(w * h * 4);
+		_this->mutex.unlock();
 
-		if (avcodec_receive_frame(pVideoCodecContext, pFrame) < 0)
-		{
-			return;
-		}
-
-		sws_scale(pSwsContext,
-			pFrame->data,
-			pFrame->linesize,
-			0,
-			pFrame->height,
-			pVideoFrame->data,
-			pVideoFrame->linesize);
-
-		double new_time = pFrame->best_effort_timestamp * av_q2d(pStream->time_base);
-		double wait = new_time - time;
-		time = new_time;
-
-		std::chrono::time_point<std::chrono::system_clock> t = std::chrono::system_clock::now();
-		t += std::chrono::milliseconds((int)(wait * 1000.0));
-		std::this_thread::sleep_until(t);
-
-		update = false;
-		memcpy(framebuffer, pVideoFrame->data[0], width * height * 4);
-		update = true;
-	}
-
-	void Decode()
-	{
-		while (1)
-		{
-			int ret = av_read_frame(pFormatContext, pPacket);
-
-			if (ret < 0)
-			{
-				if (ret == AVERROR_EOF)
-				{
-					finished = true;
-				}
-				break;
-			}
-			
-			if (pPacket->stream_index == video_stream_index)
-			{
-				DecodeVideo(pFormatContext->streams[video_stream_index]);
-				av_packet_unref(pPacket);
-				break;
-			}
-
-			if (pPacket->stream_index == audio_stream_index)
-			{
-				DecodeAudio(pFormatContext->streams[audio_stream_index]);
-				av_packet_unref(pPacket);
-				break;
-			}
-
-			av_packet_unref(pPacket);
-		}
-	}
-
-	static void VideoThread(VideoPlayer* _this)
-	{
-		while (1)
-		{
-			if (!_this->opened)
-				break;
-
-			if (!_this->play || _this->finished)
-				continue;
-
-			_this->Decode();
-		}
+		return 1;
 	}
 
 public:
@@ -174,7 +84,7 @@ public:
 
 	bool Finished()
 	{
-		return finished;
+		return vlc_mediaPlayer && libvlc_media_player_get_state(vlc_mediaPlayer) == libvlc_state_t::libvlc_Ended;
 	}
 
 	bool GetFrameBuffer(uint8_t* pBuffer)
@@ -190,12 +100,18 @@ public:
 
 	void Play()
 	{
-		play = true;
+		if (vlc_mediaPlayer)
+		{
+			libvlc_media_player_set_pause(vlc_mediaPlayer, 0);
+		}
 	}
 
 	void Pause()
 	{
-		play = false;
+		if (vlc_mediaPlayer)
+		{
+			libvlc_media_player_set_pause(vlc_mediaPlayer, 1);
+		}
 	}
 
 	bool Open(const char* path, bool sfd)
@@ -205,170 +121,57 @@ public:
 			Close();
 		}
 
-		pFormatContext = avformat_alloc_context();
-		if (!pFormatContext)
+		if (!vlc_instance)
 		{
-			PrintDebug("[video] Failed to initialize ffmpeg.\n");
 			return false;
 		}
 
-		if (sfd)
+		libvlc_media_t* vlc_media = libvlc_media_new_path(vlc_instance, path);
+		if (!vlc_media)
 		{
-			PrintDebug("[video] SFD compatibility mode.\n");
-			pFormatContext->audio_codec_id = AV_CODEC_ID_ADPCM_ADX;
-		}
-
-		if (avformat_open_input(&pFormatContext, path, NULL, NULL) != 0 ||
-			avformat_find_stream_info(pFormatContext, NULL) < 0)
-		{
-			PrintDebug("[video] Failed to open %s.\n", path);
+			PrintDebug("[video] Failed to open media.\n");
+			Close();
 			return false;
 		}
 
-		avio_seek(pFormatContext->pb, 0, SEEK_SET);
-
-		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
-		if (video_stream_index < 0)
+		vlc_mediaPlayer = libvlc_media_player_new_from_media(vlc_media);
+		if (!vlc_mediaPlayer)
 		{
-			PrintDebug("[video] No video stream found.\n");
+			PrintDebug("[video] Failed to initialize media player.\n");
+			Close();
 			return false;
 		}
 
-		const AVCodec* pVideoCodec = avcodec_find_decoder(pFormatContext->streams[video_stream_index]->codecpar->codec_id);
-		pFormatContext->video_codec = pVideoCodec;
+		libvlc_media_release(vlc_media);
 
-		pVideoCodecContext = avcodec_alloc_context3(pVideoCodec);
-		if (!pVideoCodecContext)
+		libvlc_video_set_callbacks(vlc_mediaPlayer, vlcLock, vlcUnlock, NULL, this);
+		libvlc_video_set_format_callbacks(vlc_mediaPlayer, vlcSetup, 0);
+		libvlc_media_player_play(vlc_mediaPlayer);
+
+		unsigned int timer = 0;
+		while (1)
 		{
-			PrintDebug("[video] Failed to initialize video codec context.\n");
-			return false;
-		}
-
-		AVStream* pVideoStream = pFormatContext->streams[video_stream_index];
-
-		avformat_seek_file(pFormatContext, video_stream_index, 0, 0, pVideoStream->duration, 0);
-
-		if (avcodec_parameters_to_context(pVideoCodecContext, pVideoStream->codecpar) < 0 ||
-			avcodec_open2(pVideoCodecContext, pVideoCodec, NULL) < 0)
-		{
-			PrintDebug("[video] Failed to initialize video codec.\n");
-			return false;
-		}
-
-		width = pVideoCodecContext->width;
-		height = pVideoCodecContext->height;
-
-		pSwsContext = sws_getContext(
-			pVideoCodecContext->width,
-			pVideoCodecContext->height,
-			pVideoCodecContext->pix_fmt,
-			width,
-			height,
-			AV_PIX_FMT_BGRA,
-			SWS_BICUBIC,
-			NULL,
-			NULL,
-			NULL);
-
-		if (pSwsContext == NULL)
-		{
-			PrintDebug("[video] Failed to initialize video conversion.\n");
-			return false;
-		}
-
-		pPacket = av_packet_alloc();
-		if (!pPacket)
-		{
-			PrintDebug("[video] Failed to allocate packet\n");
-			return false;
-		}
-
-		pFrame = av_frame_alloc();
-		if (!pFrame)
-		{
-			PrintDebug("[video] Failed to allocate packet frame.\n");
-			return false;
-		}
-
-		pVideoFrame = av_frame_alloc();
-		if (!pVideoFrame)
-		{
-			PrintDebug("[video] Failed to allocate video output frame.\n");
-			return false;
-		}
-
-		pVideoFrame->format = AV_PIX_FMT_BGRA;
-		pVideoFrame->width = width;
-		pVideoFrame->height = height;
-
-		if (av_frame_get_buffer(pVideoFrame, 0) < 0)
-		{
-			PrintDebug("[video] Failed to allocate video output frame buffer.\n");
-			return false;
-		}
-
-		framebuffer = (uint8_t*)av_malloc(width * height * 4);
-		if (!framebuffer)
-		{
-			PrintDebug("[video] Failed to allocate frame buffer.\n");
-			return false;
-		}
-
-		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
-		if (audio_stream_index >= 0)
-		{
-			const AVCodec* pAudioCodec = avcodec_find_decoder(pFormatContext->streams[audio_stream_index]->codecpar->codec_id);
-			pFormatContext->audio_codec = pAudioCodec;
-
-			pAudioCodecContext = avcodec_alloc_context3(pAudioCodec);
-			if (!pAudioCodecContext)
+			if (timer++ == 50)
 			{
-				PrintDebug("[video] Failed to initialize audio codec context.\n");
+				PrintDebug("[video] Failed to initialize transcoding.");
+				Close();
 				return false;
 			}
 
-			AVStream* pAudoStream = pFormatContext->streams[audio_stream_index];
-
-			if (avcodec_parameters_to_context(pAudioCodecContext, pAudoStream->codecpar) < 0 ||
-				avcodec_open2(pAudioCodecContext, pAudioCodec, NULL) < 0)
+			mutex.lock();
+			if (framebuffer)
 			{
-				PrintDebug("[video] failed to initialize audio codec.\n");
-				return false;
+				mutex.unlock();
+				break;
 			}
+			mutex.unlock();
 
-			// Initialize resampler
-			if (swr_alloc_set_opts2(&pSwrContext, &pAudoStream->codecpar->ch_layout, AV_SAMPLE_FMT_FLT, pAudoStream->codecpar->sample_rate,
-				&pAudoStream->codecpar->ch_layout, (AVSampleFormat)pAudoStream->codecpar->format, pAudoStream->codecpar->sample_rate, 0, nullptr) < 0)
-			{
-				PrintDebug("[video] Failed to initialize audio conversion.\n");
-				return false;
-			}
-
-			pAudioFrame = av_frame_alloc();
-			if (!pAudioFrame)
-			{
-				PrintDebug("[video] Failed to allocate audio output frame.\n");
-				return false;
-			}
-
-			pAudioFrame->sample_rate = pAudioCodecContext->sample_rate;
-			pAudioFrame->ch_layout = pAudioCodecContext->ch_layout;
-			pAudioFrame->format = AV_SAMPLE_FMT_FLT;
-
-			BassHandle = BASS_StreamCreate(pAudioCodecContext->sample_rate, pAudioCodecContext->ch_layout.nb_channels, BASS_SAMPLE_FLOAT, STREAMPROC_PUSH, NULL);
-			if (!BassHandle)
-			{
-				PrintDebug("[video] Failed to initialize audio library.");
-				return false;
-			}
-			
-			BASS_ChannelPlay(BassHandle, FALSE);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 
-		time = pVideoStream->start_time * av_q2d(pVideoStream->time_base);
+		libvlc_media_player_set_pause(vlc_mediaPlayer, 1);
 		opened = true;
 
-		pVideoThread = new std::thread(VideoThread, this);
 		return true;
 	}
 
@@ -376,30 +179,21 @@ public:
 	{
 		if (opened)
 		{
-			play = false;
 			opened = false;
-			finished = false;
+			update = false;
 
-			if (pVideoThread)
+			if (vlc_mediaPlayer)
 			{
-				pVideoThread->join();
-				delete pVideoThread;
-				pVideoThread = nullptr;
+				libvlc_media_player_stop(vlc_mediaPlayer);
+				libvlc_media_player_release(vlc_mediaPlayer);
+				vlc_mediaPlayer = nullptr;
 			}
 
-			if (pFormatContext) avformat_close_input(&pFormatContext);
-			if (pPacket) av_packet_free(&pPacket);
-			if (pFrame) av_frame_free(&pFrame);
-
-			if (pVideoCodecContext) avcodec_free_context(&pVideoCodecContext);
-			if (pSwsContext) sws_freeContext(pSwsContext);
-			if (pVideoFrame) av_frame_free(&pVideoFrame);
-			if (framebuffer) av_free(framebuffer);
-
-			if (pAudioCodecContext) avcodec_free_context(&pAudioCodecContext);
-			if (pSwrContext) swr_free(&pSwrContext);
-			if (pAudioFrame) av_frame_free(&pAudioFrame);
-			if (BassHandle) { BASS_StreamFree(BassHandle); BassHandle = NULL; };
+			if (framebuffer)
+			{
+				free(framebuffer);
+				framebuffer = nullptr;
+			}
 		}
 	}
 
@@ -414,7 +208,7 @@ static VideoPlayer player;
 
 Bool PauseVideo()
 {
-	if (b_ffmpeg)
+	if (b_libvlc)
 	{
 		player.Pause();
 		return TRUE;
@@ -424,7 +218,7 @@ Bool PauseVideo()
 
 Bool ResumeVideo()
 {
-	if (b_ffmpeg)
+	if (b_libvlc)
 	{
 		player.Play();
 		return TRUE;
@@ -525,12 +319,24 @@ void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 
 Bool StartDShowTextureRenderer_r()
 {
+	vlc_instance = libvlc_new(0, NULL);
+	if (!vlc_instance)
+	{
+		PrintDebug("[video] Failed to initialize VLC.\n");
+		return FALSE;
+	}
 	return TRUE;
 }
 
 Bool EndDShowTextureRenderer_r()
 {
 	player.Close();
+
+	if (vlc_instance)
+	{
+		libvlc_release(vlc_instance);
+		vlc_instance = nullptr;
+	}
 
 	if (video_tex)
 	{
@@ -591,7 +397,7 @@ Bool LoadDShowTextureRenderer_r(const char* filename)
 	video_texlist.textures = &video_texname;
 	video_texlist.nbTexture = 1;
 	njLoadTexture(&video_texlist);
-	
+
 	return TRUE;
 }
 
@@ -604,5 +410,6 @@ void Video_Init()
 	WriteJump((void*)0x513D30, PlayDShowTextureRenderer_r);
 	WriteJump((void*)0x513D50, CheckMovieStatus_r);
 	WriteJump((void*)0x513ED0, LoadDShowTextureRenderer_r);
-	b_ffmpeg = true;
+
+	b_libvlc = true;
 }
