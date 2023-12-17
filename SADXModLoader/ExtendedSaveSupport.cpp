@@ -32,6 +32,8 @@ void file_sel_disp_r(task* tp)
 {
 	file_sel_disp_h.Original(tp);
 	FileSelWk* v1 = (FileSelWk*)tp->awp;
+	if (v1 == nullptr || SaveLongFilename == nullptr)
+		return;
 	if (v1->BaseCol && GCMemoca_State.u8FileName > 0 && SaveLongFilename[0] != 0)
 	{
 		DialogJimakuInit();
@@ -145,7 +147,7 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 	char* data;
 	Uint32 size;
 
-	if (steam && !SteamDataPresent) 
+	if (steam && !SteamDataPresent)
 		return 0;
 
 	memset(&fileSearchData, 0, sizeof(fileSearchData));
@@ -161,6 +163,8 @@ static Uint8 __cdecl CountSaveNum_r(bool steam)
 	if ((int)handle == -1)
 	{
 		PrintDebug("Extended save support: Unable to find any save files.\n", fileName);
+		// Reset working folder
+		_wchdir(WorkingDir2004);
 		return 0;
 	}
 	sprintf_s(fileName, "%s/%s", mainsavepath, fileSearchData.cFileName);
