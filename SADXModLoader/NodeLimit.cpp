@@ -362,7 +362,7 @@ void PInitializeInterpolateMotion2_r(mtnjvwk* mjp)
 
 
 NJS_MATRIX InstanceMatrices_r[AnimLimit];
-void CalcMMMatrix_r(NJS_MATRIX_PTR inpmat, NJS_ACTION* actptr, Float motfrm, Uint32 srcnmb, NJS_MATRIX_PTR ansmat)
+Sint32 CalcMMMatrix_r(NJS_MATRIX_PTR inpmat, NJS_ACTION* actptr, Float motfrm, Uint32 srcnmb, NJS_MATRIX_PTR ansmat)
 {
 	SMMparams params;
 	CurrentModelIndex = 0;
@@ -386,7 +386,9 @@ void CalcMMMatrix_r(NJS_MATRIX_PTR inpmat, NJS_ACTION* actptr, Float motfrm, Uin
 	{
 		njSetMatrix(ansmat, InstanceMatrices_r[srcnmb]);
 	}
+
 	njPopMatrix(1);
+	return TRUE;
 }
 
 Sint32 __cdecl GetMMMatrix_r(Uint32 index, NJS_MATRIX_PTR matrix)
