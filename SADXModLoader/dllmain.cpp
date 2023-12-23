@@ -2182,7 +2182,7 @@ static void __cdecl LoadChrmodels()
 	if (!chrmodelshandle)
 	{
 		MessageBox(nullptr, L"CHRMODELS_orig.dll could not be loaded!\n\n"
-			L"SADX will now proceed to abruptly exit.",
+			L"The Mod Loader has not been installed correctly.\nReinstall the game and the Mod Loader and try again.",
 			L"SADX Mod Loader", MB_ICONERROR);
 		ExitProcess(1);
 	}
