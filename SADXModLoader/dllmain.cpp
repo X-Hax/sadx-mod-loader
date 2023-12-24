@@ -1110,6 +1110,7 @@ const std::wstring bassDLLs[] =
 
 static void __cdecl InitAudio()
 {
+	// BASS stuff
 	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
 	{
 		wstring bassFolder = extLibPath + L"BASS\\";
@@ -1128,6 +1129,20 @@ static void __cdecl InitAudio()
 
 		if (bassDLL)
 		{
+			PrintDebug("Loaded Bass DLLs dependencies\n");
+		}
+		else
+		{
+			PrintDebug("Failed to load bass DLL dependencies\n");
+			MessageBox(nullptr, L"Error loading BASS.\n\n"
+				L"Make sure the Mod Loader is installed properly.",
+				L"BASS Load Error", MB_OK | MB_ICONERROR);
+			return;
+		}
+
+		// Music
+		if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\se"))
+		{
 			WriteCall((void*)0x42544C, PlayMusicFile_r);
 			WriteCall((void*)0x4254F4, PlayVoiceFile_r);
 			WriteCall((void*)0x425569, PlayVoiceFile_r);
@@ -1142,24 +1157,16 @@ static void __cdecl InitAudio()
 			WriteJump((void*)0x40CFF0, WMPClose_r);
 			WriteJump((void*)0x40D28A, WMPRelease_r);
 			WriteJump((void*)0x40CF20, sub_40CF20_r);
-			PrintDebug("Loaded Bass DLLs dependencies\n");
 		}
-		else
-		{
-			PrintDebug("Failed to load bass DLL dependencies\n");
-			MessageBox(nullptr, L"Error loading BASS.\n\n"
-				L"Make sure the Mod Loader is installed properly.",
-				L"BASS Load Error", MB_OK | MB_ICONERROR);
-			return;
-		}
+
+		// SFX
+		if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
+			Sound_Init(loaderSettings.SEVolume);
 	}
 
-	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
-		Sound_Init(loaderSettings.SEVolume);
-
+	// Allow HRTF 3D sound
 	if (loaderSettings.HRTFSound)
 	{
-		// allow HRTF 3D sound
 		WriteData<uint8_t>(reinterpret_cast<uint8_t*>(0x00402773), 0xEBu);
 	}
 }
