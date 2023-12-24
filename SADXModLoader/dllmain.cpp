@@ -1110,13 +1110,13 @@ const std::wstring bassDLLs[] =
 
 static void __cdecl InitAudio()
 {
-
-	if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\bgm"))
+	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
 	{
 		wstring bassFolder = extLibPath + L"BASS\\";
 
+		// If the file doesn't exist, assume it's in the game folder like with the old Manager
 		if (!FileExists(bassFolder + L"bass.dll"))
-			bassFolder = L"BASS\\";
+			bassFolder = L"";
 
 		bool bassDLL = false;
 
@@ -1147,8 +1147,15 @@ static void __cdecl InitAudio()
 		else
 		{
 			PrintDebug("Failed to load bass DLL dependencies\n");
+			MessageBox(nullptr, L"Error loading BASS.\n\n"
+				L"Make sure the Mod Loader is installed properly.",
+				L"BASS Load Error", MB_OK | MB_ICONERROR);
+			return;
 		}
 	}
+
+	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
+		Sound_Init(loaderSettings.SEVolume);
 
 	if (loaderSettings.HRTFSound)
 	{
@@ -1502,9 +1509,6 @@ static void __cdecl InitMods()
 
 	if (loaderSettings.MaterialColorFix)
 		MaterialColorFixes_Init();
-
-	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
-		Sound_Init(loaderSettings.SEVolume);
 
 	//init interpol fix for helperfunctions
 	interpolation::init();
