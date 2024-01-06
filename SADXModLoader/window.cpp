@@ -72,6 +72,7 @@ static int customWindowHeight = 480;
 static bool windowResize = false;
 static bool textureFilter = true;
 static bool pauseWhenInactive;
+static bool showMouse = false;
 static screenmodes screenMode;
 
 // Path to Border Image
@@ -106,8 +107,6 @@ static DWORD  last_style = 0;
 static DWORD  last_exStyle = 0;
 
 const auto loc_794566 = (void*)0x00794566;
-
-RECT handleRect;
 #pragma endregion
 
 static void enable_fullscreen_mode(HWND handle)
@@ -294,10 +293,14 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 		{
 			if (screenMode == screenmodes::fullscreen_mode)
 			{
-				ClipCursor(&handleRect);
+				const auto& bounds = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
+				ClipCursor(&bounds);
 			}
 
-			while (ShowCursor(FALSE) > 0);
+			if (showMouse)
+				while (ShowCursor(TRUE) > 0);
+			else
+				while (ShowCursor(FALSE) > 0);
 		}
 
 	default:
@@ -635,13 +638,6 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			return;
 		}
 
-		if (screenMode == fullscreen_mode)
-		{
-			GetClientRect(parentWindow, &handleRect);
-			ClientToScreen(parentWindow, (LPPOINT)&handleRect.left);
-			ClientToScreen(parentWindow, (LPPOINT)&handleRect.right);
-		}
-
 		SetFocus(WindowHandle);
 		ShowWindow(parentWindow, nCmdShow);
 		UpdateWindow(parentWindow);
@@ -746,6 +742,7 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 	pauseWhenInactive = settings.PauseWhenInactive;
 	customWindowHeight = settings.WindowHeight;
 	customWindowWidth = settings.WindowWidth;
+	showMouse = true;
 
 	// If Screen Mode is not window mode, then it needs the below settings otherwise shit just breaks.
 	// This whole window handler needs a rewrite.
