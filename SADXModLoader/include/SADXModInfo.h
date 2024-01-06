@@ -79,6 +79,10 @@ struct LoaderSettings
 	int TestSpawnGameMode;
 	int TestSpawnSaveID;
 	bool InputMod;
+
+	// Graphics
+	int ScreenMode;
+
 	// Patches
 	bool HRTFSound;
 	bool CCEF;
