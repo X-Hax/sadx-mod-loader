@@ -28,6 +28,12 @@
     <Filter Include="Source Files\SDL2">
       <UniqueIdentifier>{c9388e64-e438-4cd8-a1a3-03e66706349d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Graphics">
+      <UniqueIdentifier>{eba259be-efdd-4677-9201-4486ab5c8040}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Graphics">
+      <UniqueIdentifier>{db19121e-ae36-4677-af6b-06a2a30c926f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextureReplacement.cpp">
@@ -146,6 +152,9 @@
     </ClCompile>
     <ClCompile Include="config.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="window.cpp">
+      <Filter>Source Files\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -340,6 +349,9 @@
     </ClInclude>
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="window.h">
+      <Filter>Header Files\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

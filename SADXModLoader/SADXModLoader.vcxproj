@@ -53,6 +53,7 @@
     <ClCompile Include="testspawn.cpp" />
     <ClCompile Include="TextureReplacement.cpp" />
     <ClCompile Include="uiscale.cpp" />
+    <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoMipmap.h" />
@@ -119,6 +120,7 @@
     <ClInclude Include="uiscale.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="VoiceDuration.h" />
+    <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libmodutils\libmodutils.vcxproj">
