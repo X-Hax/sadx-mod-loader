@@ -732,13 +732,12 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 {
 	borderimg = borderpath;
 	screenMode = (screenmodes)settings.ScreenMode;
-	scaleScreen = settings.StretchFullscreen;
 	screenNum = settings.ScreenNum;
 	windowResize = settings.ResizableWindow;
 	pauseWhenInactive = settings.PauseWhenInactive;
 	customWindowHeight = settings.WindowHeight;
 	customWindowWidth = settings.WindowWidth;
-	showMouse = true;
+	showMouse = settings.ShowMouseInFullscreen;
 
 	// If Screen Mode is not window mode, then it needs the below settings otherwise shit just breaks.
 	// This whole window handler needs a rewrite.

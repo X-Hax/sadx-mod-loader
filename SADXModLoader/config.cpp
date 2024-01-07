@@ -50,7 +50,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->PauseWhenInactive = json_graphics.value("EnablePauseOnInactive", true);
 		//loaderSettings->WindowedFullscreen = json_graphics.value("EnableBorderless", true);
 		//loaderSettings->CustomWindowSize = json_graphics.value("EnableCustomWindow", false);
-		loaderSettings->StretchFullscreen = json_graphics.value("EnableScreenScaling", true);
+		//loaderSettings->StretchFullscreen = json_graphics.value("EnableScreenScaling", true);
 		loaderSettings->WindowWidth = json_graphics.value("CustomWindowWidth", 640);
 		loaderSettings->WindowHeight = json_graphics.value("CustomWindowHeight", 480);
 		loaderSettings->MaintainWindowAspectRatio = json_graphics.value("EnableKeepResolutionRatio", false);
@@ -63,6 +63,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->AutoMipmap = json_graphics.value("EnableForcedMipmapping", true);
 		loaderSettings->TextureFilter = json_graphics.value("EnableForcedTextureFilter", true);
 		loaderSettings->ScreenMode = json_graphics.value("ScreenMode", 0);
+		loaderSettings->ShowMouseInFullscreen = json_graphics.value("ShowMouseInFullscreen", false);
 
 		// Controller settings
 		json json_controller = json_config["Controller"];
