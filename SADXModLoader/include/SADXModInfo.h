@@ -80,10 +80,6 @@ struct LoaderSettings
 	int TestSpawnSaveID;
 	bool InputMod;
 
-	// Graphics
-	int ScreenMode;
-	bool ShowMouseInFullscreen;
-
 	// Patches
 	bool HRTFSound;
 	bool CCEF;
@@ -101,6 +97,10 @@ struct LoaderSettings
 	bool KillGbix;
 	bool DisableCDCheck;
 	bool ExtendedSaveSupport;
+
+	// Graphics
+	int ScreenMode;
+	bool ShowMouseInFullscreen;
 };
 
 struct ModDependency
