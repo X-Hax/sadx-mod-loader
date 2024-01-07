@@ -462,13 +462,14 @@ const std::wstring bassDLLs[] =
 
 static void __cdecl InitAudio()
 {
-
-	if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\bgm"))
+	// BASS stuff
+	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
 	{
 		wstring bassFolder = extLibPath + L"BASS\\";
 
+		// If the file doesn't exist, assume it's in the game folder like with the old Manager
 		if (!FileExists(bassFolder + L"bass.dll"))
-			bassFolder = L"BASS\\";
+			bassFolder = L"";
 
 		bool bassDLL = false;
 
@@ -479,6 +480,20 @@ static void __cdecl InitAudio()
 		}
 
 		if (bassDLL)
+		{
+			PrintDebug("Loaded Bass DLLs dependencies\n");
+		}
+		else
+		{
+			PrintDebug("Failed to load bass DLL dependencies\n");
+			MessageBox(nullptr, L"Error loading BASS.\n\n"
+				L"Make sure the Mod Loader is installed properly.",
+				L"BASS Load Error", MB_OK | MB_ICONERROR);
+			return;
+		}
+
+		// Music
+		if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\se"))
 		{
 			WriteCall((void*)0x42544C, PlayMusicFile_r);
 			WriteCall((void*)0x4254F4, PlayVoiceFile_r);
@@ -494,17 +509,16 @@ static void __cdecl InitAudio()
 			WriteJump((void*)0x40CFF0, WMPClose_r);
 			WriteJump((void*)0x40D28A, WMPRelease_r);
 			WriteJump((void*)0x40CF20, sub_40CF20_r);
-			PrintDebug("Loaded Bass DLLs dependencies\n");
 		}
-		else
-		{
-			PrintDebug("Failed to load bass DLL dependencies\n");
-		}
+
+		// SFX
+		if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
+			Sound_Init(loaderSettings.SEVolume);
 	}
 
+	// Allow HRTF 3D sound
 	if (loaderSettings.HRTFSound)
 	{
-		// allow HRTF 3D sound
 		WriteData<uint8_t>(reinterpret_cast<uint8_t*>(0x00402773), 0xEBu);
 	}
 }
@@ -654,24 +668,6 @@ extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath)
 
 std::vector<Mod> modlist;
 
-bool IsWindowsVistaOrGreater()
-{
-	// Taken from https://stackoverflow.com/questions/1963992/check-windows-version
-	OSVERSIONINFOEXW osvi = {};
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	DWORDLONG const dwlConditionMask = VerSetConditionMask(
-		VerSetConditionMask(
-			VerSetConditionMask(
-				0, VER_MAJORVERSION, VER_GREATER_EQUAL),
-			VER_MINORVERSION, VER_GREATER_EQUAL),
-		VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
-	osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_VISTA);
-	osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_VISTA);
-	osvi.wServicePackMajor = 0;
-
-	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
-}
-
 static void __cdecl InitMods()
 {
 	// Hook present function to handle device lost/reset states
@@ -732,13 +728,6 @@ static void __cdecl InitMods()
 		PrintDebug("%s\n", MODLOADER_GIT_VERSION);
 #endif /* MODLOADER_GIT_DESCRIBE */
 #endif /* MODLOADER_GIT_VERSION */
-	}
-
-	// Set process DPI awareness for window resize on Vista and above
-	if (IsWindowsVistaOrGreater())
-	{
-		if (!SetProcessDPIAware())
-			PrintDebug("Unable to set process DPI awareness.\n");
 	}
 
 	PatchWindow(loaderSettings, borderimage); // override window creation function
@@ -817,9 +806,6 @@ static void __cdecl InitMods()
 
 	if (loaderSettings.MaterialColorFix)
 		MaterialColorFixes_Init();
-
-	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
-		Sound_Init(loaderSettings.SEVolume);
 
 	//init interpol fix for helperfunctions
 	interpolation::init();
@@ -1497,7 +1483,7 @@ static void __cdecl LoadChrmodels()
 	if (!chrmodelshandle)
 	{
 		MessageBox(nullptr, L"CHRMODELS_orig.dll could not be loaded!\n\n"
-			L"SADX will now proceed to abruptly exit.",
+			L"The Mod Loader has not been installed correctly.\nReinstall the game and the Mod Loader and try again.",
 			L"SADX Mod Loader", MB_ICONERROR);
 		ExitProcess(1);
 	}
