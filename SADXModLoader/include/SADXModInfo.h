@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 19;
+static const int ModLoaderVer = 20;
 struct PatchInfo
 {
 	void* address;
@@ -47,16 +47,16 @@ struct LoaderSettings
 	int HorizontalResolution;
 	int VerticalResolution;
 	bool ForceAspectRatio;
-	bool WindowedFullscreen;
+	__declspec(deprecated) bool WindowedFullscreen = true;	// Deprecated in v20+
 	bool EnableVsync;
 	bool AutoMipmap;
 	bool TextureFilter;
 	bool PauseWhenInactive;
-	bool StretchFullscreen;
+	__declspec(deprecated) bool StretchFullscreen = true;	// Deprecated in v20+
 	int ScreenNum;
 	int VoiceLanguage;
 	int TextLanguage;
-	bool CustomWindowSize;
+	__declspec(deprecated) bool CustomWindowSize = true;	// Deprecated in v20+
 	int WindowWidth;
 	int WindowHeight;
 	bool MaintainWindowAspectRatio;
@@ -99,8 +99,8 @@ struct LoaderSettings
 	bool ExtendedSaveSupport;
 
 	// Graphics
-	int ScreenMode;
-	bool ShowMouseInFullscreen;
+	int ScreenMode;				// Window Mode (Windowed, Fullscreen, Borderless Fullscren, or Custom Window); requires version 20+
+	bool ShowMouseInFullscreen;	// Displays Cursor when in Fullscreen; requires version 20+
 };
 
 struct ModDependency
