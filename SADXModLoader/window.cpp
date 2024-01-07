@@ -285,22 +285,18 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 			WndProc_B(WindowHandle, uMsg, wParam, lParam);
 		}
 
-		if (windowMode == windowed)
+		if (screenMode == screenmodes::fullscreen_mode)
+		{
+			ClipCursor(&screenBounds[0]);
+		}
+
+		if (windowMode == windowed || showMouse)
 		{
 			while (ShowCursor(TRUE) < 0);
 		}
 		else
 		{
-			if (screenMode == screenmodes::fullscreen_mode)
-			{
-				const auto& bounds = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
-				ClipCursor(&bounds);
-			}
-
-			if (showMouse)
-				while (ShowCursor(TRUE) > 0);
-			else
-				while (ShowCursor(FALSE) > 0);
+			while (ShowCursor(FALSE) > 0);
 		}
 
 	default:
