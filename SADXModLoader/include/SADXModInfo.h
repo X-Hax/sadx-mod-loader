@@ -82,6 +82,7 @@ struct LoaderSettings
 
 	// Graphics
 	int ScreenMode;
+	bool ShowMouseInFullscreen;
 
 	// Patches
 	bool HRTFSound;
