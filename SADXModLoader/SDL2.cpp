@@ -297,4 +297,6 @@ void SDL2_OnExit()
 	{
 		i.close();
 	}
+
+	SDL_Quit();
 }
