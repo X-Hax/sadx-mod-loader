@@ -285,10 +285,10 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 			WndProc_B(WindowHandle, uMsg, wParam, lParam);
 		}
 
-		if (screenMode == screenmodes::fullscreen_mode)
-		{
-			ClipCursor(&screenBounds[0]);
-		}
+		//if (screenMode == screenmodes::fullscreen_mode)
+		//{
+		//	ClipCursor(&screenBounds[0]);
+		//}
 
 		if (windowMode == windowed || showMouse)
 		{
@@ -502,7 +502,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	accelTable = LoadAcceleratorsA(g_hinstDll, MAKEINTRESOURCEA(IDR_ACCEL_WRAPPER_WINDOW));
 
-	if (screenMode >= fullscreen_mode)
+	if (screenMode >= borderless_mode)
 	{
 		PrintDebug("Creating SADX Window in borderless mode...\n");
 
@@ -741,7 +741,7 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 
 	// If Screen Mode is not window mode, then it needs the below settings otherwise shit just breaks.
 	// This whole window handler needs a rewrite.
-	if (screenMode > screenmodes::window_mode)
+	if (screenMode > screenmodes::borderless_mode)
 	{
 		scaleScreen = true;
 		borderlessWindow = true;
