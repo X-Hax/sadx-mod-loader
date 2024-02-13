@@ -67,6 +67,7 @@ using json = nlohmann::json;
 #include "NodeLimit.h"
 
 static HINSTANCE g_hinstDll = nullptr;
+static LPCTSTR iconPathName = NULL;
 
 /**
  * Show an error message indicating that this isn't the 2004 US version.
@@ -78,6 +79,23 @@ static void ShowNon2004USError()
 		L"Please obtain the EXE file from the 2004 US version and try again.",
 		L"SADX Mod Loader", MB_ICONERROR);
 	ExitProcess(1);
+}
+
+/**
+ * Set the icon at the specified path as the game window and console window icon.
+ */
+void SetWindowIcon(LPCTSTR iconPathName)
+{
+	UINT icon_flags = LR_LOADFROMFILE | LR_DEFAULTSIZE;
+	HANDLE hIcon = LoadImage(NULL, iconPathName, IMAGE_ICON, 0, 0, icon_flags);
+	// Game window
+	HINSTANCE hInst = (HINSTANCE)GetWindowLong(WindowHandle, GWL_HINSTANCE);
+	SendMessage(WindowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessage(WindowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	// Console window
+	HWND hConsole = GetConsoleWindow();
+	SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 }
 
 /**
@@ -948,6 +966,9 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	// Hook the window message handler.
 	WriteJump((void*)HandleWindowMessages, (void*)HandleWindowMessages_r);
+
+	if (iconPathName)
+		SetWindowIcon(iconPathName);
 }
 
 static __declspec(naked) void CreateSADXWindow_asm()
@@ -1553,7 +1574,7 @@ static void __cdecl InitMods()
 		const string mod_dirA = "mods\\" + mod_fname;
 		const wstring mod_dir = L"mods\\" + mod_fname_w;
 		const wstring mod_inifile = mod_dir + L"\\mod.ini";
-
+		
 		FILE* f_mod_ini = _wfopen(mod_inifile.c_str(), L"r");
 		
 		if (!f_mod_ini)
@@ -1571,6 +1592,14 @@ static void __cdecl InitMods()
 		const wstring mod_name = modinfo->getWString("Name");
 
 		PrintDebug("%u. %s\n", i, mod_nameA.c_str());
+
+		const wstring mod_icon = mod_dir + L"\\mod.ico";
+
+		if (FileExists(mod_icon))
+		{
+			iconPathName = mod_icon.c_str();
+			PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
+		}
 
 		vector<ModDependency> moddeps;
 
@@ -2183,6 +2212,12 @@ static void __cdecl InitMods()
 	GVR_Init();
 	if (loaderSettings.ExtendedSaveSupport)
 		ExtendedSaveSupport_Init();
+
+	if (FileExists(L"sonic.ico"))
+	{
+		iconPathName = L"sonic.ico";
+		PrintDebug("Setting icon from sonic.ico\n");
+	}
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
