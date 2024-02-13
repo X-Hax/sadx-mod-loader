@@ -427,6 +427,7 @@ static BOOL CALLBACK GetMonitorSize(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lp
 static const uint8_t wndpatch[] = { 0xA1, 0x30, 0xFD, 0xD0, 0x03, 0xEB, 0x08 }; // mov eax,[hWnd] / jmp short 0xf
 static int currentScreenSize[2];
 
+// This wrapper is only used in Borderless mode
 static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
@@ -440,9 +441,8 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 		break;
 
 	case WM_CLOSE:
-		// we also need to let SADX do cleanup
+		// As this sends the same message to the main window, there's no need to call OnExit here.
 		SendMessageA(WindowHandle, WM_CLOSE, wParam, lParam);
-		// what we do here is up to you: we can check if SADX decides to close, and if so, destroy ourselves, or something like that
 		return 0;
 
 	case WM_ERASEBKGND:
@@ -605,26 +605,25 @@ static void enable_windowed_mode(HWND handle)
 	while (ShowCursor(TRUE) < 0);
 }
 
-static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
+// This is a single WndProc used for both resizable and non-resizable windows
+static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
 	{
+
 	default:
 		break;
 
-	case WM_SYSKEYDOWN:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN) return 0;
-
-	case WM_SYSKEYUP:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN) return 0;
-
 	case WM_DESTROY:
+	case WM_CLOSE:
+		OnExit(0, 0, 0);
 		PostQuitMessage(0);
 		break;
 
+		// Cases below are only for resizable window
 	case WM_SIZE:
 	{
-		if (customWindowSize)
+		if (!windowResize || customWindowSize)
 		{
 			break;
 		}
@@ -648,7 +647,7 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 
 	case WM_COMMAND:
 	{
-		if (wParam != MAKELONG(ID_FULLSCREEN, 1))
+		if (!windowResize || wParam != MAKELONG(ID_FULLSCREEN, 1))
 		{
 			break;
 		}
@@ -674,7 +673,7 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 	}
 	}
 
-	return DefWindowProcA(handle, Msg, wParam, lParam);
+	return windowResize ? DefWindowProcA(handle, Msg, wParam, lParam) : WndProc(handle, Msg, wParam, lParam);
 }
 
 LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -707,12 +706,12 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	// Hook default return of SADX's window procedure to force it to return DefWindowProc
 	WriteJump(reinterpret_cast<void*>(0x00789E48), WndProc_hook);
-
+	
 	// Primary window class for SADX.
 	WNDCLASSA v8{}; // [sp+4h] [bp-28h]@1
 
 	v8.style = 0;
-	v8.lpfnWndProc = (windowResize ? WndProc_Resizable : WndProc);
+	v8.lpfnWndProc = WndProc_New;
 	v8.cbClsExtra = 0;
 	v8.cbWndExtra = 0;
 	v8.hInstance = hInstance;
@@ -1337,6 +1336,22 @@ static uint8_t ParseCharacter(const string& str)
 }
 extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath);
 
+// Console handler to properly shut down the game when the console window is enabled (since the console closes first)
+BOOL WINAPI ConsoleHandler(DWORD dwType)
+{
+	switch (dwType) 
+	{
+	case CTRL_CLOSE_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+		OnExit(0,0,0);
+		PostQuitMessage(0);
+		return TRUE;
+	default:
+		break;
+	}
+	return FALSE;
+}
 
 std::vector<Mod> modlist;
 
@@ -1375,6 +1390,9 @@ static void __cdecl InitMods()
 		SetConsoleTitle(L"SADX Mod Loader output");
 		freopen("CONOUT$", "wb", stdout);
 		dbgConsole = true;
+		bool res = SetConsoleCtrlHandler(ConsoleHandler, true);
+		if (!res)
+			PrintDebug("Unable to set console handler routine");
 	}
 
 	dbgScreen = loaderSettings.DebugScreen;

@@ -58,6 +58,7 @@ void OnControl()
 
 void __cdecl OnExit(UINT uExitCode, int a1, int a2)
 {
+	//MessageBoxA(WindowHandle, "Quit", "Quit", 0);
 	RaiseEvents(modExitEvents);
 	SDL2_OnExit();
 	FreeJVListIndices();
