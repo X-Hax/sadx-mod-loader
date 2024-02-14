@@ -203,9 +203,8 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 		break;
 
 	case WM_CLOSE:
-		// we also need to let SADX do cleanup
+		// As this sends the same message to the main window, there's no need to call OnExit here.
 		SendMessageA(WindowHandle, WM_CLOSE, wParam, lParam);
-		// what we do here is up to you: we can check if SADX decides to close, and if so, destroy ourselves, or something like that
 		return 0;
 
 	case WM_ERASEBKGND:
@@ -324,30 +323,29 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 	return DefWindowProcA(wrapper, uMsg, wParam, lParam);
 }
 
-static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
+// This is a single WndProc used for both resizable and non-resizable windows
+static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
 	{
+
 	default:
 		break;
 
-	case WM_SYSKEYDOWN:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN) return 0;
-
-	case WM_SYSKEYUP:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN) return 0;
-
 	case WM_DESTROY:
+	case WM_CLOSE:
+		OnExit(0, 0, 0);
 		PostQuitMessage(0);
 		break;
 
+		// Cases below are only for resizable window
 	case WM_SIZE:
 	{
-		if (customWindowSize)
+		if (!windowResize || customWindowSize)
 		{
 			break;
 		}
-		
+
 		if (!IsWindowed || Direct3D_Device == nullptr)
 		{
 			return 0;
@@ -367,7 +365,7 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 
 	case WM_COMMAND:
 	{
-		if (wParam != MAKELONG(ID_FULLSCREEN, 1))
+		if (!windowResize || wParam != MAKELONG(ID_FULLSCREEN, 1))
 		{
 			break;
 		}
@@ -393,7 +391,8 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 	}
 	}
 
-	return DefWindowProcA(handle, Msg, wParam, lParam);
+	// Don't know if the distinction between DefWindowProcA and WndProc makes a difference here
+	return windowResize ? DefWindowProcA(handle, Msg, wParam, lParam) : WndProc(handle, Msg, wParam, lParam);
 }
 
 LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -447,7 +446,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 	WNDCLASSA window{}; // [sp+4h] [bp-28h]@1
 
 	window.style = 0;
-	window.lpfnWndProc = (windowResize ? WndProc_Resizable : WndProc);
+	window.lpfnWndProc = WndProc_New;
 	window.cbClsExtra = 0;
 	window.cbWndExtra = 0;
 	window.hInstance = hInstance;

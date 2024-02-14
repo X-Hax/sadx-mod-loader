@@ -667,6 +667,23 @@ static uint8_t ParseCharacter(const string& str)
 }
 extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath);
 
+// Console handler to properly shut down the game when the console window is enabled (since the console closes first)
+BOOL WINAPI ConsoleHandler(DWORD dwType)
+{
+	switch (dwType) 
+	{
+	case CTRL_CLOSE_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+		OnExit(0,0,0);
+		PostQuitMessage(0);
+		return TRUE;
+	default:
+		break;
+	}
+	return FALSE;
+}
+
 std::vector<Mod> modlist;
 
 static void __cdecl InitMods()
@@ -704,6 +721,10 @@ static void __cdecl InitMods()
 		SetConsoleTitle(L"SADX Mod Loader output");
 		freopen("CONOUT$", "wb", stdout);
 		dbgConsole = true;
+		// Set console handler for closing the window
+		bool res = SetConsoleCtrlHandler(ConsoleHandler, true);
+		if (!res)
+			PrintDebug("Unable to set console handler routine\n");
 	}
 
 	dbgScreen = loaderSettings.DebugScreen;
