@@ -191,7 +191,7 @@ std::string GetModName(int index)
 	return ModList.at(index - 1);
 }
 
-int GetModCount()
+unsigned int GetModCount()
 {
 	return ModList.size();
 }
