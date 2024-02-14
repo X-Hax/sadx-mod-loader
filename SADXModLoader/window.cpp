@@ -173,6 +173,23 @@ static BOOL CALLBACK GetMonitorSize(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lp
 	return TRUE;
 }
 
+// Sets the icon at the specified path as the game window and console window icon.
+void SetWindowIcon(wstring iconPathName)
+{
+	PrintDebug("Icon: %s\n", iconPathName.c_str());
+	UINT icon_flags = LR_LOADFROMFILE | LR_DEFAULTSIZE;
+	HANDLE hIcon = LoadImage(NULL, iconPathName.c_str(), IMAGE_ICON, 0, 0, icon_flags);
+	// Game window
+	HINSTANCE hInst = (HINSTANCE)GetWindowLong(WindowHandle, GWL_HINSTANCE);
+	SendMessage(WindowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessage(WindowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	// Console window
+	HWND hConsole = GetConsoleWindow();
+	SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+}
+
+// WndProc wrapper for Borderless mode
 static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
@@ -701,6 +718,9 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	// Hook the window message handler.
 	WriteJump((void*)HandleWindowMessages, (void*)HandleWindowMessages_r);
+
+	if (!iconPathName.empty())
+		SetWindowIcon(iconPathName);
 }
 
 static __declspec(naked) void CreateSADXWindow_asm()

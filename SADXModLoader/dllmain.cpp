@@ -69,6 +69,7 @@ using json = nlohmann::json;
 
 wstring borderimage = L"mods\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
+wstring iconPathName;
 
 /**
  * Show an error message indicating that this isn't the 2004 US version.
@@ -843,7 +844,7 @@ static void __cdecl InitMods()
 		const string mod_dirA = "mods\\" + mod_fname;
 		const wstring mod_dir = L"mods\\" + mod_fname_w;
 		const wstring mod_inifile = mod_dir + L"\\mod.ini";
-
+		
 		FILE* f_mod_ini = _wfopen(mod_inifile.c_str(), L"r");
 		
 		if (!f_mod_ini)
@@ -859,8 +860,20 @@ static void __cdecl InitMods()
 
 		const string mod_nameA = modinfo->getString("Name");
 		const wstring mod_name = modinfo->getWString("Name");
+		const bool mod_hasIcon = modinfo->getBool("SetExeIcon");
 
 		PrintDebug("%u. %s\n", i, mod_nameA.c_str());
+
+		if (mod_hasIcon)
+		{
+			const wstring mod_icon = mod_dir + L"\\mod.ico";
+
+			if (FileExists(mod_icon))
+			{
+				iconPathName = mod_icon.c_str();
+				PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
+			}
+		}
 
 		vector<ModDependency> moddeps;
 
@@ -1473,6 +1486,12 @@ static void __cdecl InitMods()
 	GVR_Init();
 	if (loaderSettings.ExtendedSaveSupport)
 		ExtendedSaveSupport_Init();
+
+	if (FileExists(L"sonic.ico"))
+	{
+		iconPathName = L"sonic.ico";
+		PrintDebug("Setting icon from sonic.ico\n");
+	}
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
