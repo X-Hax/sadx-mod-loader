@@ -124,7 +124,7 @@ FunctionPointer(OCMDATA*, OCMsearchRideobj, (taskwk* otwp), 0x5FE380);
 VoidFunc(calcvsyncsyoriochi, 0x413920);
 
 // Filesystem
-FunctionPointer(void*, njOpenBinary, (const char* str), 0x7929D0);
+FunctionPointer(Sint8*, njOpenBinary, (const char* fname), 0x7929D0);
 FunctionPointer(void, njCloseBinary, (LPVOID lpMem), 0x792A70);
 
 // Texture decoding
