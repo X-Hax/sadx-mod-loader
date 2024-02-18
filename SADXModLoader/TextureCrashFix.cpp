@@ -39,7 +39,7 @@ Sint8* __cdecl njOpenBinary_r(const char* str)
 			switch (result)
 			{
 			case IDNO:
-			ExitProcess(1);
+				ExitProcess(1);
 				break;
 			case IDCANCEL:
 				IgnoreNjBinaryErrors = true;
@@ -175,6 +175,24 @@ Sint32 __fastcall Direct3D_SetTexListShit_r(NJS_TEXLIST* a1)
 	return Direct3D_SetTexListShit_h.Original(a1);
 }
 
+Uint32 __cdecl GetGlobalIndex_r(NJS_TEXLIST* a1, int texIndex)
+{
+	NJS_TEXLIST* texlist = a1;
+
+	// If anything is wrong with the texlist, set the current one
+	if (!a1 || !a1->textures || texIndex >= a1->nbTexture || !a1->textures[texIndex].texaddr)
+		texlist = nj_current_texlist;
+	// The default one can be broken too
+	if (texlist && texlist->textures)
+	{
+		NJS_TEXMEMLIST* memlist = (NJS_TEXMEMLIST*)texlist->textures[texIndex].texaddr;
+		if (memlist)
+			return memlist->globalIndex;
+	}
+	// If the TEXMEMLIST is null, return 0
+	return 0;
+}
+
 void TextureCrashFix_Init()
 {
 	// Binary file check
@@ -188,4 +206,6 @@ void TextureCrashFix_Init()
 	// Patch IsTextureNG to prevent models from becoming invisible
 	WriteData<1>((Uint8*)0x00403255, 0i8);
 	WriteData<1>((Uint8*)0x00403265, 0i8);
+	// Patch global index for invalid textures
+	WriteJump(GetGlobalIndex, GetGlobalIndex_r);
 }
