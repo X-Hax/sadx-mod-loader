@@ -1158,7 +1158,7 @@ static Sint32 __cdecl njLoadTexture_Wrapper_r(NJS_TEXLIST* texlist)
 
 static Sint32 __cdecl njLoadTexture_r(NJS_TEXLIST* texlist)
 {
-	NJS_TEXMEMLIST* memlist; // edi@7
+	NJS_TEXMEMLIST* memlist = NULL; // edi@7
 
 	if (texlist == nullptr)
 	{
@@ -1223,7 +1223,10 @@ static Sint32 __cdecl njLoadTexture_r(NJS_TEXLIST* texlist)
 			{
 				filename += gvr ? ".gvr" : ".pvr";
 				void* data = njOpenBinary(filename.c_str());
-				memlist = gvr ? gjLoadTextureTexMemList(data, gbix) : njLoadTextureTexMemList(data, gbix);
+				if (data)
+					memlist = gvr ? gjLoadTextureTexMemList(data, gbix) : njLoadTextureTexMemList(data, gbix);
+				else
+					PrintDebug("njLoadTexture_r: Failed to load %s\n", filename.c_str());
 				njCloseBinary(data);
 			}
 
