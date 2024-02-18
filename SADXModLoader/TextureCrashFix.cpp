@@ -20,6 +20,8 @@ static NJS_TEXINFO checker_texinfo;
 static NJS_TEXNAME checker_textures[300] = { 0 }; // Textures array (some functions access individual entries directly so no escape with just one)
 static NJS_TEXLIST checker_texlist = { arrayptrandlength(checker_textures) };
 static NJS_TEXMEMLIST checker_memlist = { 0 };
+static bool IgnoreNjBinaryErrors = false;
+
 char errormsg[1024];
 
 // Hack to show an error message when a binary file is missing
@@ -29,9 +31,23 @@ Sint8* __cdecl njOpenBinary_r(const char* str)
 	std::string fullpath = "system\\" + path;
 	if (!FileExists(fullpath))
 	{
-		sprintf(errormsg, "Unable to load the binary file %s. This is a critical error. Check game health in the Mod Manager and try again.\n\nTry to continue running?", str);
-		if (MessageBoxA(nullptr, errormsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNO) == IDNO)
+		PrintDebug("njOpenBinary_r: Failed to load %s\n", fullpath.c_str());
+		if (!IgnoreNjBinaryErrors)
+		{
+			sprintf(errormsg, "Unable to load the binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", str);
+			int result = MessageBoxA(nullptr, errormsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
+			switch (result)
+			{
+			case IDNO:
 			ExitProcess(1);
+				break;
+			case IDCANCEL:
+				IgnoreNjBinaryErrors = true;
+				break;
+			default:
+				break;
+			}
+		}
 	}
 	return njOpenBinary_h.Original(str);
 }
