@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include <SADXModLoader.h>
 
+// TODO: Figure out how to make 2D sprites appear when the texture is missing
+
 DataArray(int, TEXTURE_ALPHA_TBL, 0x389D458, 4);
 DataPointer(NJS_TEXLIST*, nj_current_texlist, 0x03D0FA24);
 DataPointer(NJS_TEXMEMLIST*, nj_texture_current_memlist_, 0x03CE7128);
@@ -8,41 +10,79 @@ DataPointer(NJS_TEXMEMLIST*, nj_texture_current_memlist_, 0x03CE7128);
 FunctionPointer(void, stApplyPalette, (NJS_TEXMEMLIST*), 0x78CDC0);
 FunctionPointer(void, ghGetPvrTextureSize, (NJS_TEXLIST* texlist, int index, int* width, int* height), 0x004332B0);
 FastcallFunctionPointer(void, stLoadTexture, (NJS_TEXMEMLIST* tex, IDirect3DTexture8* surface), 0x0078CBD0);
-FastcallFunctionPointer(Sint32, Direct3D_SetTexListShit, (NJS_TEXLIST* a1), 0x0077F3D0);
+FastcallFunctionPointer(Sint32, njSetTexture_real, (NJS_TEXLIST* a1), 0x0077F3D0); // The original njSetTexture (Direct3D_SetTexlist in old disasm)
 FastcallFunctionPointer(Sint32, stSetTexture, (NJS_TEXMEMLIST* a1), 0x0078CF20);
+FastcallFunctionPointer(void, stSetTexture_num, (Sint32 index), 0x0078D140); // Called stSetTexture in the new disasm
 
-FastcallFunctionHook<Sint32, NJS_TEXLIST*> Direct3D_SetTexListShit_h(Direct3D_SetTexListShit);
+// Texture loading hooks
+FastcallFunctionHook<Sint32, NJS_TEXLIST*> njSetTexture_real_h(njSetTexture_real);
 FastcallFunctionHook<Sint32, NJS_TEXMEMLIST*> stSetTexture_h(stSetTexture);
-FunctionHook<Sint8*, const char*> njOpenBinary_h(njOpenBinary);
+FastcallFunctionHook<Sint32, int> njSetTextureNum_h(njSetTextureNum_);
+FastcallFunctionHook<void, Sint32> stSetTexture_num_h(stSetTexture_num);
 
+// File loading hooks
+FunctionHook<Sint8*, const char*> njOpenBinary_h(njOpenBinary);
+FunctionHook<void, const char*, LPVOID> LoadFile_h(LoadFile);
+
+// Variables
 static Uint8 checker_texturedata[2048] = { 0 }; // Raw texture data
 static NJS_TEXINFO checker_texinfo;
 static NJS_TEXNAME checker_textures[300] = { 0 }; // Textures array (some functions access individual entries directly so no escape with just one)
-static NJS_TEXLIST checker_texlist = { arrayptrandlength(checker_textures) };
-static NJS_TEXMEMLIST checker_memlist = { 0 };
-static bool IgnoreNjBinaryErrors = false;
+static NJS_TEXLIST checker_texlist = { arrayptrandlength(checker_textures) }; // Used in direct3d.cpp
+NJS_TEXMEMLIST checker_memlist = { 0 }; // Used in TextureReplacement.cpp
 
-char errormsg[1024];
+static char errormsg[1024];
+static bool IgnoreFileLoadErrors = false; // Do not show the error dialog if true
 
-// Hack to show an error message when a binary file is missing
+// Hack to check filename before loading a file
+void LoadFile_r(const char* name, LPVOID lpBuffer)
+{
+	std::string path = name;
+	std::string fullpath = "system\\" + path;
+	if (!FileExists(fullpath))
+	{
+		PrintDebug("LoadFile_r: Failed to load %s\n", fullpath.c_str());
+		if (!IgnoreFileLoadErrors)
+		{
+			sprintf(errormsg, "Unable to load binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", name);
+			int result = MessageBoxA(nullptr, errormsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
+			switch (result)
+			{
+			case IDNO:
+				OnExit(0, 0, 0);
+				ExitProcess(1);
+				break;
+			case IDCANCEL:
+				IgnoreFileLoadErrors = true;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	return LoadFile_h.Original(name, lpBuffer);
+}
+
+// Hack to check filename before loading a file (njOpenBinary version)
 Sint8* __cdecl njOpenBinary_r(const char* str)
-{	
+{
 	std::string path = str;
 	std::string fullpath = "system\\" + path;
 	if (!FileExists(fullpath))
 	{
 		PrintDebug("njOpenBinary_r: Failed to load %s\n", fullpath.c_str());
-		if (!IgnoreNjBinaryErrors)
+		if (!IgnoreFileLoadErrors)
 		{
 			sprintf(errormsg, "Unable to load the binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", str);
 			int result = MessageBoxA(nullptr, errormsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
 			switch (result)
 			{
 			case IDNO:
+				OnExit(0, 0, 0);
 				ExitProcess(1);
 				break;
 			case IDCANCEL:
-				IgnoreNjBinaryErrors = true;
+				IgnoreFileLoadErrors = true;
 				break;
 			default:
 				break;
@@ -50,6 +90,32 @@ Sint8* __cdecl njOpenBinary_r(const char* str)
 		}
 	}
 	return njOpenBinary_h.Original(str);
+}
+
+// Hack to call stSetTexture with the correct texmemlist when the texture ID is invalid
+void __fastcall stSetTexture_num_r(Sint32 index)
+{
+	if (nj_current_texlist && nj_current_texlist->nbTexture > index && nj_current_texlist->textures[index].texaddr != NULL)
+		stSetTexture_num_h.Original(index);
+	else
+	{
+		stSetTexture(&checker_memlist);
+	}
+}
+
+// Hack to set texmemlist when a specific texid is used
+Sint32 __fastcall njSetTextureNum_r(int num)
+{
+	if (nj_current_texlist && num < nj_current_texlist->nbTexture && nj_current_texlist->textures[num].texaddr)
+	{
+		nj_texture_current_memlist_ = (NJS_TEXMEMLIST*)nj_current_texlist->textures[num].texaddr;
+	}
+	else
+	{
+		nj_texture_current_memlist_ = &checker_memlist;
+	}
+	stSetTexture(nj_texture_current_memlist_);
+	return 1;
 }
 
 // Hack to get texture dimensions when textures aren't loaded
@@ -104,22 +170,17 @@ void InitDefaultTexture()
 	// Set the same texture for 300 slots
 	for (int i = 0;i < 300;i++)
 	{
-		njSetTextureNameEx(&checker_textures[i], &checker_texinfo, &checker_memlist, NJD_TEXATTR_GLOBALINDEX | NJD_TEXATTR_TYPE_MEMORY);
+		checker_textures[i].attr = NJD_TEXATTR_GLOBALINDEX | NJD_TEXATTR_TYPE_MEMORY;
+		checker_textures[i].filename = &checker_texinfo;
 		checker_textures[i].texaddr = (Uint32)&checker_memlist;
-		checker_textures[i].attr = 0;
-		checker_textures[i].filename = "test";
 	}
 	checker_texlist.nbTexture = 300;
 	checker_texlist.textures = checker_textures;
-	//PrintDebug("Texs: %X\n", checker_texlist.textures[0]);
-	//PrintDebug("Texaddr: %X\n", checker_texlist.textures[0].texaddr);
-	//PrintDebug("Mem: %X\n", checker_memlist);
 }
 
 // Set default texture, called on failure
 Sint32 __fastcall SetDefaultTexture()
 {
-	//PrintDebug("Default texture: %X\n", checker_memlist);
 	stApplyPalette(&checker_memlist);
 	if (SetTexture_CurrentGBIX != checker_memlist.globalIndex)
 	{
@@ -133,7 +194,6 @@ Sint32 __fastcall SetDefaultTexture()
 // Set texture function that handles failure
 Sint32 __fastcall stSetTexture_r(NJS_TEXMEMLIST* t)
 {
-	//PrintDebug("sttexture %X:%X\n", t, t->globalIndex);
 	if (!t)
 		return SetDefaultTexture();
 
@@ -157,24 +217,22 @@ Sint32 __fastcall stSetTexture_r(NJS_TEXMEMLIST* t)
 	return TEXTURE_ALPHA_TBL[(t->texinfo.texsurface.PixelFormat >> 27) & 3];
 }
 
-// Set texlist function that with additional failchecks, compatible with Lantern Engine
-Sint32 __fastcall Direct3D_SetTexListShit_r(NJS_TEXLIST* a1)
+// Set texlist function with additional failchecks, compatible with Lantern Engine
+Sint32 __fastcall njSetTexture_real_r(NJS_TEXLIST* a1)
 {
-	//PrintDebug("Texlist: %X\n", a1);
 	if (!a1 || !a1->textures || !a1->textures->texaddr)
 	{
-		//PrintDebug("No texture for texlist %X\n", a1);
 		nj_current_texlist = &checker_texlist;
 		njds_texList = &checker_texlist;
 		nj_texture_current_memlist_ = (NJS_TEXMEMLIST*)checker_texlist.textures->texaddr;
 		CurrentTextureNum = 0;
-		//PrintDebug("Memlist: %X\n", a1->textures->texaddr);
 		stSetTexture(nj_texture_current_memlist_);
 		return 1;
 	}
-	return Direct3D_SetTexListShit_h.Original(a1);
+	return njSetTexture_real_h.Original(a1);
 }
 
+// Hack to get a global index value on invalid texlists without crashing
 Uint32 __cdecl GetGlobalIndex_r(NJS_TEXLIST* a1, int texIndex)
 {
 	NJS_TEXLIST* texlist = a1;
@@ -195,17 +253,19 @@ Uint32 __cdecl GetGlobalIndex_r(NJS_TEXLIST* a1, int texIndex)
 
 void TextureCrashFix_Init()
 {
-	// Binary file check
+	// Binary file checks
 	njOpenBinary_h.Hook(njOpenBinary_r);
-	// Load the checkerboard texture after Direct3D is already working
+	LoadFile_h.Hook(LoadFile_r);
+	// Load the checkerboard texture after Direct3D is initialized
 	WriteCall((void*)0x004209B2, InitDefaultTexture);
 	// Main hooks for the texture
 	WriteJump(ghGetPvrTextureSize, ghGetPvrTextureSize_r);
-	Direct3D_SetTexListShit_h.Hook(Direct3D_SetTexListShit_r);
-	stSetTexture_h.Hook(stSetTexture_r);		
+	njSetTexture_real_h.Hook(njSetTexture_real_r);
+	stSetTexture_h.Hook(stSetTexture_r);
+	njSetTextureNum_h.Hook(njSetTextureNum_r);
+	WriteJump(GetGlobalIndex, GetGlobalIndex_r);
+	stSetTexture_num_h.Hook(stSetTexture_num_r);
 	// Patch IsTextureNG to prevent models from becoming invisible
 	WriteData<1>((Uint8*)0x00403255, 0i8);
 	WriteData<1>((Uint8*)0x00403265, 0i8);
-	// Patch global index for invalid textures
-	WriteJump(GetGlobalIndex, GetGlobalIndex_r);
 }

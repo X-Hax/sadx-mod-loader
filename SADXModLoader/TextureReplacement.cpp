@@ -21,6 +21,7 @@
 
 // This
 #include "TextureReplacement.h"
+#include "TextureCrashFix.h"
 
 #define TOMAPSTRING(a) { a, #a }
 
@@ -1226,7 +1227,10 @@ static Sint32 __cdecl njLoadTexture_r(NJS_TEXLIST* texlist)
 				if (data)
 					memlist = gvr ? gjLoadTextureTexMemList(data, gbix) : njLoadTextureTexMemList(data, gbix);
 				else
+				{
 					PrintDebug("njLoadTexture_r: Failed to load %s\n", filename.c_str());
+					memlist = &checker_memlist;
+				}
 				njCloseBinary(data);
 			}
 
