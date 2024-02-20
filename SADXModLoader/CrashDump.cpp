@@ -12,16 +12,17 @@
 
 using namespace std;
 
-const string texCrashMsg = "Texture error: the game failed to apply one or more textures. This could be a mod conflict.\nIf you are making a mod, make sure all your textures are loaded\n ";
+const string texCrashMsg = "Texture error: the game failed to apply one or more textures. This could be a mod conflict.\nIf you are making a mod, make sure all your textures are loaded.";
 const string charCrashMsg = "Character Crash: The game crashed in one of the character's main function.\nYou most likely have a mod order conflict.\nMods that edit gameplay should be loaded last.";
 
 static const unordered_map<intptr_t, string> crashes_addresses_map = {
 	{ 0x78CF24, texCrashMsg},
 	{ 0x78D149, texCrashMsg },
+	{ 0x56FC1C, texCrashMsg }, // E101R init
 	{ 0x7B293A85, "DirectX error: You most likely reached a tex ID out of range."},
 	{ 0x40E380, "Font loading error: the game failed to load FONTDATA files.\nCheck game health in the Mod Manager and make sure the game has no missing files."},
 	{ 0x434614, "Camera error: the game failed to load a cam file for the stage."},
-	{ 0x787148, "Landtable error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."}
+	{ 0x787148, "Model error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."}
 };
 
 struct addressRange
@@ -70,7 +71,7 @@ static string getErrorMSG(intptr_t address)
 void SetErrorMessage(string& fullMsg, const string address, const string dllName, const intptr_t crashID)
 {
 	string errorCommon = getErrorMSG(crashID); //get error message if the crash address is common
-	fullMsg = "SADX has crashed at " + address + " (" + dllName + ").\n";
+	fullMsg = "SADX has crashed at " + address + " (" + dllName + ").\n\n";
 
 	if (errorCommon != "NULL")
 	{
