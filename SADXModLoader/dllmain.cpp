@@ -969,8 +969,6 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	if (iconPathName)
 		SetWindowIcon(iconPathName);
-
-	CrashGuard_Init();
 }
 
 static __declspec(naked) void CreateSADXWindow_asm()
@@ -2231,8 +2229,12 @@ static void __cdecl InitMods()
 
 	ApplyTestSpawn();
 	GVR_Init();
+
 	if (loaderSettings.ExtendedSaveSupport)
 		ExtendedSaveSupport_Init();
+
+	if (loaderSettings.CrashGuard)
+		CrashGuard_Init();
 
 	if (FileExists(L"sonic.ico"))
 	{
