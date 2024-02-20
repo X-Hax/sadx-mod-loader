@@ -33,16 +33,16 @@ static char errormsg[1024];
 static bool IgnoreFileLoadErrors = false; // Do not show the error dialog if true
 
 // Hack to check filename before loading a file
-void LoadFile_r(const char* name, LPVOID lpBuffer)
+void LoadFile_r(const char* str, LPVOID lpBuffer)
 {
-	std::string path = name;
-	std::string fullpath = "system\\" + path;
-	if (!FileExists(fullpath))
+	char buf[MAX_PATH];
+	sprintf_s(buf, "system\\%s", str);
+	if (!FileExists(sadx_fileMap.replaceFile(buf)))
 	{
-		PrintDebug("LoadFile_r: Failed to load %s\n", fullpath.c_str());
+		PrintDebug("LoadFile_r: Failed to load %s\n", buf);
 		if (!IgnoreFileLoadErrors)
 		{
-			sprintf(errormsg, "Unable to load binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", name);
+			sprintf(errormsg, "Unable to load binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", buf);
 			int result = MessageBoxA(nullptr, errormsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
 			switch (result)
 			{
@@ -58,20 +58,20 @@ void LoadFile_r(const char* name, LPVOID lpBuffer)
 			}
 		}
 	}
-	return LoadFile_h.Original(name, lpBuffer);
+	return LoadFile_h.Original(str, lpBuffer);
 }
 
 // Hack to check filename before loading a file (njOpenBinary version)
 Sint8* __cdecl njOpenBinary_r(const char* str)
 {
-	std::string path = str;
-	std::string fullpath = "system\\" + path;
-	if (!FileExists(fullpath))
+	char buf[MAX_PATH];
+	sprintf_s(buf, "system\\%s", str);
+	if (!FileExists(sadx_fileMap.replaceFile(buf)))
 	{
-		PrintDebug("njOpenBinary_r: Failed to load %s\n", fullpath.c_str());
+		PrintDebug("njOpenBinary_r: Failed to load %s\n", buf);
 		if (!IgnoreFileLoadErrors)
 		{
-			sprintf(errormsg, "Unable to load the binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", str);
+			sprintf(errormsg, "Unable to load the binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", buf);
 			int result = MessageBoxA(nullptr, errormsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
 			switch (result)
 			{
