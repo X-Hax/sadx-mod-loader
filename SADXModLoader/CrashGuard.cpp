@@ -95,14 +95,14 @@ Sint32 __fastcall njSetTextureNum_r(Sint32 num)
 {
 	if (nj_current_texlist && (Uint32)num < nj_current_texlist->nbTexture && nj_current_texlist->textures[num].texaddr)
 	{
-		nj_texture_current_memlist_ = (NJS_TEXMEMLIST*)nj_current_texlist->textures[num].texaddr;
+		return njSetTextureNum_h.Original(num);
 	}
 	else
 	{
 		nj_texture_current_memlist_ = &checker_memlist;
+		stSetTexture(nj_texture_current_memlist_);
+		return 1;
 	}
-	stSetTexture(nj_texture_current_memlist_);
-	return 1;
 }
 
 // Hack to get texture dimensions when textures aren't loaded
