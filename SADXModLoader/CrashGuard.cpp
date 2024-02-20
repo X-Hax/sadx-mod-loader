@@ -233,12 +233,12 @@ Sint32 __fastcall njSetTexture_real_r(NJS_TEXLIST* a1)
 }
 
 // Hack to get a global index value on invalid texlists without crashing
-Uint32 __cdecl GetGlobalIndex_r(NJS_TEXLIST* a1, int texIndex)
+Uint32 __cdecl GetGlobalIndex_r(NJS_TEXLIST* a1, Sint32 texIndex)
 {
 	NJS_TEXLIST* texlist = a1;
 
 	// If anything is wrong with the texlist, set the current one
-	if (!a1 || !a1->textures || texIndex >= a1->nbTexture || !a1->textures[texIndex].texaddr)
+	if (!a1 || !a1->textures || (Uint32)texIndex >= a1->nbTexture || !a1->textures[texIndex].texaddr)
 		texlist = nj_current_texlist;
 	// The default one can be broken too
 	if (texlist && texlist->textures)
