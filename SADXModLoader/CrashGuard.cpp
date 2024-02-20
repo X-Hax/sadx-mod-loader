@@ -12,13 +12,11 @@ FunctionPointer(void, ghGetPvrTextureSize, (NJS_TEXLIST* texlist, Sint32 index, 
 FastcallFunctionPointer(void, stLoadTexture, (NJS_TEXMEMLIST* tex, IDirect3DTexture8* surface), 0x0078CBD0);
 FastcallFunctionPointer(Sint32, njSetTexture_real, (NJS_TEXLIST* a1), 0x0077F3D0); // The original njSetTexture (Direct3D_SetTexlist in old disasm)
 FastcallFunctionPointer(Sint32, stSetTexture, (NJS_TEXMEMLIST* a1), 0x0078CF20);
-FastcallFunctionPointer(void, stSetTexture_num, (Sint32 index), 0x0078D140); // Called stSetTexture in the new disasm
 
 // Texture loading hooks
 FastcallFunctionHook<Sint32, NJS_TEXLIST*> njSetTexture_real_h(njSetTexture_real);
 FastcallFunctionHook<Sint32, NJS_TEXMEMLIST*> stSetTexture_h(stSetTexture);
 FastcallFunctionHook<Sint32, Sint32> njSetTextureNum_h(njSetTextureNum_);
-FastcallFunctionHook<void, Sint32> stSetTexture_num_h(stSetTexture_num);
 
 // File loading hooks
 FunctionHook<Sint8*, const char*> njOpenBinary_h(njOpenBinary);
@@ -90,17 +88,6 @@ Sint8* __cdecl njOpenBinary_r(const char* str)
 		}
 	}
 	return njOpenBinary_h.Original(str);
-}
-
-// Hack to call stSetTexture with the correct texmemlist when the texture ID is invalid
-void __fastcall stSetTexture_num_r(Sint32 index)
-{
-	if (nj_current_texlist && nj_current_texlist->nbTexture > (Uint32)index && nj_current_texlist->textures[index].texaddr != NULL)
-		stSetTexture_num_h.Original(index);
-	else
-	{
-		stSetTexture(&checker_memlist);
-	}
 }
 
 // Hack to set texmemlist when a specific texid is used
@@ -264,7 +251,6 @@ void CrashGuard_Init()
 	stSetTexture_h.Hook(stSetTexture_r);
 	njSetTextureNum_h.Hook(njSetTextureNum_r);
 	WriteJump(GetGlobalIndex, GetGlobalIndex_r);
-	stSetTexture_num_h.Hook(stSetTexture_num_r);
 	// Patch IsTextureNG to prevent models from becoming invisible
 	WriteData<1>((Uint8*)0x00403255, 0i8);
 	WriteData<1>((Uint8*)0x00403265, 0i8);
