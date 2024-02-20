@@ -147,7 +147,7 @@
     <ClCompile Include="config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextureCrashFix.cpp">
+    <ClCompile Include="CrashGuard.cpp">
       <Filter>Source Files\Patches</Filter>
     </ClCompile>
   </ItemGroup>
@@ -344,7 +344,7 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TextureCrashFix.h">
+    <ClInclude Include="CrashGuard.h">
       <Filter>Header Files\Patches</Filter>
     </ClInclude>
   </ItemGroup>

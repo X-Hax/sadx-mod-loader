@@ -1,4 +1,4 @@
 #pragma once
 
-void TextureCrashFix_Init();
+void CrashGuard_Init();
 extern NJS_TEXMEMLIST checker_memlist;

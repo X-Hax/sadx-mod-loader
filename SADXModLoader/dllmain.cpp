@@ -65,7 +65,7 @@ using json = nlohmann::json;
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
 #include "NodeLimit.h"
-#include "TextureCrashFix.h"
+#include "CrashGuard.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 static LPCTSTR iconPathName = NULL;
@@ -970,7 +970,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 	if (iconPathName)
 		SetWindowIcon(iconPathName);
 
-	TextureCrashFix_Init();
+	CrashGuard_Init();
 }
 
 static __declspec(naked) void CreateSADXWindow_asm()

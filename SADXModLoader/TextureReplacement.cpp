@@ -21,7 +21,7 @@
 
 // This
 #include "TextureReplacement.h"
-#include "TextureCrashFix.h"
+#include "CrashGuard.h"
 
 #define TOMAPSTRING(a) { a, #a }
 

@@ -3,12 +3,12 @@
 
 // TODO: Figure out how to make 2D sprites appear when the texture is missing
 
-DataArray(int, TEXTURE_ALPHA_TBL, 0x389D458, 4);
+DataArray(Sint32, TEXTURE_ALPHA_TBL, 0x389D458, 4);
 DataPointer(NJS_TEXLIST*, nj_current_texlist, 0x03D0FA24);
 DataPointer(NJS_TEXMEMLIST*, nj_texture_current_memlist_, 0x03CE7128);
 
 FunctionPointer(void, stApplyPalette, (NJS_TEXMEMLIST*), 0x78CDC0);
-FunctionPointer(void, ghGetPvrTextureSize, (NJS_TEXLIST* texlist, int index, int* width, int* height), 0x004332B0);
+FunctionPointer(void, ghGetPvrTextureSize, (NJS_TEXLIST* texlist, Sint32 index, Sint32* width, Sint32* height), 0x004332B0);
 FastcallFunctionPointer(void, stLoadTexture, (NJS_TEXMEMLIST* tex, IDirect3DTexture8* surface), 0x0078CBD0);
 FastcallFunctionPointer(Sint32, njSetTexture_real, (NJS_TEXLIST* a1), 0x0077F3D0); // The original njSetTexture (Direct3D_SetTexlist in old disasm)
 FastcallFunctionPointer(Sint32, stSetTexture, (NJS_TEXMEMLIST* a1), 0x0078CF20);
@@ -17,7 +17,7 @@ FastcallFunctionPointer(void, stSetTexture_num, (Sint32 index), 0x0078D140); // 
 // Texture loading hooks
 FastcallFunctionHook<Sint32, NJS_TEXLIST*> njSetTexture_real_h(njSetTexture_real);
 FastcallFunctionHook<Sint32, NJS_TEXMEMLIST*> stSetTexture_h(stSetTexture);
-FastcallFunctionHook<Sint32, int> njSetTextureNum_h(njSetTextureNum_);
+FastcallFunctionHook<Sint32, Sint32> njSetTextureNum_h(njSetTextureNum_);
 FastcallFunctionHook<void, Sint32> stSetTexture_num_h(stSetTexture_num);
 
 // File loading hooks
@@ -95,7 +95,7 @@ Sint8* __cdecl njOpenBinary_r(const char* str)
 // Hack to call stSetTexture with the correct texmemlist when the texture ID is invalid
 void __fastcall stSetTexture_num_r(Sint32 index)
 {
-	if (nj_current_texlist && nj_current_texlist->nbTexture > index && nj_current_texlist->textures[index].texaddr != NULL)
+	if (nj_current_texlist && nj_current_texlist->nbTexture > (Uint32)index && nj_current_texlist->textures[index].texaddr != NULL)
 		stSetTexture_num_h.Original(index);
 	else
 	{
@@ -104,9 +104,9 @@ void __fastcall stSetTexture_num_r(Sint32 index)
 }
 
 // Hack to set texmemlist when a specific texid is used
-Sint32 __fastcall njSetTextureNum_r(int num)
+Sint32 __fastcall njSetTextureNum_r(Sint32 num)
 {
-	if (nj_current_texlist && num < nj_current_texlist->nbTexture && nj_current_texlist->textures[num].texaddr)
+	if (nj_current_texlist && (Uint32)num < nj_current_texlist->nbTexture && nj_current_texlist->textures[num].texaddr)
 	{
 		nj_texture_current_memlist_ = (NJS_TEXMEMLIST*)nj_current_texlist->textures[num].texaddr;
 	}
@@ -119,13 +119,13 @@ Sint32 __fastcall njSetTextureNum_r(int num)
 }
 
 // Hack to get texture dimensions when textures aren't loaded
-void __cdecl ghGetPvrTextureSize_r(NJS_TEXLIST* texlist, int index, int* width, int* height)
+void __cdecl ghGetPvrTextureSize_r(NJS_TEXLIST* texlist, Sint32 index, Sint32* width, Sint32* height)
 {
 	NJS_TEXLIST* _texlist; // ecx
 	NJS_TEXSURFACE* p_texsurface; // eax
 
 	_texlist = texlist;
-	if (!texlist || !texlist->textures || (int)texlist->nbTexture <= index || !texlist->textures[index].texaddr)
+	if (!texlist || !texlist->textures || (Sint32)texlist->nbTexture <= index || !texlist->textures[index].texaddr)
 	{
 		_texlist = nj_current_texlist;
 	}
@@ -251,7 +251,7 @@ Uint32 __cdecl GetGlobalIndex_r(NJS_TEXLIST* a1, int texIndex)
 	return 0;
 }
 
-void TextureCrashFix_Init()
+void CrashGuard_Init()
 {
 	// Binary file checks
 	njOpenBinary_h.Hook(njOpenBinary_r);
