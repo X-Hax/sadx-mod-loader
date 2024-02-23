@@ -231,8 +231,6 @@ void CrashGuard_Init()
 	// Binary file checks
 	njOpenBinary_h.Hook(njOpenBinary_r);
 	LoadFile_h.Hook(LoadFile_r);
-	// Load the checkerboard texture after Direct3D is initialized
-	WriteCall((void*)0x004209B2, InitDefaultTexture);
 	// Main hooks for the texture
 	ghGetPvrTextureSize_h.Hook(ghGetPvrTextureSize_r);
 	njSetTexture_real_h.Hook(njSetTexture_real_r);

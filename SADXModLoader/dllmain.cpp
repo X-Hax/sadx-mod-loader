@@ -2249,6 +2249,8 @@ DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
 void EventGameLoopInit()
 {
 	RaiseEvents(modInitGameLoopEvents);
+	if (loaderSettings.CrashGuard)
+		InitDefaultTexture();
 }
 
 static void __cdecl LoadChrmodels()
