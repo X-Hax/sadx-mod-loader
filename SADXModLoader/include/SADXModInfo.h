@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 19;
+static const int ModLoaderVer = 20;
 struct PatchInfo
 {
 	void* address;
@@ -430,6 +430,15 @@ struct HelperFunctions
 	// Disable interpolation fix for animations, use it at the end of a display function.
 	// Requires version >= 19.
 	void(__cdecl* PopInterpolationFix)();
+	
+	/**
+	* @brief Prevents a texture list from being freed by njReleaseTextureAll.
+	* 
+	* Don't use this with RegisterCommonPVM because those will still be freed by lateReleaseTexture. 
+	* Requires version >= 20.
+	* 
+	*/
+	void(__cdecl* RegisterPermanentTexlist)(NJS_TEXLIST* texlist);
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);
