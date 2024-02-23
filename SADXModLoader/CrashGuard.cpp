@@ -31,6 +31,7 @@ NJS_TEXMEMLIST checker_memlist = { 0 }; // Used in TextureReplacement.cpp
 
 static char errormsg[1024];
 static bool IgnoreFileLoadErrors = false; // Do not show the error dialog if true
+static bool DefaultTextureLoaded = false;
 
 // Hack to check filename before loading a file
 void LoadFile_r(const char* str, LPVOID lpBuffer)
@@ -130,6 +131,8 @@ void __cdecl ghGetPvrTextureSize_r(NJS_TEXLIST* texlist, Sint32 index, Sint32* w
 // Initialize checkerboard texture
 void InitDefaultTexture()
 {
+	if (DefaultTextureLoaded)
+		return;
 	// Fill raw color data for VQ
 	for (int i = 8; i < 16; i += 2)
 	{
@@ -163,6 +166,7 @@ void InitDefaultTexture()
 	}
 	checker_texlist.nbTexture = 300;
 	checker_texlist.textures = checker_textures;
+	DefaultTextureLoaded = true;
 }
 
 // Set default texture, called on failure
