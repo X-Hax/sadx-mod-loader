@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 20;
+static const int ModLoaderVer = 21;
 struct PatchInfo
 {
 	void* address;
@@ -440,6 +440,17 @@ struct HelperFunctions
 	* 
 	*/
 	void(__cdecl* RegisterPermanentTexlist)(NJS_TEXLIST* texlist);
+
+	/**
+	* @brief Expands a TEX_PVMTABLE array (such as level PVM list) by adding a new entry to it.
+	*
+	* Requires version >= 20.
+	*
+	* @param sourcepvmlist: The original TEX_PVMTABLE array.
+	* @param newpvmentry: Pointer to the TEX_PVMTABLE struct to be added to the array.
+	* @return Pointer to the resized TEX_PVMTABLE array.
+	*/
+	TEX_PVMTABLE* (__cdecl* ExpandPVMList)(TEX_PVMTABLE* sourcepvmlist, const TEX_PVMTABLE &newpvmentry);
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);

@@ -628,6 +628,26 @@ void RegisterPermanentTexlist(NJS_TEXLIST* texlist)
 	}
 }
 
+// Expands an array of TEX_PVMTable, useful for level PVM lists
+TEX_PVMTABLE* ExpandPVMList(TEX_PVMTABLE* sourcepvmlist, const TEX_PVMTABLE &newpvmentry)
+{
+	std::vector<TEX_PVMTABLE> pvmlistvector;
+
+	// Add original and new data to vector
+	const TEX_PVMTABLE* oldlist = &sourcepvmlist[0];
+	for (; oldlist->ptexlist != nullptr; oldlist++)
+	{
+		pvmlistvector.push_back(*oldlist);
+	}
+	pvmlistvector.push_back(newpvmentry);
+	// Create a new PVM Entry list
+	auto size = pvmlistvector.size();
+	auto newlist = new TEX_PVMTABLE[size + 1];
+	memcpy(newlist, pvmlistvector.data(), sizeof(TEX_PVMTABLE) * size);
+	newlist[size].ptexlist = nullptr;
+	return newlist;
+}
+
 extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
@@ -673,4 +693,5 @@ HelperFunctions helperFunctions =
 	&PushInterpolationFix,
 	&PopInterpolationFix,
 	&RegisterPermanentTexlist,
+	&ExpandPVMList,
 };
