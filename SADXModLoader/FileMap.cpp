@@ -123,7 +123,6 @@ void FileMap::addReplaceFile(const std::string& origFile, const std::string& mod
 /**
  * Remove a file replacement.
  * @param file Filename.
- * @param modFile Mod filename.
  */
 void FileMap::unreplaceFile(const std::string& file)
 {

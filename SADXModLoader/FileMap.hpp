@@ -51,7 +51,6 @@ public:
 	/**
 	 * Remove a file replacement.
 	 * @param file Filename.
-	 * @param modFile Mod filename.
 	 */
 	void FileMap::unreplaceFile(const std::string& file);
 
