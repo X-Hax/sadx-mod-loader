@@ -327,7 +327,7 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
-	{
+	{	
 
 	default:
 		break;
@@ -338,7 +338,7 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 		PostQuitMessage(0);
 		break;
 
-		// Cases below are only for resizable window
+	// Request to change window size: only applicable for resizable window
 	case WM_SIZE:
 	{
 		if (!windowResize || customWindowSize)
@@ -363,35 +363,81 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 		break;
 	}
 
+	// Switching to/from the window, only applicable to exclusive fullscreen
+	case WM_ACTIVATE:
+	{
+		if (screenMode != fullscreen_mode)
+			return 0;
+			// Alt+TAB from exclusive fullscreen to window
+			if (wParam == WA_INACTIVE && !IsWindowed)
+			{
+				direct3d::change_resolution(last_width, last_height, true);
+				enable_windowed_mode(handle);
+				SetWindowLongA(handle, GWL_STYLE, WS_CAPTION | WS_SYSMENU | WS_VISIBLE);
+				const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
+				const auto w = rect.right - rect.left;
+				const auto h = rect.bottom - rect.top;
+				SetWindowPos(handle, HWND_NOTOPMOST, rect.left+w/ 2-last_width/2, rect.top+h/2-last_height/2, last_width, last_height, 0);
+				return 0;
+			}
+			// Alt+TAB from window to exclusive fullscreen
+			else if (wParam != WA_INACTIVE && !switchingWindowMode) // In this WndProc, switchingWindowMode is on when Alt+Enter is used
+			{
+				direct3d::change_resolution(last_width, last_height, false);
+				enable_fullscreen_mode(handle);
+				return 0;
+			}
+	}
+
+	// Alt+Enter for exclusive and borderless
 	case WM_COMMAND:
 	{
-		if (!windowResize || wParam != MAKELONG(ID_FULLSCREEN, 1))
+		if (wParam != MAKELONG(ID_FULLSCREEN, 1))
 		{
 			break;
 		}
 
+		// Alt+Enter from window to full screen
 		if (direct3d::is_windowed() && IsWindowed)
 		{
 			enable_fullscreen_mode(handle);
 
-			const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
+			// Only change render resolution to fit the screen in resizable mode
+			if (windowResize)
+			{
+				const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
 
-			const auto w = rect.right - rect.left;
-			const auto h = rect.bottom - rect.top;
+				const auto w = rect.right - rect.left;
+				const auto h = rect.bottom - rect.top;
+				direct3d::change_resolution(w, h, false);
+			}
+			else
+				direct3d::change_resolution(last_width, last_height, false);
+			
+			switchingWindowMode = false;
 
-			direct3d::change_resolution(w, h, false);
 		}
+		// Alt+Enter from fullscreen to window
 		else
 		{
 			direct3d::change_resolution(last_width, last_height, true);
 			enable_windowed_mode(handle);
+			LONG attrs = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_VISIBLE;
+			if (windowResize) 
+				attrs |= WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SIZEBOX;
+			SetWindowLongA(handle, GWL_STYLE, attrs);
+			const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
+			const auto w = rect.right - rect.left;
+			const auto h = rect.bottom - rect.top;
+			SetWindowPos(handle, HWND_NOTOPMOST, rect.left + w / 2 - last_width / 2, rect.top + h / 2 - last_height / 2, last_width, last_height, 0);
+			switchingWindowMode = true; // This is necessary to distinguish between Alt+Tab and Alt+Enter in exclusive mode
 		}
 
 		return 0;
 	}
 	}
 
-	// Don't know if the distinction between DefWindowProcA and WndProc makes a difference here
+	// The distinction between DefWindowProcA and WndProc must be preserved here, not sure about the exact differences
 	return windowResize ? DefWindowProcA(handle, Msg, wParam, lParam) : WndProc(handle, Msg, wParam, lParam);
 }
 
@@ -518,7 +564,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	accelTable = LoadAcceleratorsA(g_hinstDll, MAKEINTRESOURCEA(IDR_ACCEL_WRAPPER_WINDOW));
 
-	if (screenMode >= borderless_mode)
+	if (screenMode != fullscreen_mode)
 	{
 		PrintDebug("Creating SADX Window in borderless mode...\n");
 
@@ -802,8 +848,8 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		DisplayAdapter = screenNum - 1;
 	}
 
-	// Causes significant performance drop on some systems.
-	if (windowResize)
+	// Dynamic buffers, needed for window resize and fulscreen alttabbing
+	if (windowResize || !borderlessWindow)
 	{
 		// MeshSetBuffer_CreateVertexBuffer: Change D3DPOOL_DEFAULT to D3DPOOL_MANAGED
 		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
