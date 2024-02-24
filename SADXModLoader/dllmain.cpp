@@ -1121,6 +1121,7 @@ static void __cdecl InitMods()
 					RegisterEvent(modExitEvents, module, "OnExit");
 					RegisterEvent(modRenderDeviceLost, module, "OnRenderDeviceLost");
 					RegisterEvent(modRenderDeviceReset, module, "OnRenderDeviceReset");
+					RegisterEvent(modInitGameLoopEvents, module, "OnInitGameLoop");
 					RegisterEvent(onRenderSceneEnd, module, "OnRenderSceneEnd");
 					RegisterEvent(onRenderSceneStart, module, "OnRenderSceneStart");
 
@@ -1517,6 +1518,11 @@ static void __cdecl InitMods()
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
 
+void EventGameLoopInit()
+{
+	RaiseEvents(modInitGameLoopEvents);
+}
+
 static void __cdecl LoadChrmodels()
 {
 	chrmodelshandle = LoadLibrary(L".\\system\\CHRMODELS_orig.dll");
@@ -1533,6 +1539,7 @@ static void __cdecl LoadChrmodels()
 	SetDLLHandle(L"CHAOSTGGARDEN02MR_EVENING", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_EVENING.DLL"));
 	SetDLLHandle(L"CHAOSTGGARDEN02MR_NIGHT", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_NIGHT.DLL"));
 	WriteCall((void*)0x402513, (void*)InitMods);
+	WriteCall((void*)0x40C045, (void*)EventGameLoopInit);
 }
 
 /**

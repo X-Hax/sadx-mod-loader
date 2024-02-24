@@ -582,6 +582,72 @@ void PopInterpolationFix()
 	interpolation::pop();
 }
 
+std::list<NJS_TEXMEMLIST> PermanentTexMemlists;
+
+void RegisterPermanentTexlist(NJS_TEXLIST* texlist)
+{
+	for (unsigned int t = 0; t < texlist->nbTexture; t++)
+	{
+		bool found = false;
+		NJS_TEXMEMLIST* memlist_p = (NJS_TEXMEMLIST*)(texlist->textures[t].texaddr);
+		for (int i = 0; i < GlobalTextureCount; i++)
+		{
+			if (memlist_p == &GlobalTextures_p[i])
+			{
+#ifdef _DEBUG
+				PrintDebug("Adding texmemlist exception %d for GBIX %u at %X\n", t, memlist_p->globalIndex, texlist->textures[t].texaddr);
+#endif
+				PermanentTexMemlists.push_back(*(NJS_TEXMEMLIST*)(texlist->textures[t].texaddr));
+				texlist->textures[t].texaddr = (Uint32)&PermanentTexMemlists.back();
+				GlobalTextures_p[i].globalIndex = 0xFFFFFFFF;
+				GlobalTextures_p[i].bank = 0xFFFFFFFF;
+				GlobalTextures_p[i].tspparambuffer = 0;
+				GlobalTextures_p[i].texparambuffer = 0;
+				GlobalTextures_p[i].texaddr = 0;
+				GlobalTextures_p[i].count = 0;
+				GlobalTextures_p[i].dummy = -1;
+				GlobalTextures_p[i].texinfo.texaddr = 0;
+				GlobalTextures_p[i].texinfo.texsurface.Type = 0;
+				GlobalTextures_p[i].texinfo.texsurface.BitDepth = 0;
+				GlobalTextures_p[i].texinfo.texsurface.PixelFormat = 0;
+				GlobalTextures_p[i].texinfo.texsurface.nWidth = 0;
+				GlobalTextures_p[i].texinfo.texsurface.nHeight = 0;
+				GlobalTextures_p[i].texinfo.texsurface.TextureSize = 0;
+				GlobalTextures_p[i].texinfo.texsurface.fSurfaceFlags = 0;
+				GlobalTextures_p[i].texinfo.texsurface.pSurface = 0;
+				GlobalTextures_p[i].texinfo.texsurface.pVirtual = 0;
+				GlobalTextures_p[i].texinfo.texsurface.pPhysical = 0;
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			PrintDebug("RegisterPermanentTexlist: Unable to find texmemlist %X in global textures\n", texlist->textures[t].texaddr);
+		}
+	}
+}
+
+// Expands an array of TEX_PVMTable, useful for level PVM lists
+TEX_PVMTABLE* ExpandPVMList(TEX_PVMTABLE* sourcepvmlist, const TEX_PVMTABLE &newpvmentry)
+{
+	std::vector<TEX_PVMTABLE> pvmlistvector;
+
+	// Add original and new data to vector
+	const TEX_PVMTABLE* oldlist = &sourcepvmlist[0];
+	for (; oldlist->ptexlist != nullptr; oldlist++)
+	{
+		pvmlistvector.push_back(*oldlist);
+	}
+	pvmlistvector.push_back(newpvmentry);
+	// Create a new PVM Entry list
+	auto size = pvmlistvector.size();
+	auto newlist = new TEX_PVMTABLE[size + 1];
+	memcpy(newlist, pvmlistvector.data(), sizeof(TEX_PVMTABLE) * size);
+	newlist[size].ptexlist = nullptr;
+	return newlist;
+}
+
 extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
@@ -626,4 +692,6 @@ HelperFunctions helperFunctions =
 	&RegisterVoice,
 	&PushInterpolationFix,
 	&PopInterpolationFix,
+	&RegisterPermanentTexlist,
+	&ExpandPVMList,
 };
