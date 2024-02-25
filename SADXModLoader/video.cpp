@@ -121,7 +121,7 @@ void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 	njSetTexture(&video_texlist);
 	njQuadTextureStart(0);
 	njSetQuadTexture(0, 0xFFFFFFFF);
-	njDrawQuadTexture(&quad, 1000.0f);
+	njDrawQuadTexture(&quad, 1.0f);
 	njQuadTextureEnd();
 }
 
