@@ -1163,16 +1163,18 @@ const std::wstring bassDLLs[] =
 	L"bass_vgmstream.dll",
 };
 
+// Same as above for FFMPEG
 const std::wstring ffmpegDLLs[] =
 {
+	L"avutil-58.dll",
+	L"swresample-4.dll",
 	L"avcodec-60.dll",
 	L"avformat-60.dll",
-	L"avutil-58.dll",
 	L"swscale-7.dll",
-	L"swresample-4.dll",
+	L"sadx-ffmpeg-player.dll",
 };
 
-static void __cdecl LoadDependencyDLLs(string libName, wstring libFolderPath, const std::wstring* dllNameArray, int dllNameArraySize)
+static bool __cdecl LoadDependencyDLLs(string libName, wstring libFolderPath, const std::wstring* dllNameArray, int dllNameArraySize)
 {
 	wstring libFolder = extLibPath + libFolderPath + L"\\";
 
@@ -1194,12 +1196,12 @@ static void __cdecl LoadDependencyDLLs(string libName, wstring libFolderPath, co
 	}
 	else
 	{
-		PrintDebug("Failed to load %s DLL dependencies\n"), libName.c_str();
-		char errorMsg[260];
+		char errorMsg[360];
 		sprintf_s(errorMsg, "Error loading DLL files for %s.\n\nMake sure the Mod Loader is installed properly.", libName.c_str());
 		MessageBoxA(nullptr, errorMsg, "Dependency Load Error", MB_OK | MB_ICONERROR);
-		return;
+		return false;
 	}
+	return true;
 }
 
 static void __cdecl InitAudio()
@@ -1207,7 +1209,8 @@ static void __cdecl InitAudio()
 	// BASS stuff
 	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
 	{
-		LoadDependencyDLLs("BASS", L"BASS", bassDLLs, LengthOfArray(bassDLLs));
+		if (!LoadDependencyDLLs("BASS", L"BASS", bassDLLs, LengthOfArray(bassDLLs)))
+			return;
 
 		// Music
 		if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\se"))
@@ -1545,9 +1548,13 @@ static void __cdecl InitMods()
 
 	InitAudio();
 
-	LoadDependencyDLLs("FFMPEG", L"FFMPEG", ffmpegDLLs, LengthOfArray(ffmpegDLLs));
-
 	WriteJump(LoadSoundList, LoadSoundList_r);
+
+	if (loaderSettings.EnableFFMPEG || !Exists("system\\sa1.mpg"))
+	{
+		if (LoadDependencyDLLs("FFMPEG", L"FFMPEG", ffmpegDLLs, LengthOfArray(ffmpegDLLs)))
+			Video_Init();
+	}
 
 	InitPatches();
 
@@ -1609,9 +1616,6 @@ static void __cdecl InitMods()
 
 	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
 		Sound_Init(loaderSettings.SEVolume);
-
-	if (loaderSettings.EnableFFMPEG || !Exists("system\\sa1.mpg"))
-		Video_Init();
 
 	//init interpol fix for helperfunctions
 	interpolation::init();

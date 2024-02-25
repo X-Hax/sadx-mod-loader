@@ -182,17 +182,17 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>EXTENDED_BUTTONS;WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_WINDOWS;_USRDLL;SADXMODLOADER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\include;..\extlib\SDL2\include;..\extlib\bass;..\extlib\ffmpeg\include;..\libmodutils;..\mod-loader-common\ModLoaderCommon</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\extlib\SDL2\include;..\extlib\bass;..\libmodutils;..\mod-loader-common\ModLoaderCommon;..\extlib\ffmpeg</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProgramFiles)\DirectX 8.1 SDK\lib;..\extlib\bass;..\extlib\SDL2\lib\x86;..\extlib\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3dx8.lib;bass.lib;bass_vgmstream.lib;avcodec.lib;avformat.lib;swscale.lib;swresample.lib;notelemetry.obj;SDL2.lib;$(OutDir)libmodutils.lib;$(OutDir)ModLoaderCommon.lib;shlwapi.lib;dbghelp.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProgramFiles)\DirectX 8.1 SDK\lib;..\extlib\bass;..\extlib\SDL2\lib\x86;..\extlib\ffmpeg;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3dx8.lib;bass.lib;bass_vgmstream.lib;sadx-ffmpeg-player.lib;notelemetry.obj;SDL2.lib;$(OutDir)libmodutils.lib;$(OutDir)ModLoaderCommon.lib;shlwapi.lib;dbghelp.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libci.lib</IgnoreSpecificDefaultLibraries>
-      <DelayLoadDLLs>SDL2.dll;bass.dll;bass_vgmstream.dll;avcodec-60.dll;avformat-60.dll;avutil-58.dll;swscale-7.dll;swresample-4.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>SDL2.dll;bass.dll;bass_vgmstream.dll;sadx-ffmpeg-player.dll</DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
       <Command>"C:\Program Files\Git\bin\bash.exe" ../git_version.sh &gt;git_version.h</Command>
@@ -211,7 +211,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>EXTENDED_BUTTONS;WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;SADXMODLOADER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\include;..\extlib\SDL2\include;..\extlib\bass;..\extlib\ffmpeg\include;..\libmodutils;..\mod-loader-common\ModLoaderCommon</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\extlib\SDL2\include;..\extlib\bass;..\libmodutils;..\mod-loader-common\ModLoaderCommon;..\extlib\ffmpeg</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -220,11 +220,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProgramFiles)\DirectX 8.1 SDK\lib;..\extlib\bass;..\extlib\SDL2\lib\x86;..\extlib\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3dx8.lib;bass.lib;bass_vgmstream.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;notelemetry.obj;SDL2.lib;$(OutDir)libmodutils.lib;$(OutDir)ModLoaderCommon.lib;shlwapi.lib;dbghelp.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProgramFiles)\DirectX 8.1 SDK\lib;..\extlib\bass;..\extlib\SDL2\lib\x86;..\extlib\ffmpeg;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3dx8.lib;bass.lib;bass_vgmstream.lib;sadx-ffmpeg-player.lib;notelemetry.obj;SDL2.lib;$(OutDir)libmodutils.lib;$(OutDir)ModLoaderCommon.lib;shlwapi.lib;dbghelp.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libci.lib</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <DelayLoadDLLs>SDL2.dll;bass.dll;bass_vgmstream.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>SDL2.dll;bass.dll;bass_vgmstream.dll;sadx-ffmpeg-player.dll</DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
       <Command>"C:\Program Files\Git\bin\bash.exe" ../git_version.sh &gt;git_version.h</Command>
