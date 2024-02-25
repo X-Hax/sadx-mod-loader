@@ -14,6 +14,7 @@
 #include "hudscale.h"
 #include "testspawn.h"
 #include "json.hpp"
+#include "config.h"
 
 using std::deque;
 using std::ifstream;
@@ -67,6 +68,7 @@ using json = nlohmann::json;
 #include "NodeLimit.h"
 
 static HINSTANCE g_hinstDll = nullptr;
+static LPCTSTR iconPathName = NULL;
 
 /**
  * Show an error message indicating that this isn't the 2004 US version.
@@ -78,6 +80,23 @@ static void ShowNon2004USError()
 		L"Please obtain the EXE file from the 2004 US version and try again.",
 		L"SADX Mod Loader", MB_ICONERROR);
 	ExitProcess(1);
+}
+
+/**
+ * Set the icon at the specified path as the game window and console window icon.
+ */
+void SetWindowIcon(LPCTSTR iconPathName)
+{
+	UINT icon_flags = LR_LOADFROMFILE | LR_DEFAULTSIZE;
+	HANDLE hIcon = LoadImage(NULL, iconPathName, IMAGE_ICON, 0, 0, icon_flags);
+	// Game window
+	HINSTANCE hInst = (HINSTANCE)GetWindowLong(WindowHandle, GWL_HINSTANCE);
+	SendMessage(WindowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessage(WindowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	// Console window
+	HWND hConsole = GetConsoleWindow();
+	SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 }
 
 /**
@@ -409,6 +428,7 @@ static BOOL CALLBACK GetMonitorSize(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lp
 static const uint8_t wndpatch[] = { 0xA1, 0x30, 0xFD, 0xD0, 0x03, 0xEB, 0x08 }; // mov eax,[hWnd] / jmp short 0xf
 static int currentScreenSize[2];
 
+// This wrapper is only used in Borderless mode
 static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
@@ -422,9 +442,8 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 		break;
 
 	case WM_CLOSE:
-		// we also need to let SADX do cleanup
+		// As this sends the same message to the main window, there's no need to call OnExit here.
 		SendMessageA(WindowHandle, WM_CLOSE, wParam, lParam);
-		// what we do here is up to you: we can check if SADX decides to close, and if so, destroy ourselves, or something like that
 		return 0;
 
 	case WM_ERASEBKGND:
@@ -587,7 +606,8 @@ static void enable_windowed_mode(HWND handle)
 	while (ShowCursor(TRUE) < 0);
 }
 
-static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
+// This is a single WndProc used for both resizable and non-resizable windows
+static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
 	{
@@ -605,19 +625,17 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 			}
 		}
 		break;
-	case WM_SYSKEYDOWN:
-	case WM_SYSKEYUP:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN)
-		{
-			return 0;
-		}
-		break;
+
 	case WM_DESTROY:
+	case WM_CLOSE:
+		OnExit(0, 0, 0);
 		PostQuitMessage(0);
 		break;
+
+		// Cases below are only for resizable window
 	case WM_SIZE:
 	{
-		if (customWindowSize)
+		if (!windowResize || customWindowSize)
 		{
 			break;
 		}
@@ -640,7 +658,7 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 	}
 	case WM_COMMAND:
 	{
-		if (wParam != MAKELONG(ID_FULLSCREEN, 1))
+		if (!windowResize || wParam != MAKELONG(ID_FULLSCREEN, 1))
 		{
 			break;
 		}
@@ -666,7 +684,7 @@ static LRESULT CALLBACK WndProc_Resizable(HWND handle, UINT Msg, WPARAM wParam, 
 	}
 	}
 
-	return DefWindowProcA(handle, Msg, wParam, lParam);
+	return windowResize ? DefWindowProcA(handle, Msg, wParam, lParam) : WndProc(handle, Msg, wParam, lParam);
 }
 
 static LRESULT CALLBACK WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -723,12 +741,12 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	// Hook default return of SADX's window procedure to force it to return DefWindowProc
 	WriteJump(reinterpret_cast<void*>(0x00789E48), WndProc_hook);
-
+	
 	// Primary window class for SADX.
 	WNDCLASSA v8{}; // [sp+4h] [bp-28h]@1
 
 	v8.style = 0;
-	v8.lpfnWndProc = (windowResize ? WndProc_Resizable : WndProc);
+	v8.lpfnWndProc = WndProc_New;
 	v8.cbClsExtra = 0;
 	v8.cbWndExtra = 0;
 	v8.hInstance = hInstance;
@@ -982,6 +1000,9 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 	// Hook the window message handler.
 	WriteJump((void*)HandleWindowMessages, (void*)HandleWindowMessages_r);
+
+	if (iconPathName)
+		SetWindowIcon(iconPathName);
 }
 
 static __declspec(naked) void CreateSADXWindow_asm()
@@ -1142,25 +1163,54 @@ const std::wstring bassDLLs[] =
 	L"bass_vgmstream.dll",
 };
 
+const std::wstring ffmpegDLLs[] =
+{
+	L"avcodec-60.dll",
+	L"avformat-60.dll",
+	L"avutil-58.dll",
+	L"swscale-7.dll",
+	L"swresample-4.dll",
+};
+
+static void __cdecl LoadDependencyDLLs(string libName, wstring libFolderPath, const std::wstring* dllNameArray, int dllNameArraySize)
+{
+	wstring libFolder = extLibPath + libFolderPath + L"\\";
+
+	// If the file doesn't exist, assume it's in the game folder like with the old Manager
+	if (!FileExists(libFolder + dllNameArray[0]))
+		libFolder = L"";
+
+	bool libLoaded = false;
+
+	for (uint8_t i = 0; i < dllNameArraySize; i++)
+	{
+		wstring fullPath = libFolder + dllNameArray[i];
+		libLoaded = LoadLibrary(fullPath.c_str());
+	}
+
+	if (libLoaded)
+	{
+		PrintDebug("Loaded %s DLLs dependencies\n", libName.c_str());
+	}
+	else
+	{
+		PrintDebug("Failed to load %s DLL dependencies\n"), libName.c_str();
+		char errorMsg[260];
+		sprintf_s(errorMsg, "Error loading DLL files for %s.\n\nMake sure the Mod Loader is installed properly.", libName.c_str());
+		MessageBoxA(nullptr, errorMsg, "Dependency Load Error", MB_OK | MB_ICONERROR);
+		return;
+	}
+}
+
 static void __cdecl InitAudio()
 {
-
-	if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\bgm"))
+	// BASS stuff
+	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
 	{
-		wstring bassFolder = extLibPath + L"BASS\\";
+		LoadDependencyDLLs("BASS", L"BASS", bassDLLs, LengthOfArray(bassDLLs));
 
-		if (!FileExists(bassFolder + L"bass.dll"))
-			bassFolder = L"BASS\\";
-
-		bool bassDLL = false;
-
-		for (uint8_t i = 0; i < LengthOfArray(bassDLLs); i++)
-		{
-			wstring fullPath = bassFolder + bassDLLs[i];
-			bassDLL = LoadLibrary(fullPath.c_str());
-		}
-
-		if (bassDLL)
+		// Music
+		if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\se"))
 		{
 			WriteCall((void*)0x42544C, PlayMusicFile_r);
 			WriteCall((void*)0x4254F4, PlayVoiceFile_r);
@@ -1176,17 +1226,16 @@ static void __cdecl InitAudio()
 			WriteJump((void*)0x40CFF0, WMPClose_r);
 			WriteJump((void*)0x40D28A, WMPRelease_r);
 			WriteJump((void*)0x40CF20, sub_40CF20_r);
-			PrintDebug("Loaded Bass DLLs dependencies\n");
 		}
-		else
-		{
-			PrintDebug("Failed to load bass DLL dependencies\n");
-		}
+
+		// SFX
+		if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
+			Sound_Init(loaderSettings.SEVolume);
 	}
 
+	// Allow HRTF 3D sound
 	if (loaderSettings.HRTFSound)
 	{
-		// allow HRTF 3D sound
 		WriteData<uint8_t>(reinterpret_cast<uint8_t*>(0x00402773), 0xEBu);
 	}
 }
@@ -1336,26 +1385,24 @@ static uint8_t ParseCharacter(const string& str)
 }
 extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath);
 
+// Console handler to properly shut down the game when the console window is enabled (since the console closes first)
+BOOL WINAPI ConsoleHandler(DWORD dwType)
+{
+	switch (dwType) 
+	{
+	case CTRL_CLOSE_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+		OnExit(0,0,0);
+		PostQuitMessage(0);
+		return TRUE;
+	default:
+		break;
+	}
+	return FALSE;
+}
 
 std::vector<Mod> modlist;
-
-bool IsWindowsVistaOrGreater()
-{
-	// Taken from https://stackoverflow.com/questions/1963992/check-windows-version
-	OSVERSIONINFOEXW osvi = {};
-	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	DWORDLONG const dwlConditionMask = VerSetConditionMask(
-		VerSetConditionMask(
-			VerSetConditionMask(
-				0, VER_MAJORVERSION, VER_GREATER_EQUAL),
-			VER_MINORVERSION, VER_GREATER_EQUAL),
-		VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
-	osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_VISTA);
-	osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_VISTA);
-	osvi.wServicePackMajor = 0;
-
-	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
-}
 
 static void __cdecl InitMods()
 {
@@ -1381,110 +1428,8 @@ static void __cdecl InitMods()
 	// Get path for Mod Manager settings and libraries
 	SetAppPathConfig(exepath);
 
-	// Load profiles JSON file
-	std::ifstream ifs(appPath + L"\\SADX\\Profiles.json");
-	json json_profiles = json::parse(ifs);
-	ifs.close();
-	
-	// Get current profile index
-	int ind_profile = json_profiles.value("ProfileIndex", 0);
-
-	// Get current profile filename
-	json proflist = json_profiles["ProfilesList"];
-	std::string profname = proflist.at(ind_profile)["Filename"];
-
-	// Convert profile name from UTF8 stored in JSON to wide string
-	int count = MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), NULL, 0);
-	std::wstring profname_w(count, 0);
-	MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), &profname_w[0], count);
-
-	// Load the current profile
-	std::ifstream ifs_p(appPath + L"\\SADX\\" + profname_w);
-	json json_config = json::parse(ifs_p);
-	int setver = json_config.value("SettingsVersion", 0);
-
-	// Graphics settings
-	json json_graphics = json_config["Graphics"];
-	loaderSettings.ScreenNum = json_graphics.value("SelectedScreen", 0);
-	loaderSettings.HorizontalResolution = json_graphics.value("HorizontalResolution", 640);
-	loaderSettings.VerticalResolution = json_graphics.value("VerticalResolution", 480);
-	loaderSettings.ForceAspectRatio = json_graphics.value("Enable43ResolutionRatio", false);
-	loaderSettings.EnableVsync = json_graphics.value("EnableVsync", true);
-	loaderSettings.PauseWhenInactive = json_graphics.value("EnablePauseOnInactive", true);
-	loaderSettings.WindowedFullscreen = json_graphics.value("EnableBorderless", true);
-	loaderSettings.StretchFullscreen = json_graphics.value("EnableScreenScaling", true);
-	loaderSettings.CustomWindowSize = json_graphics.value("EnableCustomWindow", false);
-	loaderSettings.WindowWidth = json_graphics.value("CustomWindowWidth", 640);
-	loaderSettings.WindowHeight = json_graphics.value("CustomWindowHeight", 480);
-	loaderSettings.MaintainWindowAspectRatio = json_graphics.value("EnableKeepResolutionRatio", false);
-	loaderSettings.ResizableWindow = json_graphics.value("EnableResizableWindow", true);
-	loaderSettings.BackgroundFillMode = json_graphics.value("FillModeBackground", 2);
-	loaderSettings.FmvFillMode = json_graphics.value("FillModeFMV", 1);
-	// ModeTextureFiltering ?
-	// ModeUIFiltering ?
-	loaderSettings.ScaleHud = json_graphics.value("EnableUIScaling", true);
-	loaderSettings.AutoMipmap = json_graphics.value("EnableForcedMipmapping", true);
-	loaderSettings.TextureFilter = json_graphics.value("EnableForcedTextureFilter", true);
-	
-	// Controller settings
-	json json_controller = json_config["Controller"];
-	loaderSettings.InputMod = json_controller.value("EnabledInputMod", true);
-
-	// Sound settings
-	json json_sound = json_config["Sound"];
-	loaderSettings.EnableBassMusic = json_sound.value("EnableBassMusic", true);
-	loaderSettings.EnableBassSFX = json_sound.value("EnableBassSFX", true);	
-	loaderSettings.SEVolume = json_sound.value("SEVolume", 100);
-
-	// Test Spawn settings
-	json json_testspawn = json_config["TestSpawn"];
-	// UseCharacter?
-	// UseLevel?
-	// UseEvent?
-	// UseGameMode?
-	// UseSave?
-	loaderSettings.TestSpawnLevel = json_testspawn.value("CharacterIndex", 0);
-	loaderSettings.TestSpawnAct = json_testspawn.value("CharacterIndex", 0);
-	loaderSettings.TestSpawnCharacter = json_testspawn.value("CharacterIndex", 0);
-	loaderSettings.TestSpawnEvent = json_testspawn.value("EventIndex", 0);
-	loaderSettings.TestSpawnGameMode = json_testspawn.value("GameModeIndex", 0);
-	loaderSettings.TestSpawnSaveID = json_testspawn.value("SaveIndex", 0);
-	loaderSettings.TextLanguage = json_testspawn.value("GameTextLanguage", 1);
-	loaderSettings.VoiceLanguage = json_testspawn.value("GameVoiceLanguage", 1);
-	// UseManual ?
-	loaderSettings.TestSpawnPositionEnabled = json_testspawn.value("UsePosition", false);
-	loaderSettings.TestSpawnX = json_testspawn.value("XPosition", 0);
-	loaderSettings.TestSpawnY = json_testspawn.value("YPosition", 0);
-	loaderSettings.TestSpawnZ = json_testspawn.value("ZPosition", 0);
-	loaderSettings.TestSpawnRotation = json_testspawn.value("Rotation", 0);
-	
-	// Patches settings
-	json json_patches = json_config["Patches"];
-	loaderSettings.HRTFSound = json_patches.value("HRTFSound", false);
-	loaderSettings.CCEF = json_patches.value("KeepCamSettings", true);
-	loaderSettings.PolyBuff = json_patches.value("FixVertexColorRendering", true);
-	loaderSettings.MaterialColorFix = json_patches.value("MaterialColorFix", true);
-	loaderSettings.NodeLimit = json_patches.value("NodeLimit", true);
-	loaderSettings.FovFix = json_patches.value("FOVFix", true);
-	loaderSettings.SCFix = json_patches.value("SkyChaseResolutionFix", true);
-	loaderSettings.Chaos2CrashFix = json_patches.value("Chaos2CrashFix", true);
-	loaderSettings.ChunkSpecFix = json_patches.value("ChunkSpecularFix", true);
-	loaderSettings.E102PolyFix = json_patches.value("E102NGonFix", true);
-	loaderSettings.ChaoPanelFix = json_patches.value("ChaoPanelFix", true);
-	loaderSettings.PixelOffsetFix = json_patches.value("PixelOffSetFix", true);
-	loaderSettings.LightFix = json_patches.value("LightFix", true);
-	loaderSettings.KillGbix = json_patches.value("KillGBIX", false);
-	loaderSettings.DisableCDCheck = json_patches.value("DisableCDCheck", true);
-	loaderSettings.ExtendedSaveSupport = json_patches.value("ExtendedSaveSupport", true);
-
-	// Debug settings
-	json json_debug = json_config["DebugSettings"];
-	loaderSettings.DebugConsole = json_debug.value("EnableDebugConsole", false);
-	loaderSettings.DebugScreen = json_debug.value("EnableDebugScreen", false);
-	loaderSettings.DebugFile = json_debug.value("EnableDebugFile", false);
-	loaderSettings.DebugCrashLog = json_debug.value("EnableDebugCrashLog", true);
-	// EnableShowConsole ?
-
+	// Load Mod Loader settings
+	LoadModLoaderSettings(&loaderSettings, appPath);
 	// Process the main Mod Loader settings.
 	if (loaderSettings.DebugConsole)
 	{
@@ -1494,6 +1439,9 @@ static void __cdecl InitMods()
 		SetConsoleTitle(L"SADX Mod Loader output");
 		freopen("CONOUT$", "wb", stdout);
 		dbgConsole = true;
+		bool res = SetConsoleCtrlHandler(ConsoleHandler, true);
+		if (!res)
+			PrintDebug("Unable to set console handler routine");
 	}
 
 	dbgScreen = loaderSettings.DebugScreen;
@@ -1519,13 +1467,6 @@ static void __cdecl InitMods()
 		PrintDebug("%s\n", MODLOADER_GIT_VERSION);
 #endif /* MODLOADER_GIT_DESCRIBE */
 #endif /* MODLOADER_GIT_VERSION */
-	}
-
-	// Set process DPI awareness for window resize on Vista and above
-	if (IsWindowsVistaOrGreater())
-	{
-		if (!SetProcessDPIAware())
-			PrintDebug("Unable to set process DPI awareness.\n");
 	}
 
 	WriteJump((void*)0x789E50, CreateSADXWindow_asm); // override window creation function
@@ -1604,6 +1545,8 @@ static void __cdecl InitMods()
 
 	InitAudio();
 
+	LoadDependencyDLLs("FFMPEG", L"FFMPEG", ffmpegDLLs, LengthOfArray(ffmpegDLLs));
+
 	WriteJump(LoadSoundList, LoadSoundList_r);
 
 	InitPatches();
@@ -1667,9 +1610,8 @@ static void __cdecl InitMods()
 	if (loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\se"))
 		Sound_Init(loaderSettings.SEVolume);
 
-#if 0
-	Video_Init();
-#endif
+	if (loaderSettings.EnableFFMPEG || !Exists("system\\sa1.mpg"))
+		Video_Init();
 
 	//init interpol fix for helperfunctions
 	interpolation::init();
@@ -1696,12 +1638,9 @@ static void __cdecl InitMods()
 	// It's mod loading time!
 	PrintDebug("Loading mods...\n");
 	// Mod list
-	json json_mods = json_config["EnabledMods"];
-	for (unsigned int i = 1; i <= 999; i++)
+	for (unsigned int i = 1; i <= GetModCount(); i++)
 	{
-		if (i > json_mods.size())
-			break;
-		std::string mod_fname = json_mods.at(i - 1);
+		std::string mod_fname = GetModName(i);
 
 		int count_m = MultiByteToWideChar(CP_UTF8, 0, mod_fname.c_str(), mod_fname.length(), NULL, 0);
 		std::wstring mod_fname_w(count_m, 0);
@@ -1710,7 +1649,7 @@ static void __cdecl InitMods()
 		const string mod_dirA = "mods\\" + mod_fname;
 		const wstring mod_dir = L"mods\\" + mod_fname_w;
 		const wstring mod_inifile = mod_dir + L"\\mod.ini";
-
+		
 		FILE* f_mod_ini = _wfopen(mod_inifile.c_str(), L"r");
 		
 		if (!f_mod_ini)
@@ -1728,6 +1667,14 @@ static void __cdecl InitMods()
 		const wstring mod_name = modinfo->getWString("Name");
 
 		PrintDebug("%u. %s\n", i, mod_nameA.c_str());
+
+		const wstring mod_icon = mod_dir + L"\\mod.ico";
+
+		if (FileExists(mod_icon))
+		{
+			iconPathName = mod_icon.c_str();
+			PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
+		}
 
 		vector<ModDependency> moddeps;
 
@@ -1954,6 +1901,7 @@ static void __cdecl InitMods()
 					RegisterEvent(modExitEvents, module, "OnExit");
 					RegisterEvent(modRenderDeviceLost, module, "OnRenderDeviceLost");
 					RegisterEvent(modRenderDeviceReset, module, "OnRenderDeviceReset");
+					RegisterEvent(modInitGameLoopEvents, module, "OnInitGameLoop");
 					RegisterEvent(onRenderSceneEnd, module, "OnRenderSceneEnd");
 					RegisterEvent(onRenderSceneStart, module, "OnRenderSceneStart");
 
@@ -1996,7 +1944,7 @@ static void __cdecl InitMods()
 		if (modinfo->getBool("RedirectMainSave")) {
 			_mainsavepath = mod_dirA + "\\SAVEDATA";
 
-			if (!IsPathExist(_mainsavepath))
+			if (Exists(_mainsavepath))
 			{
 				_mkdir(_mainsavepath.c_str());
 			}
@@ -2007,7 +1955,7 @@ static void __cdecl InitMods()
 
 			_chaosavepath = mod_dirA + "\\SAVEDATA";
 
-			if (!IsPathExist(_chaosavepath))
+			if (!Exists(_chaosavepath))
 			{
 				_mkdir(_chaosavepath.c_str());
 			}
@@ -2340,9 +2288,20 @@ static void __cdecl InitMods()
 	GVR_Init();
 	if (loaderSettings.ExtendedSaveSupport)
 		ExtendedSaveSupport_Init();
+
+	if (FileExists(L"sonic.ico"))
+	{
+		iconPathName = L"sonic.ico";
+		PrintDebug("Setting icon from sonic.ico\n");
+	}
 }
 
 DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
+
+void EventGameLoopInit()
+{
+	RaiseEvents(modInitGameLoopEvents);
+}
 
 static void __cdecl LoadChrmodels()
 {
@@ -2350,7 +2309,7 @@ static void __cdecl LoadChrmodels()
 	if (!chrmodelshandle)
 	{
 		MessageBox(nullptr, L"CHRMODELS_orig.dll could not be loaded!\n\n"
-			L"SADX will now proceed to abruptly exit.",
+			L"The Mod Loader has not been installed correctly.\nReinstall the game and the Mod Loader and try again.",
 			L"SADX Mod Loader", MB_ICONERROR);
 		ExitProcess(1);
 	}
@@ -2360,6 +2319,7 @@ static void __cdecl LoadChrmodels()
 	SetDLLHandle(L"CHAOSTGGARDEN02MR_EVENING", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_EVENING.DLL"));
 	SetDLLHandle(L"CHAOSTGGARDEN02MR_NIGHT", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_NIGHT.DLL"));
 	WriteCall((void*)0x402513, (void*)InitMods);
+	WriteCall((void*)0x40C045, (void*)EventGameLoopInit);
 }
 
 /**

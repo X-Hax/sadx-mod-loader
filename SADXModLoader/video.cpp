@@ -65,9 +65,15 @@ private:
 			return;
 		}
 
-		if (swr_convert_frame(pSwrContext, pAudioFrame, pFrame) < 0)
+		char buf[200];
+
+		int err = swr_convert_frame(pSwrContext, pAudioFrame, pFrame);
+		if (err < -1)
 		{
-			PrintDebug("[video] Failed to convert audio frame.\n");
+			av_strerror(err, buf, 200);
+			PrintDebug("[video] Failed to convert audio frame: %s\n", buf);
+			PrintDebug("pAudioFrame: %d, %d, %d, %d\n", pAudioFrame->ch_layout.nb_channels, pAudioFrame->ch_layout.order, pAudioFrame->ch_layout.u, pAudioFrame->ch_layout.opaque);
+			PrintDebug("pFrame: %d, %d, %d, %d\n", pFrame->ch_layout.nb_channels, pFrame->ch_layout.order, pFrame->ch_layout.u, pFrame->ch_layout.opaque);
 			return;
 		}
 		
@@ -327,9 +333,9 @@ public:
 				return false;
 			}
 
-			AVStream* pAudoStream = pFormatContext->streams[audio_stream_index];
+			AVStream* pAudioStream = pFormatContext->streams[audio_stream_index];
 
-			if (avcodec_parameters_to_context(pAudioCodecContext, pAudoStream->codecpar) < 0 ||
+			if (avcodec_parameters_to_context(pAudioCodecContext, pAudioStream->codecpar) < 0 ||
 				avcodec_open2(pAudioCodecContext, pAudioCodec, NULL) < 0)
 			{
 				PrintDebug("[video] failed to initialize audio codec.\n");
@@ -337,13 +343,20 @@ public:
 			}
 
 			// Initialize resampler
-			if (swr_alloc_set_opts2(&pSwrContext, &pAudoStream->codecpar->ch_layout, AV_SAMPLE_FMT_FLT, pAudoStream->codecpar->sample_rate,
-				&pAudoStream->codecpar->ch_layout, (AVSampleFormat)pAudoStream->codecpar->format, pAudoStream->codecpar->sample_rate, 0, nullptr) < 0)
+			if (swr_alloc_set_opts2(&pSwrContext, &pAudioCodecContext->ch_layout, AV_SAMPLE_FMT_FLT, pAudioCodecContext->sample_rate,
+				&pAudioCodecContext->ch_layout, (AVSampleFormat)pAudioStream->codecpar->format, pAudioStream->codecpar->sample_rate, 0, nullptr) < 0)
 			{
 				PrintDebug("[video] Failed to initialize audio conversion.\n");
 				return false;
 			}
 
+			// Force set audio channel layout for SFD
+			if (sfd)
+			{
+				pAudioCodecContext->ch_layout.order = AV_CHANNEL_ORDER_NATIVE;
+				pAudioCodecContext->ch_layout.u.mask = AV_CH_FRONT_LEFT | AV_CH_FRONT_RIGHT;
+			}
+			
 			pAudioFrame = av_frame_alloc();
 			if (!pAudioFrame)
 			{

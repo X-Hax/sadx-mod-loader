@@ -14,6 +14,7 @@ std::vector<ModEvent>         modRenderDeviceLost;
 std::vector<ModEvent>         modRenderDeviceReset;
 std::vector<ModEvent>         onRenderSceneEnd;
 std::vector<ModEvent>         onRenderSceneStart;
+std::vector<ModEvent>         modInitGameLoopEvents;
 
 Trampoline exitDetour(0x0064672F, 0x00646736, OnExit);
 
@@ -58,6 +59,7 @@ void OnControl()
 
 void __cdecl OnExit(UINT uExitCode, int a1, int a2)
 {
+	//MessageBoxA(WindowHandle, "Quit", "Quit", 0);
 	RaiseEvents(modExitEvents);
 	SDL2_OnExit();
 	FreeJVListIndices();

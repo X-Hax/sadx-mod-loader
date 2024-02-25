@@ -15,6 +15,7 @@
     <ClCompile Include="BasicWeights.cpp" />
     <ClCompile Include="bgscale.cpp" />
     <ClCompile Include="ChunkSpecularFix.cpp" />
+    <ClCompile Include="config.cpp" />
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="direct3d.cpp" />
     <ClCompile Include="DLLData.cpp" />
@@ -59,6 +60,7 @@
     <ClInclude Include="BasicWeights.h" />
     <ClInclude Include="bgscale.h" />
     <ClInclude Include="ChunkSpecularFix.h" />
+    <ClInclude Include="config.h" />
     <ClInclude Include="CrashDump.h" />
     <ClInclude Include="DDS.h" />
     <ClInclude Include="direct3d.h" />
@@ -188,9 +190,9 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProgramFiles)\DirectX 8.1 SDK\lib;..\extlib\bass;..\extlib\SDL2\lib\x86;..\extlib\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3dx8.lib;bass.lib;bass_vgmstream.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;notelemetry.obj;SDL2.lib;$(OutDir)libmodutils.lib;$(OutDir)ModLoaderCommon.lib;shlwapi.lib;dbghelp.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dx8.lib;bass.lib;bass_vgmstream.lib;avcodec.lib;avformat.lib;swscale.lib;swresample.lib;notelemetry.obj;SDL2.lib;$(OutDir)libmodutils.lib;$(OutDir)ModLoaderCommon.lib;shlwapi.lib;dbghelp.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libci.lib</IgnoreSpecificDefaultLibraries>
-      <DelayLoadDLLs>SDL2.dll;bass.dll;bass_vgmstream.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>SDL2.dll;bass.dll;bass_vgmstream.dll;avcodec-60.dll;avformat-60.dll;avutil-58.dll;swscale-7.dll;swresample-4.dll</DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
       <Command>"C:\Program Files\Git\bin\bash.exe" ../git_version.sh &gt;git_version.h</Command>

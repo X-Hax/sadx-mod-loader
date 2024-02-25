@@ -137,7 +137,7 @@ void SDL2_Init()
 
 	//if path doesn't exist, assume the dll is in the game folder directly
 	if (!FileExists(sdlFolderPath + L"SDL2.dll"))
-		sdlFolderPath = L"extlib\\SDL2\\";
+		sdlFolderPath = L"";
 
 	std::wstring dll = sdlFolderPath + L"SDL2.dll";
 
@@ -145,12 +145,10 @@ void SDL2_Init()
 
 	if (handle == nullptr)
 	{
-
-		PrintDebug("[Input] Unable to load SDL2.dll.\n");
-
-		MessageBoxA(nullptr, "Error loading SDL. See debug message for details.",
-			"SDL Load Error", MB_OK | MB_ICONERROR);
-
+		MessageBox(nullptr, L"Error loading SDL.\n\n"
+			L"Make sure the Mod Loader is installed properly.",
+			L"SDL Load Error", MB_OK | MB_ICONERROR);
+		enabledSDL = false;
 		return;
 	}
 
@@ -299,4 +297,6 @@ void SDL2_OnExit()
 	{
 		i.close();
 	}
+
+	SDL_Quit();
 }

@@ -15,6 +15,7 @@ extern std::vector<ModEvent> modRenderDeviceLost;
 extern std::vector<ModEvent> modRenderDeviceReset;
 extern std::vector<ModEvent> onRenderSceneEnd;
 extern std::vector<ModEvent> onRenderSceneStart;
+extern std::vector<ModEvent> modInitGameLoopEvents;
 
 /**
 * Calls all registered events in the specified event list.

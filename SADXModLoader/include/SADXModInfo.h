@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 19;
+static const int ModLoaderVer = 22;
 struct PatchInfo
 {
 	void* address;
@@ -96,6 +96,7 @@ struct LoaderSettings
 	bool KillGbix;
 	bool DisableCDCheck;
 	bool ExtendedSaveSupport;
+	bool EnableFFMPEG;
 };
 
 struct ModDependency
@@ -430,6 +431,30 @@ struct HelperFunctions
 	// Disable interpolation fix for animations, use it at the end of a display function.
 	// Requires version >= 19.
 	void(__cdecl* PopInterpolationFix)();
+	
+	/**
+	* @brief Prevents a texture list from being freed by njReleaseTextureAll.
+	* 
+	* Don't use this with RegisterCommonPVM because those will still be freed by lateReleaseTexture. 
+	* Requires version >= 20.
+	* 
+	*/
+	void(__cdecl* RegisterPermanentTexlist)(NJS_TEXLIST* texlist);
+
+	/**
+	* @brief Expands a TEX_PVMTABLE array (such as level PVM list) by adding a new entry to it.
+	*
+	* Requires version >= 20.
+	*
+	* @param sourcepvmlist: The original TEX_PVMTABLE array.
+	* @param newpvmentry: Pointer to the TEX_PVMTABLE struct to be added to the array.
+	* @return Pointer to the resized TEX_PVMTABLE array.
+	*/
+	TEX_PVMTABLE* (__cdecl* ExpandPVMList)(TEX_PVMTABLE* sourcepvmlist, const TEX_PVMTABLE &newpvmentry);
+
+	// Removes any file replacements for the specified file.
+	// Requires version >= 22.
+	void(__cdecl* UnreplaceFile)(const char* file);
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);
