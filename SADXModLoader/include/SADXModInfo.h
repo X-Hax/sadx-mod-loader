@@ -96,6 +96,7 @@ struct LoaderSettings
 	bool KillGbix;
 	bool DisableCDCheck;
 	bool ExtendedSaveSupport;
+	bool CrashGuard;
 };
 
 struct ModDependency

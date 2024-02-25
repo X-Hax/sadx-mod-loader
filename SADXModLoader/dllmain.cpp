@@ -65,6 +65,7 @@ using json = nlohmann::json;
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
 #include "NodeLimit.h"
+#include "CrashGuard.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 static LPCTSTR iconPathName = NULL;
@@ -2229,8 +2230,12 @@ static void __cdecl InitMods()
 
 	ApplyTestSpawn();
 	GVR_Init();
+
 	if (loaderSettings.ExtendedSaveSupport)
 		ExtendedSaveSupport_Init();
+
+	if (loaderSettings.CrashGuard)
+		CrashGuard_Init();
 
 	if (FileExists(L"sonic.ico"))
 	{
@@ -2244,6 +2249,8 @@ DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
 void EventGameLoopInit()
 {
 	RaiseEvents(modInitGameLoopEvents);
+	if (loaderSettings.CrashGuard)
+		InitDefaultTexture();
 }
 
 static void __cdecl LoadChrmodels()

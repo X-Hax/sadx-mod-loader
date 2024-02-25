@@ -51,6 +51,7 @@
     </ClCompile>
     <ClCompile Include="ExtendedSaveSupport.cpp" />
     <ClCompile Include="testspawn.cpp" />
+    <ClCompile Include="CrashGuard.cpp" />
     <ClCompile Include="TextureReplacement.cpp" />
     <ClCompile Include="uiscale.cpp" />
   </ItemGroup>
@@ -113,6 +114,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ExtendedSaveSupport.h" />
     <ClInclude Include="testspawn.h" />
+    <ClInclude Include="CrashGuard.h" />
     <ClInclude Include="TextureReplacement.h" />
     <ClInclude Include="include\UsercallFunctionHandler.h" />
     <ClInclude Include="typedefs.h" />
