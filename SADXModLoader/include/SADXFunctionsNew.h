@@ -31,8 +31,11 @@ typedef bool _BOOL1;
 FunctionPointer(int, InitGame, (), 0x413C00);
 FunctionPointer(bool, ChkPause, (), 0x414D70); // Check if the game is paused
 FunctionPointer(Bool, ChkGameMode, (), 0x414D90); // Check if in game
-FunctionPointer(void*, MAlloc, (int size), 0x40B220); // Allocate memory
-FunctionPointer(void*, CAlloc, (int count, int size), 0x0040B2D0); // Allocate memory
+FunctionPointer(void*, MAlloc, (int size), 0x40B220);
+FunctionPointer(void*, CAlloc, (int count, int size), 0x40B2D0);
+FunctionPointer(void*, syMalloc, (Sint32 size), 0x780F60);
+FunctionPointer(void*, syCalloc, (Sint32 size), 0x780F90);
+FunctionPointer(void, syFree, (void* mem), 0x780FB0);
 FunctionPointer(void*, malloc_0, (size_t Size), 0x00645002);
 FunctionPointer(void*, SOCFree, (void* pBlock), 0x00644E51);
 VoidFunc(Clear, 0x0040BF30);
@@ -202,7 +205,6 @@ VoidFunc(late_exec, 0x4086F0); // Draws queued models
 VoidFunc(njWaitVSync, 0x780BE0); // Wait loop
 FunctionPointer(void, OnConstantAttr, (NJD_FLAG _and, NJD_FLAG _or), 0x439560);
 FunctionPointer(void, OffConstantAttr, (NJD_FLAG _and, NJD_FLAG _or), 0x439590);
-FunctionPointer(void, njSetQuadTexture, (int n, NJS_COLOR color), 0x0077DDF0);
 
 // Lighting
 FunctionPointer(void, late_SetFunc, (void(__cdecl* func)(void*), void* data, float depth, int late_flags), 0x404840); // DrawModelCallback_Queue
@@ -982,7 +984,12 @@ FunctionPointer(void, njDrawLine3D, (NJS_POINT3COL* p, int n, NJD_DRAW attr), 0x
 FunctionPointer(void, njDrawLine2D, (NJS_POINT2COL* p, int n, float pri, NJD_DRAW attr), 0x77DF40);
 FunctionPointer(void, njDrawTriangle3D, (NJS_POINT3COL* p, int n, NJD_DRAW atr), 0x77EBA0);
 FunctionPointer(void, njDrawTexture, (NJS_TEXTURE_VTX* p, Int count, Uint32 gbix, Int flag), 0x77DC70);
+FunctionPointer(void, njQuadTextureStart, (Sint32 trans), 0x77DD90);
+VoidFunc(njQuadTextureEnd, 0x77DDE0);
+FunctionPointer(void, njSetQuadTexture, (Uint32 n, Uint32 color), 0x77DDF0);
 FunctionPointer(void, njDrawQuadTextureEx, (NJS_QUAD_TEXTURE_EX* p), 0x77DE10);
+FunctionPointer(void, njDrawQuadTexture, (NJS_QUAD_TEXTURE* q, Float z), 0x77E970);
+
 ThiscallFunctionPointer(void, njCnkPushPopMotion, (NJS_CNK_OBJECT* a1), 0x792F70);
 FunctionPointer(void, saCnkDrawMotionSA, (NJS_CNK_OBJECT* obj, NJS_MOTION* motion, float frame), 0x720A70);
 FunctionPointer(void, njCnkDrawMotion, (NJS_CNK_OBJECT* obj, NJS_MOTION* motion, float frame), 0x789690);
