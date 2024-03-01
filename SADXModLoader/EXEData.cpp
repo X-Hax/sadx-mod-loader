@@ -1748,6 +1748,7 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "objlist",            ProcessObjListINI },
 	{ "startpos",           ProcessStartPosINI },
 	{ "texturedata",        ProcessTexListINI },
+	{ "texlist",	        ProcessTexListINI },
 	{ "leveltexlist",       ProcessLevelTexListINI },
 	{ "triallevellist",     ProcessTrialLevelListINI },
 	{ "bosslevellist",      ProcessBossLevelListINI },
