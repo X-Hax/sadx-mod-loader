@@ -1864,6 +1864,13 @@ static void __cdecl InitMods()
 			}
 		}
 
+		// Set global codepage overrides
+		CodepageJapanese = modinfo->getInt("CodepageJapanese", 932);
+		CodepageEnglish = modinfo->getInt("CodepageEnglish", 932);
+		CodepageFrench = modinfo->getInt("CodepageFrench", 1252);
+		CodepageGerman = modinfo->getInt("CodepageGerman", 1252);
+		CodepageSpanish = modinfo->getInt("CodepageSpanish", 1252);
+
 		// Check if the mod has EXE data replacements.
 		if (modinfo->hasKeyNonEmpty("EXEData"))
 		{
