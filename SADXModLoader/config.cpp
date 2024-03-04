@@ -91,6 +91,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->KillGbix = json_patches.value("KillGBIX", false);
 		loaderSettings->DisableCDCheck = json_patches.value("DisableCDCheck", true);
 		loaderSettings->ExtendedSaveSupport = json_patches.value("ExtendedSaveSupport", true);
+		loaderSettings->CrashGuard = json_patches.value("CrashGuard", true);
 		loaderSettings->EnableFFMPEG = json_patches.value("EnableFFMPEG", true);
 
 		// Debug settings
@@ -173,6 +174,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->KillGbix = setgrp->getBool("KillGbix", true);
 		loaderSettings->DisableCDCheck = setgrp->getBool("DisableCDCheck", false);
 		loaderSettings->ExtendedSaveSupport = setgrp->getBool("ExtendedSaveSupport", true);
+		loaderSettings->CrashGuard = setgrp->getBool("CrashGuard", true);
 
 		for (unsigned int i = 1; i <= 999; i++)
 		{

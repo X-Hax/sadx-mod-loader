@@ -66,6 +66,7 @@ using json = nlohmann::json;
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
 #include "NodeLimit.h"
+#include "CrashGuard.h"
 
 static HINSTANCE g_hinstDll = nullptr;
 static LPCTSTR iconPathName = NULL;
@@ -1924,6 +1925,13 @@ static void __cdecl InitMods()
 			}
 		}
 
+		// Set global codepage overrides
+		CodepageJapanese = modinfo->getInt("CodepageJapanese", 932);
+		CodepageEnglish = modinfo->getInt("CodepageEnglish", 932);
+		CodepageFrench = modinfo->getInt("CodepageFrench", 1252);
+		CodepageGerman = modinfo->getInt("CodepageGerman", 1252);
+		CodepageSpanish = modinfo->getInt("CodepageSpanish", 1252);
+
 		// Check if the mod has EXE data replacements.
 		if (modinfo->hasKeyNonEmpty("EXEData"))
 		{
@@ -2290,8 +2298,12 @@ static void __cdecl InitMods()
 
 	ApplyTestSpawn();
 	GVR_Init();
+
 	if (loaderSettings.ExtendedSaveSupport)
 		ExtendedSaveSupport_Init();
+
+	if (loaderSettings.CrashGuard)
+		CrashGuard_Init();
 
 	if (FileExists(L"sonic.ico"))
 	{
@@ -2305,6 +2317,8 @@ DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
 void EventGameLoopInit()
 {
 	RaiseEvents(modInitGameLoopEvents);
+	if (loaderSettings.CrashGuard)
+		InitDefaultTexture();
 }
 
 static void __cdecl LoadChrmodels()

@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 22;
+static const int ModLoaderVer = 23;
 struct PatchInfo
 {
 	void* address;
@@ -96,6 +96,7 @@ struct LoaderSettings
 	bool KillGbix;
 	bool DisableCDCheck;
 	bool ExtendedSaveSupport;
+	bool CrashGuard;
 	bool EnableFFMPEG;
 };
 

@@ -19,6 +19,12 @@ using std::string;
 using std::wstring;
 using std::ifstream;
 
+UINT CodepageJapanese = 932;
+UINT CodepageEnglish = 932;
+UINT CodepageFrench = 1252;
+UINT CodepageGerman = 1252;
+UINT CodepageSpanish = 1252;
+
 static vector<string>& split(const string& s, char delim, vector<string>& elems)
 {
 	std::stringstream ss(s);
@@ -230,7 +236,26 @@ static uint8_t ParseLanguage(const string& str)
 
 static string DecodeUTF8(const string& str, int language, unsigned int codepage)
 {
-	return (language <= Languages_English) ? UTF8toSJIS(str) : UTF8toCodepage(str, codepage);
+	// If there is a non-global codepage override, use the old parsing
+	if (codepage != 0)
+		return (language <= Languages_English) ? UTF8toSJIS(str) : UTF8toCodepage(str, codepage);
+	// If there is no override, use the global codepage value for the specified language
+	else
+	{
+		switch (language)
+		{
+		case Languages_Japanese:
+			return UTF8toCodepage(str, CodepageJapanese);
+		case Languages_English:
+			return UTF8toCodepage(str, CodepageEnglish);
+		case Languages_French:
+			return UTF8toCodepage(str, CodepageFrench);
+		case Languages_German:
+			return UTF8toCodepage(str, CodepageGerman);
+		case Languages_Spanish:
+			return UTF8toCodepage(str, CodepageSpanish);
+		}
+	}
 }
 
 static string UnescapeNewlines(const string& str)
@@ -867,7 +892,7 @@ static void ProcessStringArrayINI(const IniGroup* group, const wstring& mod_dir)
 	}
 
 	wchar_t filename[MAX_PATH]{};
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 
 	swprintf(filename, LengthOfArray(filename), L"%s\\%s",
 	         mod_dir.c_str(), group->getWString("filename").c_str());
@@ -926,7 +951,7 @@ static void ProcessCutsceneTextINI(const IniGroup* group, const wstring& mod_dir
 {
 	if (!group->hasKeyNonEmpty("filename"))
 		return;
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	char*** addr = (char***)group->getIntRadix("address", 16);
 	if (addr == nullptr)
 		return;
@@ -955,7 +980,7 @@ static void ProcessRecapScreenINI(const IniGroup* group, const wstring& mod_dir)
 		return;
 	}
 
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	int length = group->getInt("length");
 	auto addr = (RecapScreen**)group->getIntRadix("address", 16);
 
@@ -1003,7 +1028,7 @@ static void ProcessNPCTextINI(const IniGroup* group, const wstring& mod_dir)
 	{
 		return;
 	}
-	unsigned int codepage= group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	int length = group->getInt("length");
 	auto addr = (HintText_Entry**)group->getIntRadix("address", 16);
 	
@@ -1638,7 +1663,7 @@ static void ProcessCreditsTextListINI(const IniGroup* group, const wstring& mod_
 	}
 
 	addr = (CreditsList*)((intptr_t)addr + 0x400000);
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	wchar_t filename[MAX_PATH] {};
 
 	swprintf(filename, LengthOfArray(filename), L"%s\\%s",
@@ -1748,6 +1773,7 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "objlist",            ProcessObjListINI },
 	{ "startpos",           ProcessStartPosINI },
 	{ "texturedata",        ProcessTexListINI },
+	{ "texlist",	        ProcessTexListINI },
 	{ "leveltexlist",       ProcessLevelTexListINI },
 	{ "triallevellist",     ProcessTrialLevelListINI },
 	{ "bosslevellist",      ProcessBossLevelListINI },
