@@ -1824,6 +1824,57 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 	WriteData((char**)addr, strs);
 }
 
+static void ProcessMultiString(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	int length = group->getInt("length", 1);
+
+	bool doublepnt = group->getBool("doublepointer", false);
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
+	
+	for (unsigned int i = 0; i < LengthOfArray(languagenames); i++)
+	{
+		wchar_t filename[MAX_PATH]{};
+
+		swprintf(filename, LengthOfArray(filename), L"%s\\%s.txt",
+			pathbase.c_str(), languagenames[i]);
+
+		vector <char*> strs = ProcessStringArrayINI_Internal(filename, i, 0);
+
+		if (doublepnt)
+		{
+			int charaddr = *(int*)addr;
+			for (int l = 0; l < length; l++)
+			{
+				WriteData((char**)charaddr, strs[l]);
+				charaddr += 4;
+			}
+			addr += 4;
+		}
+		else
+		{
+			WriteData((char**)addr, strs[0]);
+			addr += 4;
+		}
+	}
+}
+
 using exedatafunc_t = void(__cdecl*)(const IniGroup* group, const wstring& mod_dir);
 
 static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
@@ -1860,6 +1911,7 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "physicsdata",		ProcessPhysicsDataINI },
 	{ "fogdatatable",		ProcessFogDataINI },
 	{ "singlestring",		ProcessSingleString },
+	{ "multistring",		ProcessMultiString },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
