@@ -234,28 +234,31 @@ static uint8_t ParseLanguage(const string& str)
 	return Languages_Japanese;
 }
 
+static UINT GetCodepageForLanguageID(int language)
+{
+	switch (language)
+	{
+	case Languages_Japanese:
+	default:
+		return CodepageJapanese;
+	case Languages_English:
+		return CodepageEnglish;
+	case Languages_French:
+		return CodepageFrench;
+	case Languages_German:
+		return CodepageGerman;
+	case Languages_Spanish:
+		return CodepageSpanish;
+	}
+}
+
 static string DecodeUTF8(const string& str, int language, unsigned int codepage)
 {
 	// If there is a non-global codepage override, use the old parsing
 	if (codepage != 0)
 		return (language <= Languages_English) ? UTF8toSJIS(str) : UTF8toCodepage(str, codepage);
 	// If there is no override, use the global codepage value for the specified language
-	else
-	{
-		switch (language)
-		{
-		case Languages_Japanese:
-			return UTF8toCodepage(str, CodepageJapanese);
-		case Languages_English:
-			return UTF8toCodepage(str, CodepageEnglish);
-		case Languages_French:
-			return UTF8toCodepage(str, CodepageFrench);
-		case Languages_German:
-			return UTF8toCodepage(str, CodepageGerman);
-		case Languages_Spanish:
-			return UTF8toCodepage(str, CodepageSpanish);
-		}
-	}
+	return UTF8toCodepage(str, GetCodepageForLanguageID(language));
 }
 
 static string UnescapeNewlines(const string& str)
@@ -882,6 +885,21 @@ static vector<char*> ProcessStringArrayINI_Internal(const wchar_t* filename, uin
 	}
 	fstr.close();
 	return strs;
+}
+
+static char* ProcessSingleString(const wchar_t* filename, uint8_t language)
+{
+	ifstream fstr(filename);
+	vector<char*> strs;
+	string str;
+	if (fstr.good())
+	{
+		getline(fstr, str);
+		str = DecodeUTF8(UnescapeNewlines(str), language, 0);
+		fstr.close();
+		return strdup(str.c_str());
+	}
+	return NULL;
 }
 
 static void ProcessStringArrayINI(const IniGroup* group, const wstring& mod_dir)
@@ -1761,6 +1779,51 @@ static void ProcessPhysicsDataINI(const IniGroup* group, const wstring& mod_dir)
 	delete inidata;
 }
 
+static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	if (!group->hasKeyNonEmpty("language"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+	wchar_t language[32]{};
+
+	swprintf(language, LengthOfArray(language), group->getWString("language").c_str());
+
+	int langid = Languages_Japanese;
+
+	for (int i = 0; i < LengthOfArray(languagenames); i++)
+	{
+		if (!wcscmp(language, languagenames[i]))
+		{
+			langid = i;
+			break;
+		}
+	}
+
+	swprintf(filename, LengthOfArray(filename), L"%s\\%s\\%s.txt",
+		mod_dir.c_str(), group->getWString("filename").c_str(), language);
+
+	char* strs = ProcessSingleString(filename, langid);
+
+	WriteData((char**)addr, strs);
+}
+
 using exedatafunc_t = void(__cdecl*)(const IniGroup* group, const wstring& mod_dir);
 
 static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
@@ -1796,6 +1859,7 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "creditstextlist",    ProcessCreditsTextListINI },
 	{ "physicsdata",		ProcessPhysicsDataINI },
 	{ "fogdatatable",		ProcessFogDataINI },
+	{ "singlestring",		ProcessSingleString },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
