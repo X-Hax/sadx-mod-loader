@@ -887,7 +887,7 @@ static vector<char*> ProcessStringArrayINI_Internal(const wchar_t* filename, uin
 	return strs;
 }
 
-static char* ProcessSingleString(const wchar_t* filename, uint8_t language)
+static char* ProcessSingleStringInternal(const wchar_t* filename, uint8_t language)
 {
 	ifstream fstr(filename);
 	vector<char*> strs;
@@ -973,7 +973,7 @@ static void ProcessCutsceneTextINI(const IniGroup* group, const wstring& mod_dir
 	char*** addr = (char***)group->getIntRadix("address", 16);
 	if (addr == nullptr)
 		return;
-	addr                   = (char***)((int)addr + 0x400000);
+	addr = (char***)((int)addr + 0x400000);
 	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
 	for (unsigned int i = 0; i < LengthOfArray(languagenames); i++)
 	{
@@ -1819,7 +1819,7 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 	swprintf(filename, LengthOfArray(filename), L"%s\\%s\\%s.txt",
 		mod_dir.c_str(), group->getWString("filename").c_str(), language);
 
-	char* strs = ProcessSingleString(filename, langid);
+	char* strs = ProcessSingleStringInternal(filename, langid);
 
 	WriteData((char**)addr, strs);
 }
