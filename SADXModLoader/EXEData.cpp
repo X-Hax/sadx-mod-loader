@@ -1801,6 +1801,9 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 	addr = (char*)((intptr_t)addr + 0x400000);
 
 	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
+
 	wchar_t language[32]{};
 
 	swprintf(language, LengthOfArray(language), group->getWString("language").c_str());
@@ -1816,8 +1819,8 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 		}
 	}
 
-	swprintf(filename, LengthOfArray(filename), L"%s\\%s\\%s.txt",
-		mod_dir.c_str(), group->getWString("filename").c_str(), language);
+	swprintf(filename, LengthOfArray(filename), L"%s\\%s.txt",
+		pathbase.c_str(), language);
 
 	char* strs = ProcessSingleStringInternal(filename, langid);
 
