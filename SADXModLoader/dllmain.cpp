@@ -1413,11 +1413,7 @@ static void __cdecl InitMods()
 			ModLoaderVer);
 
 #ifdef MODLOADER_GIT_VERSION
-#ifdef MODLOADER_GIT_DESCRIBE
-		PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
-#else /* !MODLOADER_GIT_DESCRIBE */
-		PrintDebug("%s\n", MODLOADER_GIT_VERSION);
-#endif /* MODLOADER_GIT_DESCRIBE */
+		PrintDebug("%s\n", MODLOADER_GIT_VERSION); // Old: PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
 #endif /* MODLOADER_GIT_VERSION */
 	}
 
