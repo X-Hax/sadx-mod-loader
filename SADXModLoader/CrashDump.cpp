@@ -71,11 +71,11 @@ static string getErrorMSG(intptr_t address)
 void SetErrorMessage(string& fullMsg, const string address, const string dllName, const intptr_t crashID)
 {
 	string errorCommon = getErrorMSG(crashID); //get error message if the crash address is common
-	fullMsg = "SADX has crashed at " + address + " (" + dllName + ").\n\n";
+	fullMsg = "SADX has crashed at " + address + " (" + dllName + ").\n";
 
 	if (errorCommon != "NULL")
 	{
-		fullMsg += errorCommon + "\n"; //add the common error message if it exists
+		fullMsg += "\n" + errorCommon + "\n"; //add the common error message if it exists
 	}
 	else
 	{
@@ -84,11 +84,11 @@ void SetErrorMessage(string& fullMsg, const string address, const string dllName
 
 		if (charcrash != "NULL")
 		{
-			fullMsg += charcrash + "\n";
+			fullMsg += "\n" + charcrash + "\n";
 		}
 	}
 
-	fullMsg += "\nA minidump has been created in your SADX folder.\n";
+	fullMsg += "\nA crash dump and a mod list have been added to your game's CrashDumps folder.\n\nIf you want to report this crash, please include the dump (.dmp file) and the mod list (.json file) in your report.\n";
 }
 
 void CopyAndRename_SADXLoaderProfile()
