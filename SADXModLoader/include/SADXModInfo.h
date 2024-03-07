@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 22;
+static const int ModLoaderVer = 23;
 struct PatchInfo
 {
 	void* address;
@@ -47,16 +47,16 @@ struct LoaderSettings
 	int HorizontalResolution;
 	int VerticalResolution;
 	bool ForceAspectRatio;
-	__declspec(deprecated) bool WindowedFullscreen = true;	// Deprecated in v20+
+	bool WindowedFullscreen;
 	bool EnableVsync;
 	bool AutoMipmap;
 	bool TextureFilter;
 	bool PauseWhenInactive;
-	__declspec(deprecated) bool StretchFullscreen = true;	// Deprecated in v20+
+	bool StretchFullscreen;
 	int ScreenNum;
 	int VoiceLanguage;
 	int TextLanguage;
-	__declspec(deprecated) bool CustomWindowSize = true;	// Deprecated in v20+
+	bool CustomWindowSize;
 	int WindowWidth;
 	int WindowHeight;
 	bool MaintainWindowAspectRatio;
@@ -79,7 +79,6 @@ struct LoaderSettings
 	int TestSpawnGameMode;
 	int TestSpawnSaveID;
 	bool InputMod;
-
 	// Patches
 	bool HRTFSound;
 	bool CCEF;
@@ -97,10 +96,7 @@ struct LoaderSettings
 	bool KillGbix;
 	bool DisableCDCheck;
 	bool ExtendedSaveSupport;
-
-	// Graphics
-	int ScreenMode;				// Window Mode (Windowed, Fullscreen, Borderless Fullscren, or Custom Window); requires version 20+
-	bool ShowMouseInFullscreen;	// Displays Cursor when in Fullscreen; requires version 20+
+	bool CrashGuard;
 };
 
 struct ModDependency
@@ -455,6 +451,10 @@ struct HelperFunctions
 	* @return Pointer to the resized TEX_PVMTABLE array.
 	*/
 	TEX_PVMTABLE* (__cdecl* ExpandPVMList)(TEX_PVMTABLE* sourcepvmlist, const TEX_PVMTABLE &newpvmentry);
+
+	// Removes any file replacements for the specified file.
+	// Requires version >= 22.
+	void(__cdecl* UnreplaceFile)(const char* file);
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);

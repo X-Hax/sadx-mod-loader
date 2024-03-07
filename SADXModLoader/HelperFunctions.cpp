@@ -648,6 +648,11 @@ TEX_PVMTABLE* ExpandPVMList(TEX_PVMTABLE* sourcepvmlist, const TEX_PVMTABLE &new
 	return newlist;
 }
 
+void UnreplaceFile(const char* file)
+{
+	sadx_fileMap.unreplaceFile(file);
+}
+
 extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
@@ -694,4 +699,5 @@ HelperFunctions helperFunctions =
 	&PopInterpolationFix,
 	&RegisterPermanentTexlist,
 	&ExpandPVMList,
+	&UnreplaceFile,
 };

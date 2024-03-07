@@ -12,16 +12,17 @@
 
 using namespace std;
 
-const string texCrashMsg = "Texture error: the game failed to apply one or more textures. This could be a mod conflict.\nIf you are making a mod, make sure all your textures are loaded\n ";
+const string texCrashMsg = "Texture error: the game failed to apply one or more textures. This could be a mod conflict.\nIf you are making a mod, make sure all your textures are loaded.";
 const string charCrashMsg = "Character Crash: The game crashed in one of the character's main function.\nYou most likely have a mod order conflict.\nMods that edit gameplay should be loaded last.";
 
 static const unordered_map<intptr_t, string> crashes_addresses_map = {
 	{ 0x78CF24, texCrashMsg},
 	{ 0x78D149, texCrashMsg },
+	{ 0x56FC1C, texCrashMsg }, // E101R init
 	{ 0x7B293A85, "DirectX error: You most likely reached a tex ID out of range."},
 	{ 0x40E380, "Font loading error: the game failed to load FONTDATA files.\nCheck game health in the Mod Manager and make sure the game has no missing files."},
 	{ 0x434614, "Camera error: the game failed to load a cam file for the stage."},
-	{ 0x787148, "Landtable error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."}
+	{ 0x787148, "Model error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."}
 };
 
 struct addressRange
@@ -74,7 +75,7 @@ void SetErrorMessage(string& fullMsg, const string address, const string dllName
 
 	if (errorCommon != "NULL")
 	{
-		fullMsg += errorCommon + "\n"; //add the common error message if it exists
+		fullMsg += "\n" + errorCommon + "\n"; //add the common error message if it exists
 	}
 	else
 	{
@@ -83,11 +84,11 @@ void SetErrorMessage(string& fullMsg, const string address, const string dllName
 
 		if (charcrash != "NULL")
 		{
-			fullMsg += charcrash + "\n";
+			fullMsg += "\n" + charcrash + "\n";
 		}
 	}
 
-	fullMsg += "\nA minidump has been created in your SADX folder.\n";
+	fullMsg += "\nA crash dump and a mod list have been added to your game's CrashDumps folder.\n\nIf you want to report this crash, please include the dump (.dmp file) and the mod list (.json file) in your report.\n";
 }
 
 void CopyAndRename_SADXLoaderProfile()

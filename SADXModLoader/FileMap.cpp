@@ -121,6 +121,16 @@ void FileMap::addReplaceFile(const std::string& origFile, const std::string& mod
 }
 
 /**
+ * Remove a file replacement.
+ * @param file Filename.
+ */
+void FileMap::unreplaceFile(const std::string& file)
+{
+	string file_norm = normalizePath(file);
+	m_fileMap.erase(file_norm);
+}
+
+/**
 * Swap two files.
 * @param fileA First filename.
 * @param fileB Second filename.

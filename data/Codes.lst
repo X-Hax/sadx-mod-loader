@@ -6,10 +6,12 @@ Category Graphics
 Description Originally, Casinopolis allowed the light to dynamically move. This enables that effect to be applied in any stage.
 
 Code "Egg Carrier Ocean Music"
-ifmask32 03C62394 0x1
-	write8 0051BE03 32
-else
-	write8 0051BE03 31
+ifmask8 0051BE01 0xC6
+	ifmask32 03C62394 0x1
+		write8 0051BE03 32
+	else
+		write8 0051BE03 31
+	endif
 endif
 Author PkR
 Category Audio
