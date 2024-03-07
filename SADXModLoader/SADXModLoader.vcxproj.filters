@@ -156,6 +156,9 @@
     <ClCompile Include="window.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="CrashGuard.cpp">
+      <Filter>Source Files\Patches</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MediaFns.hpp">
@@ -352,6 +355,9 @@
     </ClInclude>
     <ClInclude Include="window.h">
       <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="CrashGuard.h">
+      <Filter>Header Files\Patches</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -65,7 +65,11 @@ using json = nlohmann::json;
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
 #include "NodeLimit.h"
+#include "CrashGuard.h"
 #include "window.h"
+
+static HINSTANCE g_hinstDll = nullptr;
+static LPCTSTR iconPathName = NULL;
 
 wstring borderimage = L"mods\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
@@ -670,12 +674,12 @@ extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath)
 // Console handler to properly shut down the game when the console window is enabled (since the console closes first)
 BOOL WINAPI ConsoleHandler(DWORD dwType)
 {
-	switch (dwType) 
+	switch (dwType)
 	{
 	case CTRL_CLOSE_EVENT:
 	case CTRL_LOGOFF_EVENT:
 	case CTRL_SHUTDOWN_EVENT:
-		OnExit(0,0,0);
+		OnExit(0, 0, 0);
 		PostQuitMessage(0);
 		return TRUE;
 	default:
@@ -724,7 +728,7 @@ static void __cdecl InitMods()
 		// Set console handler for closing the window
 		bool res = SetConsoleCtrlHandler(ConsoleHandler, true);
 		if (!res)
-			PrintDebug("Unable to set console handler routine\n");
+			PrintDebug("Unable to set console handler routine");
 	}
 
 	dbgScreen = loaderSettings.DebugScreen;
@@ -744,11 +748,7 @@ static void __cdecl InitMods()
 			ModLoaderVer);
 
 #ifdef MODLOADER_GIT_VERSION
-#ifdef MODLOADER_GIT_DESCRIBE
-		PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
-#else /* !MODLOADER_GIT_DESCRIBE */
-		PrintDebug("%s\n", MODLOADER_GIT_VERSION);
-#endif /* MODLOADER_GIT_DESCRIBE */
+		PrintDebug("%s\n", MODLOADER_GIT_VERSION); // Old: PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
 #endif /* MODLOADER_GIT_VERSION */
 	}
 
@@ -818,7 +818,7 @@ static void __cdecl InitMods()
 	}
 
 	// This is different from the rewrite portion of the polybuff namespace!
-		polybuff::init();
+	polybuff::init();
 
 	if (loaderSettings.PolyBuff)
 		polybuff::rewrite_init();
@@ -865,9 +865,9 @@ static void __cdecl InitMods()
 		const string mod_dirA = "mods\\" + mod_fname;
 		const wstring mod_dir = L"mods\\" + mod_fname_w;
 		const wstring mod_inifile = mod_dir + L"\\mod.ini";
-		
+
 		FILE* f_mod_ini = _wfopen(mod_inifile.c_str(), L"r");
-		
+
 		if (!f_mod_ini)
 		{
 			PrintDebug("Could not open file mod.ini in \"%s\".\n", mod_dirA.c_str());
@@ -1139,6 +1139,13 @@ static void __cdecl InitMods()
 				}
 			}
 		}
+
+		// Set global codepage overrides
+		CodepageJapanese = modinfo->getInt("CodepageJapanese", 932);
+		CodepageEnglish = modinfo->getInt("CodepageEnglish", 932);
+		CodepageFrench = modinfo->getInt("CodepageFrench", 1252);
+		CodepageGerman = modinfo->getInt("CodepageGerman", 1252);
+		CodepageSpanish = modinfo->getInt("CodepageSpanish", 1252);
 
 		// Check if the mod has EXE data replacements.
 		if (modinfo->hasKeyNonEmpty("EXEData"))
@@ -1506,8 +1513,12 @@ static void __cdecl InitMods()
 
 	ApplyTestSpawn();
 	GVR_Init();
+
 	if (loaderSettings.ExtendedSaveSupport)
 		ExtendedSaveSupport_Init();
+
+	if (loaderSettings.CrashGuard)
+		CrashGuard_Init();
 
 	if (FileExists(L"sonic.ico"))
 	{
@@ -1521,6 +1532,8 @@ DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
 void EventGameLoopInit()
 {
 	RaiseEvents(modInitGameLoopEvents);
+	if (loaderSettings.CrashGuard)
+		InitDefaultTexture();
 }
 
 static void __cdecl LoadChrmodels()
