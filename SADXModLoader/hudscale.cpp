@@ -123,6 +123,7 @@ static Trampoline* GuideButtonDisplayer_t;
 static Trampoline* CreateCancelButton_t;
 static Trampoline* CreateDecideButton_t;
 static Trampoline* DecideButtonDisplayer_t;
+static Trampoline* AloG00Homepage_t;
 static Trampoline* AloG00Hintmenu_t;
 static Trampoline* AlgKinderPrDisp_t;
 static Trampoline* ChaoParamWindowExecutor_t;
@@ -718,6 +719,11 @@ static void __cdecl AloG00Hintmenu_r(ObjectMaster* a1)
 	scale_trampoline(Align::Align_Center, false, AloG00Hintmenu_r, AloG00Hintmenu_t, a1);
 }
 
+static void __cdecl AloG00Homepage_r(ObjectMaster* a1)
+{
+	scale_trampoline(Align::Align_Center, false, AloG00Homepage_r, AloG00Homepage_t, a1);
+}
+
 static void __cdecl AlgKinderPrDisp_r(ObjectMaster* a1)
 {
 	scale_trampoline(Align::Align_Center, false, AlgKinderPrDisp_r, AlgKinderPrDisp_t, a1);
@@ -1177,7 +1183,10 @@ static void InitializeChaoHUDs()
 
 	// Monitor
 	AloG00Hintmenu_t = new Trampoline(0x00746800, 0x00746806, AloG00Hintmenu_r);
+	AloG00Homepage_t = new Trampoline(0x0072B0C0, 0x0072B0C5, AloG00Homepage_r);
 	AlgKinderPrDisp_t = new Trampoline(0x00746710, 0x00746715, AlgKinderPrDisp_r);
+	WriteData(reinterpret_cast<const float**>(0x0072B341), &patch_dummy);
+	WriteData(reinterpret_cast<const float**>(0x0072B353), &patch_dummy);
 
 	// Black Market item list
 	WriteData(reinterpret_cast<const int**>(0x00727449), &int640); // Egg

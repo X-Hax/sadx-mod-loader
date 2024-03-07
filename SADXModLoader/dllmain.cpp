@@ -1413,11 +1413,7 @@ static void __cdecl InitMods()
 			ModLoaderVer);
 
 #ifdef MODLOADER_GIT_VERSION
-#ifdef MODLOADER_GIT_DESCRIBE
-		PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
-#else /* !MODLOADER_GIT_DESCRIBE */
-		PrintDebug("%s\n", MODLOADER_GIT_VERSION);
-#endif /* MODLOADER_GIT_DESCRIBE */
+		PrintDebug("%s\n", MODLOADER_GIT_VERSION); // Old: PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
 #endif /* MODLOADER_GIT_VERSION */
 	}
 
@@ -1863,6 +1859,13 @@ static void __cdecl InitMods()
 				}
 			}
 		}
+
+		// Set global codepage overrides
+		CodepageJapanese = modinfo->getInt("CodepageJapanese", 932);
+		CodepageEnglish = modinfo->getInt("CodepageEnglish", 932);
+		CodepageFrench = modinfo->getInt("CodepageFrench", 1252);
+		CodepageGerman = modinfo->getInt("CodepageGerman", 1252);
+		CodepageSpanish = modinfo->getInt("CodepageSpanish", 1252);
 
 		// Check if the mod has EXE data replacements.
 		if (modinfo->hasKeyNonEmpty("EXEData"))

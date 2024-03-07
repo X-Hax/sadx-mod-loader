@@ -19,6 +19,12 @@ using std::string;
 using std::wstring;
 using std::ifstream;
 
+UINT CodepageJapanese = 932;
+UINT CodepageEnglish = 932;
+UINT CodepageFrench = 1252;
+UINT CodepageGerman = 1252;
+UINT CodepageSpanish = 1252;
+
 static vector<string>& split(const string& s, char delim, vector<string>& elems)
 {
 	std::stringstream ss(s);
@@ -228,9 +234,31 @@ static uint8_t ParseLanguage(const string& str)
 	return Languages_Japanese;
 }
 
+static UINT GetCodepageForLanguageID(int language)
+{
+	switch (language)
+	{
+	case Languages_Japanese:
+	default:
+		return CodepageJapanese;
+	case Languages_English:
+		return CodepageEnglish;
+	case Languages_French:
+		return CodepageFrench;
+	case Languages_German:
+		return CodepageGerman;
+	case Languages_Spanish:
+		return CodepageSpanish;
+	}
+}
+
 static string DecodeUTF8(const string& str, int language, unsigned int codepage)
 {
-	return (language <= Languages_English) ? UTF8toSJIS(str) : UTF8toCodepage(str, codepage);
+	// If there is a non-global codepage override, use the old parsing
+	if (codepage != 0)
+		return (language <= Languages_English) ? UTF8toSJIS(str) : UTF8toCodepage(str, codepage);
+	// If there is no override, use the global codepage value for the specified language
+	return UTF8toCodepage(str, GetCodepageForLanguageID(language));
 }
 
 static string UnescapeNewlines(const string& str)
@@ -859,6 +887,21 @@ static vector<char*> ProcessStringArrayINI_Internal(const wchar_t* filename, uin
 	return strs;
 }
 
+static char* ProcessSingleStringInternal(const wchar_t* filename, uint8_t language)
+{
+	ifstream fstr(filename);
+	vector<char*> strs;
+	string str;
+	if (fstr.good())
+	{
+		getline(fstr, str);
+		str = DecodeUTF8(UnescapeNewlines(str), language, 0);
+		fstr.close();
+		return strdup(str.c_str());
+	}
+	return NULL;
+}
+
 static void ProcessStringArrayINI(const IniGroup* group, const wstring& mod_dir)
 {
 	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address"))
@@ -867,7 +910,7 @@ static void ProcessStringArrayINI(const IniGroup* group, const wstring& mod_dir)
 	}
 
 	wchar_t filename[MAX_PATH]{};
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 
 	swprintf(filename, LengthOfArray(filename), L"%s\\%s",
 	         mod_dir.c_str(), group->getWString("filename").c_str());
@@ -926,11 +969,11 @@ static void ProcessCutsceneTextINI(const IniGroup* group, const wstring& mod_dir
 {
 	if (!group->hasKeyNonEmpty("filename"))
 		return;
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	char*** addr = (char***)group->getIntRadix("address", 16);
 	if (addr == nullptr)
 		return;
-	addr                   = (char***)((int)addr + 0x400000);
+	addr = (char***)((int)addr + 0x400000);
 	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
 	for (unsigned int i = 0; i < LengthOfArray(languagenames); i++)
 	{
@@ -955,7 +998,7 @@ static void ProcessRecapScreenINI(const IniGroup* group, const wstring& mod_dir)
 		return;
 	}
 
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	int length = group->getInt("length");
 	auto addr = (RecapScreen**)group->getIntRadix("address", 16);
 
@@ -1003,7 +1046,7 @@ static void ProcessNPCTextINI(const IniGroup* group, const wstring& mod_dir)
 	{
 		return;
 	}
-	unsigned int codepage= group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	int length = group->getInt("length");
 	auto addr = (HintText_Entry**)group->getIntRadix("address", 16);
 	
@@ -1638,7 +1681,7 @@ static void ProcessCreditsTextListINI(const IniGroup* group, const wstring& mod_
 	}
 
 	addr = (CreditsList*)((intptr_t)addr + 0x400000);
-	unsigned int codepage = group->getInt("codepage", 1252);
+	unsigned int codepage = group->getInt("codepage", 0);
 	wchar_t filename[MAX_PATH] {};
 
 	swprintf(filename, LengthOfArray(filename), L"%s\\%s",
@@ -1736,6 +1779,105 @@ static void ProcessPhysicsDataINI(const IniGroup* group, const wstring& mod_dir)
 	delete inidata;
 }
 
+static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	if (!group->hasKeyNonEmpty("language"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
+
+	wchar_t language[32]{};
+
+	swprintf(language, LengthOfArray(language), group->getWString("language").c_str());
+
+	int langid = Languages_Japanese;
+
+	for (int i = 0; i < LengthOfArray(languagenames); i++)
+	{
+		if (!wcscmp(language, languagenames[i]))
+		{
+			langid = i;
+			break;
+		}
+	}
+
+	swprintf(filename, LengthOfArray(filename), L"%s\\%s.txt",
+		pathbase.c_str(), language);
+
+	char* strs = ProcessSingleStringInternal(filename, langid);
+
+	WriteData((char**)addr, strs);
+}
+
+static void ProcessMultiString(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	int length = group->getInt("length", 1);
+
+	bool doublepnt = group->getBool("doublepointer", false);
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
+	
+	for (unsigned int i = 0; i < LengthOfArray(languagenames); i++)
+	{
+		wchar_t filename[MAX_PATH]{};
+
+		swprintf(filename, LengthOfArray(filename), L"%s\\%s.txt",
+			pathbase.c_str(), languagenames[i]);
+
+		vector <char*> strs = ProcessStringArrayINI_Internal(filename, i, 0);
+
+		if (doublepnt)
+		{
+			int charaddr = *(int*)addr;
+			for (int l = 0; l < length; l++)
+			{
+				WriteData((char**)charaddr, strs[l]);
+				charaddr += 4;
+			}
+			addr += 4;
+		}
+		else
+		{
+			WriteData((char**)addr, strs[0]);
+			addr += 4;
+		}
+	}
+}
+
 using exedatafunc_t = void(__cdecl*)(const IniGroup* group, const wstring& mod_dir);
 
 static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
@@ -1771,6 +1913,8 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "creditstextlist",    ProcessCreditsTextListINI },
 	{ "physicsdata",		ProcessPhysicsDataINI },
 	{ "fogdatatable",		ProcessFogDataINI },
+	{ "singlestring",		ProcessSingleString },
+	{ "multistring",		ProcessMultiString },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
