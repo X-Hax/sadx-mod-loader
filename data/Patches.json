@@ -79,6 +79,11 @@
       "Name": "ExtendedSaveSupport",
       "Author": "PkR",
       "Category": "System"
+    },
+    {
+      "Name": "CrashGuard",
+      "Author": "PkR",
+      "Category": "System"
     }
   ]
 }
