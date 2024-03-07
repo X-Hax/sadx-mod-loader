@@ -68,9 +68,6 @@ using json = nlohmann::json;
 #include "CrashGuard.h"
 #include "window.h"
 
-static HINSTANCE g_hinstDll = nullptr;
-static LPCTSTR iconPathName = NULL;
-
 wstring borderimage = L"mods\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
 wstring iconPathName;
