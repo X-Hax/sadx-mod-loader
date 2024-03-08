@@ -1925,6 +1925,45 @@ static void ProcessTikalSingleHint(const IniGroup* group, const wstring& mod_dir
 	}
 }
 
+static void ProcessMissionDescriptions(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+
+	for (unsigned int j = 0; j < 70; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		char* desc = strdup(DecodeUTF8(inidata->getString("", buf), lang, 0).c_str());
+		int write = (int)addr + 208 * j;
+		memset((char*)write, 0, 208);
+		snprintf((char*)write, 208, desc);
+	}
+}
+
 static void ProcessMissionTutoText(const IniGroup* group, const wstring& mod_dir)
 {
 	if (!group->hasKeyNonEmpty("filename"))
@@ -2078,6 +2117,7 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "tikalhintsingle",	ProcessTikalSingleHint },
 	{ "tikalhintmulti",		ProcessTikalMultiHint },
 	{ "missiontutorial",	ProcessMissionTutoText },
+	{ "missiondescription",	ProcessMissionDescriptions },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
