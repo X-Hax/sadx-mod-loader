@@ -1925,6 +1925,59 @@ static void ProcessTikalSingleHint(const IniGroup* group, const wstring& mod_dir
 	}
 }
 
+static void ProcessMissionTutoText(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+	
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+	int numPages = inidata->getInt("", "NumPages", 0);
+	WriteData((int*)addr, numPages);
+	addr += 4;
+
+	for (unsigned int j = 0; j < numPages; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		if (!inidata->hasGroup(buf))
+		{
+			break;
+		}
+
+		const IniGroup* entdata = inidata->getGroup(buf);
+		int numLines = entdata->getInt("NumLines",0);
+		int addr_ent = *(int*)addr + 8 * j;
+		int strpointer = *(int*)(addr_ent += 4);
+		for (int l = 0;l < numLines;l++)
+		{
+			snprintf(buf, sizeof(buf), "%u", l);
+			char* str = strdup(DecodeUTF8(entdata->getString(buf), lang, 0).c_str());
+			WriteData((char**)strpointer, str);
+			strpointer += 4;
+		}
+	}
+}
 
 static void ProcessTikalMultiHint(const IniGroup* group, const wstring& mod_dir)
 {
@@ -2024,6 +2077,7 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "multistring",		ProcessMultiString },
 	{ "tikalhintsingle",	ProcessTikalSingleHint },
 	{ "tikalhintmulti",		ProcessTikalMultiHint },
+	{ "missiontutorial",	ProcessMissionTutoText },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
