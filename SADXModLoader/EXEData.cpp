@@ -1878,6 +1878,205 @@ static void ProcessMultiString(const IniGroup* group, const wstring& mod_dir)
 	}
 }
 
+static void ProcessTikalSingleHint(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	int length = group->getInt("length", 1);
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+	
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+
+	for (unsigned int j = 0; j < length; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		if (!inidata->hasGroup(buf))
+		{
+			break;
+		}
+
+		const IniGroup* entdata = inidata->getGroup(buf);
+
+		HintText_Text* msgstring = (HintText_Text*)(addr + 8 * j);
+		msgstring->Message = strdup(DecodeUTF8(entdata->getString("Line"), lang, 0).c_str());
+		msgstring->Time = entdata->getInt("Time");
+	}
+}
+
+static void ProcessMissionDescriptions(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+
+	for (unsigned int j = 0; j < 70; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		char* desc = strdup(DecodeUTF8(inidata->getString("", buf), lang, 0).c_str());
+		int write = (int)addr + 208 * j;
+		memset((char*)write, 0, 208);
+		snprintf((char*)write, 208, desc);
+	}
+}
+
+static void ProcessMissionTutoText(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+	
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+	int numPages = inidata->getInt("", "NumPages", 0);
+	WriteData((int*)addr, numPages);
+	addr += 4;
+
+	for (unsigned int j = 0; j < numPages; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		if (!inidata->hasGroup(buf))
+		{
+			break;
+		}
+
+		const IniGroup* entdata = inidata->getGroup(buf);
+		int numLines = entdata->getInt("NumLines",0);
+		int addr_ent = *(int*)addr + 8 * j;
+		int strpointer = *(int*)(addr_ent += 4);
+		for (int l = 0;l < numLines;l++)
+		{
+			snprintf(buf, sizeof(buf), "%u", l);
+			char* str = strdup(DecodeUTF8(entdata->getString(buf), lang, 0).c_str());
+			WriteData((char**)strpointer, str);
+			strpointer += 4;
+		}
+	}
+}
+
+static void ProcessTikalMultiHint(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	int length = group->getInt("length", 1);
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	bool doublepnt = group->getBool("doublepointer", false);
+
+	HintText_Text* msgstring;
+
+	for (int l = 0; l < LengthOfArray(languagenames); l++)
+	{
+		swprintf(filename, LengthOfArray(filename), L"%s\\%s.ini", pathbase.c_str(), languagenames[l]);
+		auto inidata = new IniFile(filename);
+		int pointer_lang = (int)addr + l * 4;
+		int entrypnt = *(int*)pointer_lang;
+		for (unsigned int j = 0; j < length; j++)
+		{
+			char buf[8]{};
+
+			snprintf(buf, sizeof(buf), "%u", j);
+
+			if (!inidata->hasGroup(buf))
+			{
+				break;
+			}
+
+			const IniGroup* entdata = inidata->getGroup(buf);
+			int entry = entrypnt;
+			if (doublepnt)
+			{
+				entry = *(int*)entrypnt;
+				msgstring = (HintText_Text*)(entry);
+			}
+			else
+				msgstring = (HintText_Text*)(entry + 8 * j);
+			msgstring->Message = strdup(DecodeUTF8(entdata->getString("Line"), l, 0).c_str());
+			msgstring->Time = entdata->getInt("Time");
+			entrypnt += 4;
+		}
+	}
+}
+
 using exedatafunc_t = void(__cdecl*)(const IniGroup* group, const wstring& mod_dir);
 
 static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
@@ -1915,6 +2114,10 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "fogdatatable",		ProcessFogDataINI },
 	{ "singlestring",		ProcessSingleString },
 	{ "multistring",		ProcessMultiString },
+	{ "tikalhintsingle",	ProcessTikalSingleHint },
+	{ "tikalhintmulti",		ProcessTikalMultiHint },
+	{ "missiontutorial",	ProcessMissionTutoText },
+	{ "missiondescription",	ProcessMissionDescriptions },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
