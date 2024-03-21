@@ -2659,7 +2659,7 @@ DataPointer(float, ViewPortX, 0x3D0FD20);
 DataPointer(float, ViewPortY, 0x3D0FD24);
 DataPointer(float, ViewPortWidthMinus1PlusX, 0x3D0FD28);
 DataPointer(float, ViewPortHeightMinus1PlusY, 0x3D0FD2C);
-DataPointer(HWND, WindowHandle, 0x3D0FD30);
+DataPointer(HWND, WindowHandle, 0x3D0FD30);		// Game Render Window
 DataPointer(HINSTANCE, hInst, 0x3D0FD34);
 DataArray(Float, _nj_current_matrix_no_view_inverse_, 0x3D0FD40, 16);
 DataPointer(D3DMATRIX, TransformationMatrix, 0x3D0FD80);

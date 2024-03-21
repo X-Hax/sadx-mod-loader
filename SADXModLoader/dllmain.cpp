@@ -66,9 +66,11 @@ using json = nlohmann::json;
 #include "ExtendedSaveSupport.h"
 #include "NodeLimit.h"
 #include "CrashGuard.h"
+#include "window.h"
 
-static HINSTANCE g_hinstDll = nullptr;
-static LPCTSTR iconPathName = NULL;
+wstring borderimage = L"mods\\Border.png";
+HINSTANCE g_hinstDll = nullptr;
+wstring iconPathName;
 
 /**
  * Show an error message indicating that this isn't the 2004 US version.
@@ -80,23 +82,6 @@ static void ShowNon2004USError()
 		L"Please obtain the EXE file from the 2004 US version and try again.",
 		L"SADX Mod Loader", MB_ICONERROR);
 	ExitProcess(1);
-}
-
-/**
- * Set the icon at the specified path as the game window and console window icon.
- */
-void SetWindowIcon(LPCTSTR iconPathName)
-{
-	UINT icon_flags = LR_LOADFROMFILE | LR_DEFAULTSIZE;
-	HANDLE hIcon = LoadImage(NULL, iconPathName, IMAGE_ICON, 0, 0, icon_flags);
-	// Game window
-	HINSTANCE hInst = (HINSTANCE)GetWindowLong(WindowHandle, GWL_HINSTANCE);
-	SendMessage(WindowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-	SendMessage(WindowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-	// Console window
-	HWND hConsole = GetConsoleWindow();
-	SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-	SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 }
 
 /**
@@ -285,7 +270,6 @@ void SetAppPathConfig(std::wstring gamepath)
 }
 
 static bool dbgConsole, dbgScreen;
-static bool pauseWhenInactive;
 // File for logging debugging output.
 static FILE* dbgFile = nullptr;
 
@@ -346,644 +330,6 @@ static int __cdecl SADXDebugOutput(const char* Format, ...)
 	return result;
 }
 
-enum windowmodes { windowed, fullscreen };
-
-struct windowsize
-{
-	int x;
-	int y;
-	int width;
-	int height;
-};
-
-struct windowdata
-{
-	int x;
-	int y;
-	int width;
-	int height;
-	DWORD style;
-	DWORD exStyle;
-};
-
-// Used for borderless windowed mode.
-// Defines the size of the outer-window which wraps the game window and draws the background.
-static windowdata outerSizes[] = {
-	{ CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, WS_CAPTION | WS_SYSMENU | WS_VISIBLE, 0 }, // windowed
-	{ 0, 0, CW_USEDEFAULT, CW_USEDEFAULT, WS_POPUP | WS_VISIBLE, WS_EX_APPWINDOW } // fullscreen
-};
-
-// Used for borderless windowed mode.
-// Defines the size of the inner-window on which the game is rendered.
-static windowsize innerSizes[2] = {};
-
-static HWND accelWindow = nullptr;
-static windowmodes windowMode = windowmodes::windowed;
-static HACCEL accelTable = nullptr;
-
-DataPointer(int, dword_3D08534, 0x3D08534);
-
-static void __cdecl HandleWindowMessages_r()
-{
-	MSG Msg; // [sp+4h] [bp-1Ch]@1
-
-	if (PeekMessageA(&Msg, nullptr, 0, 0, 1u))
-	{
-		do
-		{
-			if (!TranslateAccelerator(accelWindow, accelTable, &Msg))
-			{
-				TranslateMessage(&Msg);
-				DispatchMessageA(&Msg);
-			}
-		} while (PeekMessageA(&Msg, nullptr, 0, 0, 1u));
-		dword_3D08534 = Msg.wParam;
-	}
-	else
-	{
-		dword_3D08534 = Msg.wParam;
-	}
-}
-
-static vector<RECT> screenBounds;
-static Gdiplus::Bitmap* backgroundImage = nullptr;
-static bool switchingWindowMode = false;
-static bool borderlessWindow = false;
-static char voiceLanguage = 1;
-static char textLanguage = 1;
-static bool scaleScreen = true;
-static bool windowResize = false;
-static unsigned int screenNum = 1;
-static bool customWindowSize = false;
-static int customWindowWidth = 640;
-static int customWindowHeight = 480;
-static bool textureFilter = true;
-
-static BOOL CALLBACK GetMonitorSize(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData)
-{
-	screenBounds.push_back(*lprcMonitor);
-	return TRUE;
-}
-
-static const uint8_t wndpatch[] = { 0xA1, 0x30, 0xFD, 0xD0, 0x03, 0xEB, 0x08 }; // mov eax,[hWnd] / jmp short 0xf
-static int currentScreenSize[2];
-
-// This wrapper is only used in Borderless mode
-static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-	case WM_ACTIVATE:
-		if ((LOWORD(wParam) != WA_INACTIVE && !lParam) || reinterpret_cast<HWND>(lParam) == WindowHandle)
-		{
-			SetFocus(WindowHandle);
-			return 0;
-		}
-		break;
-
-	case WM_CLOSE:
-		// As this sends the same message to the main window, there's no need to call OnExit here.
-		SendMessageA(WindowHandle, WM_CLOSE, wParam, lParam);
-		return 0;
-
-	case WM_ERASEBKGND:
-	{
-		if (backgroundImage == nullptr || windowResize)
-		{
-			break;
-		}
-
-		Gdiplus::Graphics gfx((HDC)wParam);
-		gfx.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-
-		RECT rect;
-		GetClientRect(wrapper, &rect);
-
-		auto w = rect.right - rect.left;
-		auto h = rect.bottom - rect.top;
-
-		if (w == innerSizes[windowMode].width && h == innerSizes[windowMode].height)
-		{
-			break;
-		}
-
-		gfx.DrawImage(backgroundImage, 0, 0, w, h);
-		return 0;
-	}
-
-	case WM_SIZE:
-	{
-		auto& inner = innerSizes[windowMode];
-
-		if (windowResize)
-		{
-			inner.x = 0;
-			inner.y = 0;
-			inner.width = LOWORD(lParam);
-			inner.height = HIWORD(lParam);
-		}
-
-		// update the inner window (game view)
-		SetWindowPos(WindowHandle, HWND_TOP, inner.x, inner.y, inner.width, inner.height, 0);
-		break;
-	}
-
-	case WM_COMMAND:
-	{
-		if (wParam != MAKELONG(ID_FULLSCREEN, 1))
-			break;
-
-		switchingWindowMode = true;
-
-		if (windowMode == windowed)
-		{
-			RECT rect;
-			GetWindowRect(wrapper, &rect);
-
-			outerSizes[windowMode].x = rect.left;
-			outerSizes[windowMode].y = rect.top;
-			outerSizes[windowMode].width = rect.right - rect.left;
-			outerSizes[windowMode].height = rect.bottom - rect.top;
-			outerSizes[windowMode].style = GetWindowLongA(accelWindow, GWL_STYLE);
-			outerSizes[windowMode].exStyle = GetWindowLongA(accelWindow, GWL_EXSTYLE);
-		}
-
-		windowMode = windowMode == windowed ? fullscreen : windowed;
-
-		// update outer window (draws background)
-		const auto& outer = outerSizes[windowMode];
-		SetWindowLongA(accelWindow, GWL_STYLE, outer.style);
-		SetWindowLongA(accelWindow, GWL_EXSTYLE, outer.exStyle);
-		SetWindowPos(accelWindow, HWND_NOTOPMOST, outer.x, outer.y, outer.width, outer.height, SWP_FRAMECHANGED);
-
-		switchingWindowMode = false;
-		return 0;
-	}
-
-	case WM_ACTIVATEAPP:
-		if (!switchingWindowMode)
-		{
-			if (pauseWhenInactive)
-			{
-				if (wParam)
-				{
-					if (!IsGamePaused())
-					{
-						UnpauseAllSounds(0);
-					}
-					else
-						ResumeMusic();
-				}
-				else
-					PauseAllSounds(0);
-			}
-			WndProc_B(WindowHandle, uMsg, wParam, lParam);
-		}
-
-		if (windowMode == windowed)
-		{
-			while (ShowCursor(TRUE) < 0);
-		}
-		else
-		{
-			while (ShowCursor(FALSE) > 0);
-		}
-
-	default:
-		break;
-	}
-
-	// alternatively we can return SendMe
-	return DefWindowProcA(wrapper, uMsg, wParam, lParam);
-}
-
-static RECT   last_rect = {};
-static Uint32 last_width = 0;
-static Uint32 last_height = 0;
-static DWORD  last_style = 0;
-static DWORD  last_exStyle = 0;
-
-static void enable_fullscreen_mode(HWND handle)
-{
-	IsWindowed = false;
-	last_width = HorizontalResolution;
-	last_height = VerticalResolution;
-
-	GetWindowRect(handle, &last_rect);
-
-	last_style = GetWindowLongA(handle, GWL_STYLE);
-	last_exStyle = GetWindowLongA(handle, GWL_EXSTYLE);
-
-	SetWindowLongA(handle, GWL_STYLE, WS_POPUP | WS_SYSMENU | WS_VISIBLE);
-
-	while (ShowCursor(FALSE) > 0);
-}
-
-static void enable_windowed_mode(HWND handle)
-{
-	SetWindowLongA(handle, GWL_STYLE, last_style);
-	SetWindowLongA(handle, GWL_EXSTYLE, last_exStyle);
-
-	auto width = last_rect.right - last_rect.left;
-	auto height = last_rect.bottom - last_rect.top;
-
-	if (width <= 0 || height <= 0)
-	{
-		last_rect = {};
-
-		last_rect.right = 640;
-		last_rect.bottom = 480;
-
-		AdjustWindowRectEx(&last_rect, last_style, false, last_exStyle);
-
-		width = last_rect.right - last_rect.left;
-		height = last_rect.bottom - last_rect.top;
-	}
-
-	SetWindowPos(handle, HWND_NOTOPMOST, last_rect.left, last_rect.top, width, height, 0);
-	IsWindowed = true;
-
-	while (ShowCursor(TRUE) < 0);
-}
-
-// This is a single WndProc used for both resizable and non-resizable windows
-static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (Msg)
-	{
-
-	default:
-		break;
-
-	case WM_DESTROY:
-	case WM_CLOSE:
-		OnExit(0, 0, 0);
-		PostQuitMessage(0);
-		break;
-
-		// Cases below are only for resizable window
-	case WM_SIZE:
-	{
-		if (!windowResize || customWindowSize)
-		{
-			break;
-		}
-
-		if (!IsWindowed || Direct3D_Device == nullptr)
-		{
-			return 0;
-		}
-
-		int w = LOWORD(lParam);
-		int h = HIWORD(lParam);
-
-		if (!w || !h)
-		{
-			break;
-		}
-
-		direct3d::change_resolution(w, h);
-		break;
-	}
-
-	case WM_COMMAND:
-	{
-		if (!windowResize || wParam != MAKELONG(ID_FULLSCREEN, 1))
-		{
-			break;
-		}
-
-		if (direct3d::is_windowed() && IsWindowed)
-		{
-			enable_fullscreen_mode(handle);
-
-			const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
-
-			const auto w = rect.right - rect.left;
-			const auto h = rect.bottom - rect.top;
-
-			direct3d::change_resolution(w, h, false);
-		}
-		else
-		{
-			direct3d::change_resolution(last_width, last_height, true);
-			enable_windowed_mode(handle);
-		}
-
-		return 0;
-	}
-	}
-
-	return windowResize ? DefWindowProcA(handle, Msg, wParam, lParam) : WndProc(handle, Msg, wParam, lParam);
-}
-
-LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	if ((Msg == WM_SYSKEYDOWN || Msg == WM_SYSKEYUP) && ((wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN))) return 0;
-	return DefWindowProcA(handle, Msg, wParam, lParam);
-}
-
-wstring borderimg = L"mods\\Border.png";
-
-static void ResumeAllSoundsPause()
-{
-	if (!IsGamePaused())
-	{
-		UnpauseAllSounds(0);
-	}
-	else
-		ResumeMusic();
-}
-
-static void PauseAllSoundsAndMusic()
-{
-	PauseAllSounds(0);
-}
-
-static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
-{
-	// Primary window class name.
-	const char* const lpszClassName = GetWindowClassName();
-
-	// Hook default return of SADX's window procedure to force it to return DefWindowProc
-	WriteJump(reinterpret_cast<void*>(0x00789E48), WndProc_hook);
-	
-	// Primary window class for SADX.
-	WNDCLASSA v8{}; // [sp+4h] [bp-28h]@1
-
-	v8.style = 0;
-	v8.lpfnWndProc = WndProc_New;
-	v8.cbClsExtra = 0;
-	v8.cbWndExtra = 0;
-	v8.hInstance = hInstance;
-	v8.hIcon = LoadIconA(hInstance, MAKEINTRESOURCEA(101));
-	v8.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	v8.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	v8.lpszMenuName = nullptr;
-	v8.lpszClassName = lpszClassName;
-
-	if (!RegisterClassA(&v8))
-	{
-		MessageBox(nullptr, L"Failed to register class A to create SADX Window, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
-		return;
-	}
-
-	RECT windowRect;
-
-	windowRect.top = 0;
-	windowRect.left = 0;
-
-	if (customWindowSize)
-	{
-		windowRect.right = customWindowWidth;
-		windowRect.bottom = customWindowHeight;
-	}
-	else
-	{
-		windowRect.right = HorizontalResolution;
-		windowRect.bottom = VerticalResolution;
-	}
-
-	if (borderlessWindow || IsWindowed)
-	{
-		currentScreenSize[0] = GetSystemMetrics(SM_CXSCREEN);
-		currentScreenSize[1] = GetSystemMetrics(SM_CYSCREEN);
-		WriteData((int**)0x79426E, &currentScreenSize[0]);
-		WriteData((int**)0x79427A, &currentScreenSize[1]);
-	}
-
-	EnumDisplayMonitors(nullptr, nullptr, GetMonitorSize, 0);
-
-	int screenX, screenY, screenW, screenH, wsX, wsY, wsW, wsH;
-	if (screenNum > 0)
-	{
-		if (screenBounds.size() < screenNum)
-		{
-			screenNum = 1;
-		}
-
-		RECT screenSize = screenBounds[screenNum - 1];
-
-		wsX = screenX = screenSize.left;
-		wsY = screenY = screenSize.top;
-		wsW = screenW = screenSize.right - screenSize.left;
-		wsH = screenH = screenSize.bottom - screenSize.top;
-	}
-	else
-	{
-		screenX = GetSystemMetrics(SM_XVIRTUALSCREEN);
-		screenY = GetSystemMetrics(SM_YVIRTUALSCREEN);
-		screenW = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-		screenH = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-		wsX = 0;
-		wsY = 0;
-		wsW = GetSystemMetrics(SM_CXSCREEN);
-		wsH = GetSystemMetrics(SM_CYSCREEN);
-	}
-
-	accelTable = LoadAcceleratorsA(g_hinstDll, MAKEINTRESOURCEA(IDR_ACCEL_WRAPPER_WINDOW));
-
-	if (borderlessWindow)
-	{
-		PrintDebug("Creating SADX Window in borderless mode...\n");
-
-		if (windowResize)
-		{
-			outerSizes[windowed].style |= WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
-		}
-
-		AdjustWindowRectEx(&windowRect, outerSizes[windowed].style, false, 0);
-
-		outerSizes[windowed].width = windowRect.right - windowRect.left;
-		outerSizes[windowed].height = windowRect.bottom - windowRect.top;
-
-		outerSizes[windowed].x = wsX + ((wsW - outerSizes[windowed].width) / 2);
-		outerSizes[windowed].y = wsY + ((wsH - outerSizes[windowed].height) / 2);
-
-		outerSizes[fullscreen].x = screenX;
-		outerSizes[fullscreen].y = screenY;
-		outerSizes[fullscreen].width = screenW;
-		outerSizes[fullscreen].height = screenH;
-
-		if (customWindowSize)
-		{
-			float num = min((float)customWindowWidth / (float)HorizontalResolution, (float)customWindowHeight / (float)VerticalResolution);
-
-			innerSizes[windowed].width = (int)((float)HorizontalResolution * num);
-			innerSizes[windowed].height = (int)((float)VerticalResolution * num);
-			innerSizes[windowed].x = (customWindowWidth - innerSizes[windowed].width) / 2;
-			innerSizes[windowed].y = (customWindowHeight - innerSizes[windowed].height) / 2;
-		}
-		else
-		{
-			innerSizes[windowed].width = HorizontalResolution;
-			innerSizes[windowed].height = VerticalResolution;
-			innerSizes[windowed].x = 0;
-			innerSizes[windowed].y = 0;
-		}
-
-		if (scaleScreen)
-		{
-			float num = min((float)screenW / (float)HorizontalResolution, (float)screenH / (float)VerticalResolution);
-
-			innerSizes[fullscreen].width = (int)((float)HorizontalResolution * num);
-			innerSizes[fullscreen].height = (int)((float)VerticalResolution * num);
-		}
-		else
-		{
-			innerSizes[fullscreen].width = HorizontalResolution;
-			innerSizes[fullscreen].height = VerticalResolution;
-		}
-
-		innerSizes[fullscreen].x = (screenW - innerSizes[fullscreen].width) / 2;
-		innerSizes[fullscreen].y = (screenH - innerSizes[fullscreen].height) / 2;
-
-		windowMode = IsWindowed ? windowed : fullscreen;
-
-		if (!FileExists(borderimg))
-		{
-			borderimg = L"mods\\Border_Default.png";
-		}
-
-		if (FileExists(borderimg))
-		{
-			Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-			ULONG_PTR gdiplusToken;
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
-			backgroundImage = Gdiplus::Bitmap::FromFile(borderimg.c_str());
-		}
-
-		// Register a window class for the wrapper window.
-		WNDCLASSA w;
-
-		w.style = 0;
-		w.lpfnWndProc = WrapperWndProc;
-		w.cbClsExtra = 0;
-		w.cbWndExtra = 0;
-		w.hInstance = hInstance;
-		w.hIcon = LoadIconA(hInstance, MAKEINTRESOURCEA(101));
-		w.hCursor = LoadCursor(nullptr, IDC_ARROW);
-		w.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-		w.lpszMenuName = nullptr;
-		w.lpszClassName = "WrapperWindow";
-
-		if (!RegisterClassA(&w))
-		{
-			MessageBox(nullptr, L"Failed to register class A to create SADX Window with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
-			return;
-		}
-
-		const auto& outerSize = outerSizes[windowMode];
-
-		accelWindow = CreateWindowExA(outerSize.exStyle,
-			"WrapperWindow",
-			lpszClassName,
-			outerSize.style,
-			outerSize.x, outerSize.y, outerSize.width, outerSize.height,
-			nullptr, nullptr, hInstance, nullptr);
-
-		if (accelWindow == nullptr)
-		{
-			MessageBox(nullptr, L"Failed to Create AccelWindow with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
-			return;
-		}
-
-		const auto& innerSize = innerSizes[windowMode];
-
-		WindowHandle = CreateWindowExA(0,
-			lpszClassName,
-			lpszClassName,
-			WS_CHILD | WS_VISIBLE,
-			innerSize.x, innerSize.y, innerSize.width, innerSize.height,
-			accelWindow, nullptr, hInstance, nullptr);
-
-		if (WindowHandle == nullptr)
-		{
-			MessageBox(nullptr, L"Failed to Create SADX Window with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
-			return;
-		}
-
-		SetFocus(WindowHandle);
-		ShowWindow(accelWindow, nCmdShow);
-		UpdateWindow(accelWindow);
-		SetForegroundWindow(accelWindow);
-
-		PrintDebug("Successfully created SADX Window!\n");
-		IsWindowed = true;
-
-		WriteData((void*)0x402C61, wndpatch);
-	}
-	else
-	{
-		PrintDebug("Creating SADX Window...\n");
-
-		DWORD dwStyle = WS_CAPTION | WS_SYSMENU | WS_VISIBLE;
-		DWORD dwExStyle = 0;
-
-		if (windowResize)
-		{
-			dwStyle |= WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
-		}
-
-		AdjustWindowRectEx(&windowRect, dwStyle, false, dwExStyle);
-
-		int w = windowRect.right - windowRect.left;
-		int h = windowRect.bottom - windowRect.top;
-		int x = wsX + ((wsW - w) / 2);
-		int y = wsY + ((wsH - h) / 2);
-
-		WindowHandle = CreateWindowExA(dwExStyle,
-			lpszClassName,
-			lpszClassName,
-			dwStyle,
-			x, y, w, h,
-			nullptr, nullptr, hInstance, nullptr);
-
-		if (WindowHandle == nullptr)
-		{
-			MessageBox(nullptr, L"Failed to Create SADX Window, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
-			return;
-		}
-
-
-		if (!IsWindowed)
-		{
-			enable_fullscreen_mode(WindowHandle);
-		}
-
-		ShowWindow(WindowHandle, nCmdShow);
-		UpdateWindow(WindowHandle);
-		SetForegroundWindow(WindowHandle);
-
-		accelWindow = WindowHandle;
-
-		WriteCall((void*)0x00401920, ResumeAllSoundsPause);
-		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);
-
-		PrintDebug("Successfully created SADX Window!\n");
-	}
-
-	// Hook the window message handler.
-	WriteJump((void*)HandleWindowMessages, (void*)HandleWindowMessages_r);
-
-	if (iconPathName)
-		SetWindowIcon(iconPathName);
-}
-
-static __declspec(naked) void CreateSADXWindow_asm()
-{
-	__asm
-	{
-		mov ebx, [esp + 4]
-		push ebx
-		push eax
-		call CreateSADXWindow_r
-		add esp, 8
-		retn
-	}
-}
-
 unordered_map<unsigned char, unordered_map<int, StartPosition>> StartPositions;
 unordered_map<unsigned char, unordered_map<int, FieldStartPosition>> FieldStartPositions;
 unordered_map<int, PathDataPtr> Paths;
@@ -1018,26 +364,13 @@ static const char* const dlldatakeys[] = {
 
 void __cdecl SetLanguage()
 {
-	VoiceLanguage = voiceLanguage;
-	TextLanguage = textLanguage;
+	VoiceLanguage = loaderSettings.VoiceLanguage;
+	TextLanguage = loaderSettings.TextLanguage;
 }
 
 Bool __cdecl FixEKey(int i)
 {
 	return IsFreeCameraAllowed() == TRUE && GetKey(i) == TRUE;
-}
-
-const auto loc_794566 = (void*)0x00794566;
-
-void __declspec(naked) PolyBuff_Init_FixVBuffParams()
-{
-	__asm
-	{
-		push D3DPOOL_MANAGED
-		push ecx
-		push D3DUSAGE_WRITEONLY
-		jmp loc_794566
-	}
 }
 
 void __cdecl Direct3D_TextureFilterPoint_ForceLinear()
@@ -1052,7 +385,7 @@ void __cdecl Direct3D_TextureFilterPoint_ForceLinear()
 
 void __cdecl SetPreferredFilterOption()
 {
-	if (textureFilter == true)
+	if (loaderSettings.TextureFilter == true)
 	{
 		Direct3D_TextureFilterPoint_ForceLinear();
 	}
@@ -1273,7 +606,6 @@ void InitPatches()
 		Init_NOGbixHack();
 }
 
-
 static vector<string>& split(const string& s, char delim, vector<string>& elems)
 {
 	std::stringstream ss(s);
@@ -1286,7 +618,6 @@ static vector<string>& split(const string& s, char delim, vector<string>& elems)
 
 	return elems;
 }
-
 
 static vector<string> split(const string& s, char delim)
 {
@@ -1340,12 +671,12 @@ extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath)
 // Console handler to properly shut down the game when the console window is enabled (since the console closes first)
 BOOL WINAPI ConsoleHandler(DWORD dwType)
 {
-	switch (dwType) 
+	switch (dwType)
 	{
 	case CTRL_CLOSE_EVENT:
 	case CTRL_LOGOFF_EVENT:
 	case CTRL_SHUTDOWN_EVENT:
-		OnExit(0,0,0);
+		OnExit(0, 0, 0);
 		PostQuitMessage(0);
 		return TRUE;
 	default:
@@ -1391,6 +722,7 @@ static void __cdecl InitMods()
 		SetConsoleTitle(L"SADX Mod Loader output");
 		freopen("CONOUT$", "wb", stdout);
 		dbgConsole = true;
+		// Set console handler for closing the window
 		bool res = SetConsoleCtrlHandler(ConsoleHandler, true);
 		if (!res)
 			PrintDebug("Unable to set console handler routine");
@@ -1417,71 +749,11 @@ static void __cdecl InitMods()
 #endif /* MODLOADER_GIT_VERSION */
 	}
 
-	WriteJump((void*)0x789E50, CreateSADXWindow_asm); // override window creation function
+	PatchWindow(loaderSettings, borderimage); // override window creation function
+
 	// Other various settings.
 	if (loaderSettings.DisableCDCheck)
 		WriteJump((void*)0x402621, (void*)0x402664);
-
-	// Custom resolution.
-	WriteJump((void*)0x40297A, (void*)0x402A90);
-
-	int hres = loaderSettings.HorizontalResolution;
-	if (hres > 0)
-	{
-		HorizontalResolution = hres;
-		HorizontalStretch = static_cast<float>(HorizontalResolution) / 640.0f;
-	}
-
-	int vres = loaderSettings.VerticalResolution;
-	if (vres > 0)
-	{
-		VerticalResolution = vres;
-		VerticalStretch = static_cast<float>(VerticalResolution) / 480.0f;
-	}
-
-	if (loaderSettings.FovFix)
-		fov::initialize();
-
-	voiceLanguage = loaderSettings.VoiceLanguage;
-	textLanguage = loaderSettings.TextLanguage;
-	borderlessWindow = loaderSettings.WindowedFullscreen;
-	scaleScreen = loaderSettings.StretchFullscreen;
-	screenNum = loaderSettings.ScreenNum;
-	customWindowSize = loaderSettings.CustomWindowSize;
-	customWindowWidth = loaderSettings.WindowWidth;
-	customWindowHeight = loaderSettings.WindowHeight;
-	windowResize = loaderSettings.ResizableWindow && !customWindowSize;
-	textureFilter = loaderSettings.TextureFilter;
-
-	if (!borderlessWindow)
-	{
-		vector<uint8_t> nop(5, 0x90);
-		WriteData((void*)0x007943D0, nop.data(), nop.size());
-
-		// SADX automatically corrects values greater than the number of adapters available.
-		// DisplayAdapter is unsigned, so -1 will be greater than the number of adapters, and it will reset.
-		DisplayAdapter = screenNum - 1;
-	}
-
-	// Causes significant performance drop on some systems.
-	if (windowResize)
-	{
-		// MeshSetBuffer_CreateVertexBuffer: Change D3DPOOL_DEFAULT to D3DPOOL_MANAGED
-		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
-		// MeshSetBuffer_CreateVertexBuffer: Remove D3DUSAGE_DYNAMIC
-		WriteData((short*)0x007853F6, (short)D3DUSAGE_WRITEONLY);
-		// PolyBuff_Init: Remove D3DUSAGE_DYNAMIC and set pool to D3DPOOL_MANAGED
-		WriteJump((void*)0x0079455F, PolyBuff_Init_FixVBuffParams);
-	}
-
-	pauseWhenInactive = loaderSettings.PauseWhenInactive;
-	if (!pauseWhenInactive)
-	{
-		WriteData((uint8_t*)0x00401914, (uint8_t)0xEBu);
-		// Don't pause music and sounds when the window is inactive
-		WriteData<5>(reinterpret_cast<void*>(0x00401939), 0x90u);
-		WriteData<5>(reinterpret_cast<void*>(0x00401920), 0x90u);
-	}
 
 	if (loaderSettings.AutoMipmap)
 		mipmap::enable_auto_mipmaps();
@@ -1502,6 +774,7 @@ static void __cdecl InitMods()
 	// Unprotect the .rdata section.
 	SetRDataWriteProtection(false);
 
+	bool textureFilter = loaderSettings.TextureFilter;
 	// Enables GUI texture filtering (D3DTEXF_POINT -> D3DTEXF_LINEAR)
 	if (textureFilter == true)
 	{
@@ -1542,7 +815,7 @@ static void __cdecl InitMods()
 	}
 
 	// This is different from the rewrite portion of the polybuff namespace!
-		polybuff::init();
+	polybuff::init();
 
 	if (loaderSettings.PolyBuff)
 		polybuff::rewrite_init();
@@ -1589,9 +862,9 @@ static void __cdecl InitMods()
 		const string mod_dirA = "mods\\" + mod_fname;
 		const wstring mod_dir = L"mods\\" + mod_fname_w;
 		const wstring mod_inifile = mod_dir + L"\\mod.ini";
-		
+
 		FILE* f_mod_ini = _wfopen(mod_inifile.c_str(), L"r");
-		
+
 		if (!f_mod_ini)
 		{
 			PrintDebug("Could not open file mod.ini in \"%s\".\n", mod_dirA.c_str());
@@ -1605,15 +878,19 @@ static void __cdecl InitMods()
 
 		const string mod_nameA = modinfo->getString("Name");
 		const wstring mod_name = modinfo->getWString("Name");
+		const bool mod_hasIcon = modinfo->getBool("SetExeIcon");
 
 		PrintDebug("%u. %s\n", i, mod_nameA.c_str());
 
-		const wstring mod_icon = mod_dir + L"\\mod.ico";
-
-		if (FileExists(mod_icon))
+		if (mod_hasIcon)
 		{
-			iconPathName = mod_icon.c_str();
-			PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
+			const wstring mod_icon = mod_dir + L"\\mod.ico";
+
+			if (FileExists(mod_icon))
+			{
+				iconPathName = mod_icon.c_str();
+				PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
+			}
 		}
 
 		vector<ModDependency> moddeps;
@@ -1913,7 +1190,7 @@ static void __cdecl InitMods()
 			windowtitle = modinfo->getString("WindowTitle");
 
 		if (modinfo->hasKeyNonEmpty("BorderImage"))
-			borderimg = mod_dir + L'\\' + modinfo->getWString("BorderImage");
+			borderimage = mod_dir + L'\\' + modinfo->getWString("BorderImage");
 		modlist.push_back(modinf);
 	}
 

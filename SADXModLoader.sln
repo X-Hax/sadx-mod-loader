@@ -8,6 +8,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModLoaderCommon", "mod-loader-common\ModLoaderCommon\ModLoaderCommon.vcxproj", "{EC0293F5-4BCF-46B2-8133-18CAEA141C5B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SADXModLoader", "SADXModLoader\SADXModLoader.vcxproj", "{B537B54A-67A7-4CD8-9679-457E498E592F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EC0293F5-4BCF-46B2-8133-18CAEA141C5B} = {EC0293F5-4BCF-46B2-8133-18CAEA141C5B}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
