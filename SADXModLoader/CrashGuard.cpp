@@ -77,7 +77,7 @@ Sint8* __cdecl njOpenBinary_r(const char* str)
 		PrintDebug("njOpenBinary_r: Failed to load %s\n", buf);
 		if (!IgnoreFileLoadErrors)
 		{
-			sprintf(ErrorMsg, "Unable to load the binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", buf);
+			sprintf(ErrorMsg, "Unable to load the binary file %s. This is a critical error and the game may not work properly. Check if the mods are replacing this file correctly.\n\nIf you have no mods enabled, check game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", buf);
 			int result = MessageBoxA(nullptr, ErrorMsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
 			switch (result)
 			{
