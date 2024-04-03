@@ -186,6 +186,10 @@ Sint32 __fastcall stSetTexture_r(NJS_TEXMEMLIST* t)
 	{
 		if (t->texinfo.texsurface.pSurface)
 		{
+			if (t->texinfo.texsurface.nWidth == 0 || t->texinfo.texsurface.nHeight == 0)
+			{
+				return SetDefaultTexture();
+			}
 			if (FAILED(Direct3D_Device->SetTexture(0, (IDirect3DBaseTexture8*)t->texinfo.texsurface.pSurface)))
 			{
 				return SetDefaultTexture();
