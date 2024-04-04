@@ -804,16 +804,34 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 	customWindowWidth = settings.WindowWidth;
 	showMouse = settings.ShowMouseInFullscreen;
 
+	bool dynamicBuffers = false;
+
 	// If Screen Mode is not window mode, then it needs the below settings otherwise shit just breaks.
 	// This whole window handler needs a rewrite.
-	if (screenMode > screenmodes::borderless_mode)
+	switch (screenMode)
 	{
-		scaleScreen = true;
+	case custom_mode:
+		customWindowSize = true;
 		borderlessWindow = true;
-		windowResize = false;
-
-		if (screenMode == screenmodes::custom_mode)
-			customWindowSize = true;
+		scaleScreen = true;
+		break;
+	case borderless_mode:
+		customWindowSize = false;
+		borderlessWindow = true;
+		scaleScreen = true;
+		break;
+	case fullscreen_mode:
+		customWindowSize = false;
+		dynamicBuffers = true;
+		scaleScreen = true;
+		break;
+	case window_mode:
+	default:
+		customWindowSize = false;
+		dynamicBuffers = false;
+		borderlessWindow = true;
+		scaleScreen = true;
+		break;
 	}
 
 	WriteJump((void*)0x789E50, CreateSADXWindow_asm); // override window creation function
@@ -848,8 +866,8 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		DisplayAdapter = screenNum - 1;
 	}
 
-	// Dynamic buffers, needed for window resize and fulscreen alttabbing
-	if (windowResize || !borderlessWindow)
+	// Dynamic buffers, needed for window resize and fulscreen alttabbing (causes slowdown)
+	if (windowResize || dynamicBuffers)
 	{
 		// MeshSetBuffer_CreateVertexBuffer: Change D3DPOOL_DEFAULT to D3DPOOL_MANAGED
 		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
@@ -857,6 +875,7 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		WriteData((short*)0x007853F6, (short)D3DUSAGE_WRITEONLY);
 		// PolyBuff_Init: Remove D3DUSAGE_DYNAMIC and set pool to D3DPOOL_MANAGED
 		WriteJump((void*)0x0079455F, PolyBuff_Init_FixVBuffParams);
+		PrintDebug("Dynamic buffers initialized\n");
 	}
 
 	if (!pauseWhenInactive)
