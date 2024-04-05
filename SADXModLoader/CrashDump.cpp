@@ -14,6 +14,7 @@ using namespace std;
 
 const string texCrashMsg = "Texture error: the game failed to apply one or more textures. This could be a mod conflict.\nIf you are making a mod, make sure all your textures are loaded.";
 const string charCrashMsg = "Character Crash: The game crashed in one of the character's main function.\nYou most likely have a mod order conflict.\nMods that edit gameplay should be loaded last.";
+const string weldCrashMsg = "Welds Crash: The game crashed in the function that processes vertex welding.\nMake sure your character welds are correct and try again.";
 
 static const unordered_map<intptr_t, string> crashes_addresses_map = {
 	{ 0x78CF24, texCrashMsg},
@@ -42,6 +43,7 @@ static const addressRange Range_Addresses_list[] =
 	{ (intptr_t)AmyRose, 0x48B5B6, charCrashMsg },
 	{ (intptr_t)E102, 0x4841CA, charCrashMsg },
 	{ (intptr_t)BigTheCat, 0x491438, charCrashMsg },
+	{ (intptr_t)ProcessVertexWelds, 0x440342, weldCrashMsg },
 };
 
 static const string GetRangeAddressesCrash(const intptr_t address)
@@ -71,11 +73,11 @@ static string getErrorMSG(intptr_t address)
 void SetErrorMessage(string& fullMsg, const string address, const string dllName, const intptr_t crashID)
 {
 	string errorCommon = getErrorMSG(crashID); //get error message if the crash address is common
-	fullMsg = "SADX has crashed at " + address + " (" + dllName + ").\n\n";
+	fullMsg = "SADX has crashed at " + address + " (" + dllName + ").\n";
 
 	if (errorCommon != "NULL")
 	{
-		fullMsg += errorCommon + "\n"; //add the common error message if it exists
+		fullMsg += "\n" + errorCommon + "\n"; //add the common error message if it exists
 	}
 	else
 	{
@@ -84,11 +86,11 @@ void SetErrorMessage(string& fullMsg, const string address, const string dllName
 
 		if (charcrash != "NULL")
 		{
-			fullMsg += charcrash + "\n";
+			fullMsg += "\n" + charcrash + "\n";
 		}
 	}
 
-	fullMsg += "\nA minidump has been created in your SADX folder.\n";
+	fullMsg += "\nA crash dump and a mod list have been added to your game's CrashDumps folder.\n\nIf you want to report this crash, please include the dump (.dmp file) and the mod list (.json file) in your report.\n";
 }
 
 void CopyAndRename_SADXLoaderProfile()

@@ -48,9 +48,9 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->ForceAspectRatio = json_graphics.value("Enable43ResolutionRatio", false);
 		loaderSettings->EnableVsync = json_graphics.value("EnableVsync", true);
 		loaderSettings->PauseWhenInactive = json_graphics.value("EnablePauseOnInactive", true);
-		loaderSettings->WindowedFullscreen = json_graphics.value("EnableBorderless", true);
-		loaderSettings->CustomWindowSize = json_graphics.value("EnableCustomWindow", false);
-		loaderSettings->StretchFullscreen = json_graphics.value("EnableScreenScaling", true);
+		//loaderSettings->WindowedFullscreen = json_graphics.value("EnableBorderless", true);
+		//loaderSettings->CustomWindowSize = json_graphics.value("EnableCustomWindow", false);
+		//loaderSettings->StretchFullscreen = json_graphics.value("EnableScreenScaling", true);
 		loaderSettings->WindowWidth = json_graphics.value("CustomWindowWidth", 640);
 		loaderSettings->WindowHeight = json_graphics.value("CustomWindowHeight", 480);
 		loaderSettings->MaintainWindowAspectRatio = json_graphics.value("EnableKeepResolutionRatio", false);
@@ -62,6 +62,8 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->ScaleHud = json_graphics.value("EnableUIScaling", true);
 		loaderSettings->AutoMipmap = json_graphics.value("EnableForcedMipmapping", true);
 		loaderSettings->TextureFilter = json_graphics.value("EnableForcedTextureFilter", true);
+		loaderSettings->ScreenMode = json_graphics.value("ScreenMode", 0);
+		loaderSettings->ShowMouseInFullscreen = json_graphics.value("ShowMouseInFullscreen", false);
 
 		// Controller settings
 		json json_controller = json_config["Controller"];
@@ -136,16 +138,16 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->HorizontalResolution = setgrp->getInt("HorizontalResolution", 640);
 		loaderSettings->VerticalResolution = setgrp->getInt("VerticalResolution", 480);
 		loaderSettings->ForceAspectRatio = setgrp->getBool("ForceAspectRatio");
-		loaderSettings->WindowedFullscreen = (setgrp->getBool("Borderless") || setgrp->getBool("WindowedFullscreen"));
+		//loaderSettings->WindowedFullscreen = (setgrp->getBool("Borderless") || setgrp->getBool("WindowedFullscreen"));
 		loaderSettings->EnableVsync = setgrp->getBool("EnableVsync", true);
 		loaderSettings->AutoMipmap = setgrp->getBool("AutoMipmap", true);
 		loaderSettings->TextureFilter = setgrp->getBool("TextureFilter", true);
 		loaderSettings->PauseWhenInactive = setgrp->getBool("PauseWhenInactive", true);
-		loaderSettings->StretchFullscreen = setgrp->getBool("StretchFullscreen", true);
+		//loaderSettings->StretchFullscreen = setgrp->getBool("StretchFullscreen", true);
 		loaderSettings->ScreenNum = setgrp->getInt("ScreenNum", 1);
 		loaderSettings->VoiceLanguage = setgrp->getInt("VoiceLanguage", 1);
 		loaderSettings->TextLanguage = setgrp->getInt("TextLanguage", 1);
-		loaderSettings->CustomWindowSize = setgrp->getBool("CustomWindowSize");
+		//loaderSettings->CustomWindowSize = setgrp->getBool("CustomWindowSize");
 		loaderSettings->WindowWidth = setgrp->getInt("WindowWidth", 640);
 		loaderSettings->WindowHeight = setgrp->getInt("WindowHeight", 480);
 		loaderSettings->MaintainWindowAspectRatio = setgrp->getBool("MaintainWindowAspectRatio");
@@ -192,7 +194,7 @@ std::string GetModName(int index)
 	return ModList.at(index - 1);
 }
 
-int GetModCount()
+unsigned int GetModCount()
 {
 	return ModList.size();
 }

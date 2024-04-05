@@ -67,9 +67,11 @@ using json = nlohmann::json;
 #include "ExtendedSaveSupport.h"
 #include "NodeLimit.h"
 #include "CrashGuard.h"
+#include "window.h"
 
-static HINSTANCE g_hinstDll = nullptr;
-static LPCTSTR iconPathName = NULL;
+wstring borderimage = L"mods\\Border.png";
+HINSTANCE g_hinstDll = nullptr;
+wstring iconPathName;
 
 /**
  * Show an error message indicating that this isn't the 2004 US version.
@@ -81,23 +83,6 @@ static void ShowNon2004USError()
 		L"Please obtain the EXE file from the 2004 US version and try again.",
 		L"SADX Mod Loader", MB_ICONERROR);
 	ExitProcess(1);
-}
-
-/**
- * Set the icon at the specified path as the game window and console window icon.
- */
-void SetWindowIcon(LPCTSTR iconPathName)
-{
-	UINT icon_flags = LR_LOADFROMFILE | LR_DEFAULTSIZE;
-	HANDLE hIcon = LoadImage(NULL, iconPathName, IMAGE_ICON, 0, 0, icon_flags);
-	// Game window
-	HINSTANCE hInst = (HINSTANCE)GetWindowLong(WindowHandle, GWL_HINSTANCE);
-	SendMessage(WindowHandle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-	SendMessage(WindowHandle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-	// Console window
-	HWND hConsole = GetConsoleWindow();
-	SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-	SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 }
 
 /**
@@ -286,7 +271,6 @@ void SetAppPathConfig(std::wstring gamepath)
 }
 
 static bool dbgConsole, dbgScreen;
-static bool pauseWhenInactive;
 // File for logging debugging output.
 static FILE* dbgFile = nullptr;
 
@@ -612,19 +596,8 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 {
 	switch (Msg)
 	{
-	case WM_ACTIVATE:
-	case WM_ACTIVATEAPP:
-		if (pauseWhenInactive && GameMode == GameModes_Movie)
-		{
-			if (LOWORD(wParam) == WA_INACTIVE)
-			{
-				PauseVideo();
-			}
-			else
-			{
-				ResumeVideo();
-			}
-		}
+
+	default:
 		break;
 
 	case WM_DESTROY:
@@ -657,6 +630,7 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 		direct3d::change_resolution(w, h);
 		break;
 	}
+
 	case WM_COMMAND:
 	{
 		if (!windowResize || wParam != MAKELONG(ID_FULLSCREEN, 1))
@@ -688,33 +662,9 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 	return windowResize ? DefWindowProcA(handle, Msg, wParam, lParam) : WndProc(handle, Msg, wParam, lParam);
 }
 
-static LRESULT CALLBACK WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	switch (Msg)
-	{
-	case WM_ACTIVATE:
-	case WM_ACTIVATEAPP:
-		if (pauseWhenInactive && GameMode == GameModes_Movie)
-		{
-			if (LOWORD(wParam) == WA_INACTIVE)
-			{
-				PauseVideo();
-			}
-			else
-			{
-				ResumeVideo();
-			}
-		}
-		break;
-	case WM_SYSKEYDOWN:
-	case WM_SYSKEYUP:
-		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN)
-		{
-			return 0;
-		}
-		break;
-	}
-
+	if ((Msg == WM_SYSKEYDOWN || Msg == WM_SYSKEYUP) && ((wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN))) return 0;
 	return DefWindowProcA(handle, Msg, wParam, lParam);
 }
 
@@ -1053,26 +1003,13 @@ static const char* const dlldatakeys[] = {
 
 void __cdecl SetLanguage()
 {
-	VoiceLanguage = voiceLanguage;
-	TextLanguage = textLanguage;
+	VoiceLanguage = loaderSettings.VoiceLanguage;
+	TextLanguage = loaderSettings.TextLanguage;
 }
 
 Bool __cdecl FixEKey(int i)
 {
 	return IsFreeCameraAllowed() == TRUE && GetKey(i) == TRUE;
-}
-
-const auto loc_794566 = (void*)0x00794566;
-
-void __declspec(naked) PolyBuff_Init_FixVBuffParams()
-{
-	__asm
-	{
-		push D3DPOOL_MANAGED
-		push ecx
-		push D3DUSAGE_WRITEONLY
-		jmp loc_794566
-	}
 }
 
 void __cdecl Direct3D_TextureFilterPoint_ForceLinear()
@@ -1087,7 +1024,7 @@ void __cdecl Direct3D_TextureFilterPoint_ForceLinear()
 
 void __cdecl SetPreferredFilterOption()
 {
-	if (textureFilter == true)
+	if (loaderSettings.TextureFilter == true)
 	{
 		Direct3D_TextureFilterPoint_ForceLinear();
 	}
@@ -1325,7 +1262,6 @@ void InitPatches()
 		Init_NOGbixHack();
 }
 
-
 static vector<string>& split(const string& s, char delim, vector<string>& elems)
 {
 	std::stringstream ss(s);
@@ -1338,7 +1274,6 @@ static vector<string>& split(const string& s, char delim, vector<string>& elems)
 
 	return elems;
 }
-
 
 static vector<string> split(const string& s, char delim)
 {
@@ -1392,12 +1327,12 @@ extern void RegisterCharacterWelds(const uint8_t character, const char* iniPath)
 // Console handler to properly shut down the game when the console window is enabled (since the console closes first)
 BOOL WINAPI ConsoleHandler(DWORD dwType)
 {
-	switch (dwType) 
+	switch (dwType)
 	{
 	case CTRL_CLOSE_EVENT:
 	case CTRL_LOGOFF_EVENT:
 	case CTRL_SHUTDOWN_EVENT:
-		OnExit(0,0,0);
+		OnExit(0, 0, 0);
 		PostQuitMessage(0);
 		return TRUE;
 	default:
@@ -1443,6 +1378,7 @@ static void __cdecl InitMods()
 		SetConsoleTitle(L"SADX Mod Loader output");
 		freopen("CONOUT$", "wb", stdout);
 		dbgConsole = true;
+		// Set console handler for closing the window
 		bool res = SetConsoleCtrlHandler(ConsoleHandler, true);
 		if (!res)
 			PrintDebug("Unable to set console handler routine");
@@ -1465,79 +1401,15 @@ static void __cdecl InitMods()
 			ModLoaderVer);
 
 #ifdef MODLOADER_GIT_VERSION
-#ifdef MODLOADER_GIT_DESCRIBE
-		PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
-#else /* !MODLOADER_GIT_DESCRIBE */
-		PrintDebug("%s\n", MODLOADER_GIT_VERSION);
-#endif /* MODLOADER_GIT_DESCRIBE */
+		PrintDebug("%s\n", MODLOADER_GIT_VERSION); // Old: PrintDebug("%s, %s\n", MODLOADER_GIT_VERSION, MODLOADER_GIT_DESCRIBE);
 #endif /* MODLOADER_GIT_VERSION */
 	}
 
-	WriteJump((void*)0x789E50, CreateSADXWindow_asm); // override window creation function
+	PatchWindow(loaderSettings, borderimage); // override window creation function
+
 	// Other various settings.
 	if (loaderSettings.DisableCDCheck)
 		WriteJump((void*)0x402621, (void*)0x402664);
-
-	// Custom resolution.
-	WriteJump((void*)0x40297A, (void*)0x402A90);
-
-	int hres = loaderSettings.HorizontalResolution;
-	if (hres > 0)
-	{
-		HorizontalResolution = hres;
-		HorizontalStretch = static_cast<float>(HorizontalResolution) / 640.0f;
-	}
-
-	int vres = loaderSettings.VerticalResolution;
-	if (vres > 0)
-	{
-		VerticalResolution = vres;
-		VerticalStretch = static_cast<float>(VerticalResolution) / 480.0f;
-	}
-
-	if (loaderSettings.FovFix)
-		fov::initialize();
-
-	voiceLanguage = loaderSettings.VoiceLanguage;
-	textLanguage = loaderSettings.TextLanguage;
-	borderlessWindow = loaderSettings.WindowedFullscreen;
-	scaleScreen = loaderSettings.StretchFullscreen;
-	screenNum = loaderSettings.ScreenNum;
-	customWindowSize = loaderSettings.CustomWindowSize;
-	customWindowWidth = loaderSettings.WindowWidth;
-	customWindowHeight = loaderSettings.WindowHeight;
-	windowResize = loaderSettings.ResizableWindow && !customWindowSize;
-	textureFilter = loaderSettings.TextureFilter;
-
-	if (!borderlessWindow)
-	{
-		vector<uint8_t> nop(5, 0x90);
-		WriteData((void*)0x007943D0, nop.data(), nop.size());
-
-		// SADX automatically corrects values greater than the number of adapters available.
-		// DisplayAdapter is unsigned, so -1 will be greater than the number of adapters, and it will reset.
-		DisplayAdapter = screenNum - 1;
-	}
-
-	// Causes significant performance drop on some systems.
-	if (windowResize)
-	{
-		// MeshSetBuffer_CreateVertexBuffer: Change D3DPOOL_DEFAULT to D3DPOOL_MANAGED
-		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
-		// MeshSetBuffer_CreateVertexBuffer: Remove D3DUSAGE_DYNAMIC
-		WriteData((short*)0x007853F6, (short)D3DUSAGE_WRITEONLY);
-		// PolyBuff_Init: Remove D3DUSAGE_DYNAMIC and set pool to D3DPOOL_MANAGED
-		WriteJump((void*)0x0079455F, PolyBuff_Init_FixVBuffParams);
-	}
-
-	pauseWhenInactive = loaderSettings.PauseWhenInactive;
-	if (!pauseWhenInactive)
-	{
-		WriteData((uint8_t*)0x00401914, (uint8_t)0xEBu);
-		// Don't pause music and sounds when the window is inactive
-		WriteData<5>(reinterpret_cast<void*>(0x00401939), 0x90u);
-		WriteData<5>(reinterpret_cast<void*>(0x00401920), 0x90u);
-	}
 
 	if (loaderSettings.AutoMipmap)
 		mipmap::enable_auto_mipmaps();
@@ -1564,6 +1436,7 @@ static void __cdecl InitMods()
 	// Unprotect the .rdata section.
 	SetRDataWriteProtection(false);
 
+	bool textureFilter = loaderSettings.TextureFilter;
 	// Enables GUI texture filtering (D3DTEXF_POINT -> D3DTEXF_LINEAR)
 	if (textureFilter == true)
 	{
@@ -1604,7 +1477,7 @@ static void __cdecl InitMods()
 	}
 
 	// This is different from the rewrite portion of the polybuff namespace!
-		polybuff::init();
+	polybuff::init();
 
 	if (loaderSettings.PolyBuff)
 		polybuff::rewrite_init();
@@ -1654,9 +1527,9 @@ static void __cdecl InitMods()
 		const string mod_dirA = "mods\\" + mod_fname;
 		const wstring mod_dir = L"mods\\" + mod_fname_w;
 		const wstring mod_inifile = mod_dir + L"\\mod.ini";
-		
+
 		FILE* f_mod_ini = _wfopen(mod_inifile.c_str(), L"r");
-		
+
 		if (!f_mod_ini)
 		{
 			PrintDebug("Could not open file mod.ini in \"%s\".\n", mod_dirA.c_str());
@@ -1670,15 +1543,19 @@ static void __cdecl InitMods()
 
 		const string mod_nameA = modinfo->getString("Name");
 		const wstring mod_name = modinfo->getWString("Name");
+		const bool mod_hasIcon = modinfo->getBool("SetExeIcon");
 
 		PrintDebug("%u. %s\n", i, mod_nameA.c_str());
 
-		const wstring mod_icon = mod_dir + L"\\mod.ico";
-
-		if (FileExists(mod_icon))
+		if (mod_hasIcon)
 		{
-			iconPathName = mod_icon.c_str();
-			PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
+			const wstring mod_icon = mod_dir + L"\\mod.ico";
+
+			if (FileExists(mod_icon))
+			{
+				iconPathName = mod_icon.c_str();
+				PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
+			}
 		}
 
 		vector<ModDependency> moddeps;
@@ -1978,7 +1855,7 @@ static void __cdecl InitMods()
 			windowtitle = modinfo->getString("WindowTitle");
 
 		if (modinfo->hasKeyNonEmpty("BorderImage"))
-			borderimg = mod_dir + L'\\' + modinfo->getWString("BorderImage");
+			borderimage = mod_dir + L'\\' + modinfo->getWString("BorderImage");
 		modlist.push_back(modinf);
 	}
 

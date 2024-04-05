@@ -234,28 +234,31 @@ static uint8_t ParseLanguage(const string& str)
 	return Languages_Japanese;
 }
 
+static UINT GetCodepageForLanguageID(int language)
+{
+	switch (language)
+	{
+	case Languages_Japanese:
+	default:
+		return CodepageJapanese;
+	case Languages_English:
+		return CodepageEnglish;
+	case Languages_French:
+		return CodepageFrench;
+	case Languages_German:
+		return CodepageGerman;
+	case Languages_Spanish:
+		return CodepageSpanish;
+	}
+}
+
 static string DecodeUTF8(const string& str, int language, unsigned int codepage)
 {
 	// If there is a non-global codepage override, use the old parsing
 	if (codepage != 0)
 		return (language <= Languages_English) ? UTF8toSJIS(str) : UTF8toCodepage(str, codepage);
 	// If there is no override, use the global codepage value for the specified language
-	else
-	{
-		switch (language)
-		{
-		case Languages_Japanese:
-			return UTF8toCodepage(str, CodepageJapanese);
-		case Languages_English:
-			return UTF8toCodepage(str, CodepageEnglish);
-		case Languages_French:
-			return UTF8toCodepage(str, CodepageFrench);
-		case Languages_German:
-			return UTF8toCodepage(str, CodepageGerman);
-		case Languages_Spanish:
-			return UTF8toCodepage(str, CodepageSpanish);
-		}
-	}
+	return UTF8toCodepage(str, GetCodepageForLanguageID(language));
 }
 
 static string UnescapeNewlines(const string& str)
@@ -884,6 +887,21 @@ static vector<char*> ProcessStringArrayINI_Internal(const wchar_t* filename, uin
 	return strs;
 }
 
+static char* ProcessSingleStringInternal(const wchar_t* filename, uint8_t language)
+{
+	ifstream fstr(filename);
+	vector<char*> strs;
+	string str;
+	if (fstr.good())
+	{
+		getline(fstr, str);
+		str = DecodeUTF8(UnescapeNewlines(str), language, 0);
+		fstr.close();
+		return strdup(str.c_str());
+	}
+	return NULL;
+}
+
 static void ProcessStringArrayINI(const IniGroup* group, const wstring& mod_dir)
 {
 	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address"))
@@ -955,7 +973,7 @@ static void ProcessCutsceneTextINI(const IniGroup* group, const wstring& mod_dir
 	char*** addr = (char***)group->getIntRadix("address", 16);
 	if (addr == nullptr)
 		return;
-	addr                   = (char***)((int)addr + 0x400000);
+	addr = (char***)((int)addr + 0x400000);
 	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
 	for (unsigned int i = 0; i < LengthOfArray(languagenames); i++)
 	{
@@ -1761,6 +1779,304 @@ static void ProcessPhysicsDataINI(const IniGroup* group, const wstring& mod_dir)
 	delete inidata;
 }
 
+static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	if (!group->hasKeyNonEmpty("language"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
+
+	wchar_t language[32]{};
+
+	swprintf(language, LengthOfArray(language), group->getWString("language").c_str());
+
+	int langid = Languages_Japanese;
+
+	for (int i = 0; i < LengthOfArray(languagenames); i++)
+	{
+		if (!wcscmp(language, languagenames[i]))
+		{
+			langid = i;
+			break;
+		}
+	}
+
+	swprintf(filename, LengthOfArray(filename), L"%s\\%s.txt",
+		pathbase.c_str(), language);
+
+	char* strs = ProcessSingleStringInternal(filename, langid);
+
+	WriteData((char**)addr, strs);
+}
+
+static void ProcessMultiString(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	int length = group->getInt("length", 1);
+
+	bool doublepnt = group->getBool("doublepointer", false);
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename") + L'\\';
+	
+	for (unsigned int i = 0; i < LengthOfArray(languagenames); i++)
+	{
+		wchar_t filename[MAX_PATH]{};
+
+		swprintf(filename, LengthOfArray(filename), L"%s\\%s.txt",
+			pathbase.c_str(), languagenames[i]);
+
+		vector <char*> strs = ProcessStringArrayINI_Internal(filename, i, 0);
+
+		if (doublepnt)
+		{
+			int charaddr = *(int*)addr;
+			for (int l = 0; l < length; l++)
+			{
+				WriteData((char**)charaddr, strs[l]);
+				charaddr += 4;
+			}
+			addr += 4;
+		}
+		else
+		{
+			WriteData((char**)addr, strs[0]);
+			addr += 4;
+		}
+	}
+}
+
+static void ProcessTikalSingleHint(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	int length = group->getInt("length", 1);
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+	
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+
+	for (unsigned int j = 0; j < length; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		if (!inidata->hasGroup(buf))
+		{
+			break;
+		}
+
+		const IniGroup* entdata = inidata->getGroup(buf);
+
+		HintText_Text* msgstring = (HintText_Text*)(addr + 8 * j);
+		msgstring->Message = strdup(DecodeUTF8(entdata->getString("Line"), lang, 0).c_str());
+		msgstring->Time = entdata->getInt("Time");
+	}
+}
+
+static void ProcessMissionDescriptions(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+
+	for (unsigned int j = 0; j < 70; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		char* desc = strdup(DecodeUTF8(inidata->getString("", buf), lang, 0).c_str());
+		int write = (int)addr + 208 * j;
+		memset((char*)write, 0, 208);
+		snprintf((char*)write, 208, desc);
+	}
+}
+
+static void ProcessMissionTutoText(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	int lang = ParseLanguage(group->getString("language"));
+	
+	swprintf(filename, LengthOfArray(filename), pathbase.c_str());
+
+	auto inidata = new IniFile(filename);
+	int numPages = inidata->getInt("", "NumPages", 0);
+	WriteData((int*)addr, numPages);
+	addr += 4;
+
+	for (unsigned int j = 0; j < numPages; j++)
+	{
+		char buf[8]{};
+
+		snprintf(buf, sizeof(buf), "%u", j);
+
+		if (!inidata->hasGroup(buf))
+		{
+			break;
+		}
+
+		const IniGroup* entdata = inidata->getGroup(buf);
+		int numLines = entdata->getInt("NumLines",0);
+		int addr_ent = *(int*)addr + 8 * j;
+		int strpointer = *(int*)(addr_ent += 4);
+		for (int l = 0;l < numLines;l++)
+		{
+			snprintf(buf, sizeof(buf), "%u", l);
+			char* str = strdup(DecodeUTF8(entdata->getString(buf), lang, 0).c_str());
+			WriteData((char**)strpointer, str);
+			strpointer += 4;
+		}
+	}
+}
+
+static void ProcessTikalMultiHint(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	if (addr == nullptr)
+	{
+		return;
+	}
+
+	int length = group->getInt("length", 1);
+
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	bool doublepnt = group->getBool("doublepointer", false);
+
+	HintText_Text* msgstring;
+
+	for (int l = 0; l < LengthOfArray(languagenames); l++)
+	{
+		swprintf(filename, LengthOfArray(filename), L"%s\\%s.ini", pathbase.c_str(), languagenames[l]);
+		auto inidata = new IniFile(filename);
+		int pointer_lang = (int)addr + l * 4;
+		int entrypnt = *(int*)pointer_lang;
+		for (unsigned int j = 0; j < length; j++)
+		{
+			char buf[8]{};
+
+			snprintf(buf, sizeof(buf), "%u", j);
+
+			if (!inidata->hasGroup(buf))
+			{
+				break;
+			}
+
+			const IniGroup* entdata = inidata->getGroup(buf);
+			int entry = entrypnt;
+			if (doublepnt)
+			{
+				entry = *(int*)entrypnt;
+				msgstring = (HintText_Text*)(entry);
+			}
+			else
+				msgstring = (HintText_Text*)(entry + 8 * j);
+			msgstring->Message = strdup(DecodeUTF8(entdata->getString("Line"), l, 0).c_str());
+			msgstring->Time = entdata->getInt("Time");
+			entrypnt += 4;
+		}
+	}
+}
+
 using exedatafunc_t = void(__cdecl*)(const IniGroup* group, const wstring& mod_dir);
 
 static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
@@ -1796,6 +2112,12 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "creditstextlist",    ProcessCreditsTextListINI },
 	{ "physicsdata",		ProcessPhysicsDataINI },
 	{ "fogdatatable",		ProcessFogDataINI },
+	{ "singlestring",		ProcessSingleString },
+	{ "multistring",		ProcessMultiString },
+	{ "tikalhintsingle",	ProcessTikalSingleHint },
+	{ "tikalhintmulti",		ProcessTikalMultiHint },
+	{ "missiontutorial",	ProcessMissionTutoText },
+	{ "missiondescription",	ProcessMissionDescriptions },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 

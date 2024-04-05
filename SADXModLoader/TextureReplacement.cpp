@@ -319,6 +319,13 @@ bool texpack::parse_index(const string& path, vector<TexPackEntry>& out)
 
 				width  = stoul(dimensions.substr(0, separator));
 				height = stoul(dimensions.substr(++separator));
+
+				if (width <= 0 || height <= 0)
+				{
+					PrintDebug("Invalid texture dimensions on line number: %u\n", line_number);
+					result = false;
+					break;
+				}
 			}
 
 			auto texture_path = path;

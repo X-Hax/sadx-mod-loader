@@ -92,10 +92,13 @@ void DeInitWeights(WeightInfo* weights, NJS_OBJECT* object)
 	{
 		auto& node = weights->nodes[ni];
 		auto model = node.node->basicdxmodel;
-		memcpy(model->points, node.vertices_orig, model->nbPoint * sizeof(NJS_VECTOR));
-		memcpy(model->normals, node.normals_orig, model->nbPoint * sizeof(NJS_VECTOR));
-		delete[] node.vertices_orig;
-		delete[] node.normals_orig;
+		if (node.vertices_orig && node.normals_orig)
+		{
+			memcpy(model->points, node.vertices_orig, model->nbPoint * sizeof(NJS_VECTOR));
+			memcpy(model->normals, node.normals_orig, model->nbPoint * sizeof(NJS_VECTOR));
+			delete[] node.vertices_orig;
+			delete[] node.normals_orig;
+		}
 		node.vertices_orig = nullptr;
 		node.normals_orig = nullptr;
 	}

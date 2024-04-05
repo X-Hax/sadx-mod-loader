@@ -37,6 +37,7 @@ NJS_TEXMEMLIST checker_memlist = { 0 }; // Used in TextureReplacement.cpp
 static char ErrorMsg[1024];
 static bool IgnoreFileLoadErrors = false; // Do not show the error dialog if true
 static bool DefaultTextureLoaded = false;
+static const char ErrorMsgString[] = "Unable to load the binary file %s.\n\nThis is a critical error and the game may not work properly. Check if the mods are replacing files correctly, including texture packs and PVMX files.\n\nIf you have no mods enabled, check game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.";
 
 // Hack to check filename before loading a file
 void LoadFile_r(const char* str, LPVOID lpBuffer)
@@ -48,7 +49,7 @@ void LoadFile_r(const char* str, LPVOID lpBuffer)
 		PrintDebug("LoadFile_r: Failed to load %s\n", buf);
 		if (!IgnoreFileLoadErrors)
 		{
-			sprintf(ErrorMsg, "Unable to load binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", buf);
+			sprintf(ErrorMsg, ErrorMsgString, buf);
 			int result = MessageBoxA(nullptr, ErrorMsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
 			switch (result)
 			{
@@ -77,7 +78,7 @@ Sint8* __cdecl njOpenBinary_r(const char* str)
 		PrintDebug("njOpenBinary_r: Failed to load %s\n", buf);
 		if (!IgnoreFileLoadErrors)
 		{
-			sprintf(ErrorMsg, "Unable to load the binary file %s. This is a critical error and the game may not work properly.\n\nCheck game health in the Mod Manager and try again.\n\nTry to continue running? Select Cancel to ignore further errors.", buf);
+			sprintf(ErrorMsg, ErrorMsgString, buf);
 			int result = MessageBoxA(nullptr, ErrorMsg, "SADX Mod Loader Error", MB_ICONERROR | MB_YESNOCANCEL);
 			switch (result)
 			{
