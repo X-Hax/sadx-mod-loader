@@ -701,7 +701,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 		UpdateWindow(parentWindow);
 		SetForegroundWindow(parentWindow);
 
-		PrintDebug("Successfully created SADX Window!\n");
+		PrintDebug("Successfully created SADX Borderless Window: outer %dx%d, inner %dx%d\n", outerSize.width, outerSize.height, innerSize.width, innerSize.height);
 		IsWindowed = true;
 
 		WriteData((void*)0x402C61, wndpatch);
@@ -758,7 +758,7 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 		WriteCall((void*)0x00401920, ResumeAllSoundsPause);
 		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);
 
-		PrintDebug("Successfully created SADX Window!\n");
+		PrintDebug("Successfully created SADX Window: %dx%d\n", w, h);
 	}
 
 	// Hook the window message handler.
