@@ -189,6 +189,8 @@ void CreateJVList(NJS_OBJECT* arr[], IniFile* ini, vector<PL_JOIN_VERTEX>& jvlis
 			string indices = ini->getString(s, "VertIndexes", "");
 
 			PL_JOIN_VERTEX jvEntry = BuildJVListEntry(arr, base, mdlA, mdlB, type, indices);
+			if (ini->hasKeyNonEmpty(s, "Direction"))
+				jvEntry.numVertex = ini->getInt(s, "Direction");
 			jvlist.push_back(jvEntry);
 
 			if (mdlA == 20 && isKnux)
