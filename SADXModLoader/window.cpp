@@ -781,17 +781,6 @@ static __declspec(naked) void CreateSADXWindow_asm()
 	}
 }
 
-void __declspec(naked) PolyBuff_Init_FixVBuffParams()
-{
-	__asm
-	{
-		push D3DPOOL_MANAGED
-		push ecx
-		push D3DUSAGE_WRITEONLY
-		jmp loc_794566
-	}
-}
-
 // Patches the window handler and several other graphical options related to the window's settings.
 void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 {
@@ -804,7 +793,7 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 	customWindowWidth = settings.WindowWidth;
 	showMouse = settings.ShowMouseInFullscreen;
 
-	bool dynamicBuffers = false;
+	bool dynamicBuffers = true; // Always enabled since the main performance impact has been mitigated
 
 	// If Screen Mode is not window mode, then it needs the below settings otherwise shit just breaks.
 	// This whole window handler needs a rewrite.
@@ -822,13 +811,11 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		break;
 	case fullscreen_mode:
 		customWindowSize = false;
-		dynamicBuffers = true;
 		scaleScreen = true;
 		break;
 	case window_mode:
 	default:
 		customWindowSize = false;
-		dynamicBuffers = false;
 		borderlessWindow = true;
 		scaleScreen = true;
 		break;
@@ -873,8 +860,6 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		WriteData((char*)0x007853F3, (char)D3DPOOL_MANAGED);
 		// MeshSetBuffer_CreateVertexBuffer: Remove D3DUSAGE_DYNAMIC
 		WriteData((short*)0x007853F6, (short)D3DUSAGE_WRITEONLY);
-		// PolyBuff_Init: Remove D3DUSAGE_DYNAMIC and set pool to D3DPOOL_MANAGED
-		WriteJump((void*)0x0079455F, PolyBuff_Init_FixVBuffParams);
 		PrintDebug("Dynamic buffers initialized\n");
 	}
 
