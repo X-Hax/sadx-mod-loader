@@ -881,7 +881,10 @@ static vector<char*> ProcessStringArrayINI_Internal(const wchar_t* filename, uin
 		string str;
 		getline(fstr, str);
 		str = DecodeUTF8(UnescapeNewlines(str), language, codepage);
-		strs.push_back(strdup(str.c_str()));
+		if (strlen(str.c_str()) == 0)
+			strs.push_back(NULL);
+		else
+			strs.push_back(strdup(str.c_str()));
 	}
 	fstr.close();
 	return strs;
