@@ -1827,6 +1827,52 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 	WriteData((char**)addr, strs);
 }
 
+static void ProcessFixedStringArray(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	int length = group->getInt("length", 0);
+
+	int count = group->getInt("count", 0);
+
+	if (addr == nullptr || length <= 0 || count <= 0)
+	{
+		return;
+	}
+	
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	int lang = ParseLanguage(group->getString("language"));
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	swprintf(filename, LengthOfArray(filename), L"%s",pathbase.c_str());
+
+	vector <char*> strs = ProcessStringArrayINI_Internal(filename, lang, 0);
+
+	for (int i = 0;i < count;i++)
+	{
+		int charaddr = (int)addr + i * length;
+		// Clear the whole string before writing
+		for (int c = 0; c < length; c++)
+		{
+			WriteData<1>((char*)(charaddr + c), 0i8);
+		}
+		// Write the string
+		for (int c2 = 0; c2 < strlen(strs[i]); c2++)
+		{
+			WriteData<1>((char*)(charaddr + c2), strs[i][c2]);
+		}
+	}
+}
+
 static void ProcessMultiString(const IniGroup* group, const wstring& mod_dir)
 {
 	if (!group->hasKeyNonEmpty("filename"))
@@ -2118,6 +2164,7 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "tikalhintmulti",		ProcessTikalMultiHint },
 	{ "missiontutorial",	ProcessMissionTutoText },
 	{ "missiondescription",	ProcessMissionDescriptions },
+	{ "fixedstringarray",	ProcessFixedStringArray },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
