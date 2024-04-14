@@ -766,7 +766,7 @@ static void __cdecl InitMods()
 
 	InitAudio();
 	WriteJump(LoadSoundList, LoadSoundList_r);
-	Video_Init();
+	Video_Init(loaderSettings);
 	InitPatches();
 
 	texpack::init();

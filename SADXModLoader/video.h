@@ -2,4 +2,4 @@
 
 Bool PauseVideo();
 Bool ResumeVideo();
-void Video_Init();
+void Video_Init(const LoaderSettings& settings);
