@@ -75,9 +75,6 @@ static bool pauseWhenInactive;
 static bool showMouse = false;
 static screenmodes screenMode;
 
-// Path to Border Image
-wstring borderimg;
-
 // Used for borderless windowed mode.
 // Defines the size of the inner-window on which the game is rendered.
 static windowsize innerSizes[2] = {};
@@ -621,19 +618,6 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 		windowMode = IsWindowed ? windowed : fullscreen;
 
-		if (!FileExists(borderimg))
-		{
-			borderimg = L"mods\\Border_Default.png";
-		}
-
-		if (FileExists(borderimg))
-		{
-			Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-			ULONG_PTR gdiplusToken;
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
-			backgroundImage = Gdiplus::Bitmap::FromFile(borderimg.c_str());
-		}
-
 		// Register a window class for the wrapper window.
 		WNDCLASSA wrapper;
 
@@ -782,9 +766,8 @@ static __declspec(naked) void CreateSADXWindow_asm()
 }
 
 // Patches the window handler and several other graphical options related to the window's settings.
-void PatchWindow(const LoaderSettings& settings, wstring borderpath)
+void PatchWindow(const LoaderSettings& settings)
 {
-	borderimg = borderpath;
 	screenMode = (screenmodes)settings.ScreenMode;
 	screenNum = settings.ScreenNum;
 	windowResize = settings.ResizableWindow;
@@ -869,5 +852,27 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		// Don't pause music and sounds when the window is inactive
 		WriteData<5>(reinterpret_cast<void*>(0x00401939), 0x90u);
 		WriteData<5>(reinterpret_cast<void*>(0x00401920), 0x90u);
+	}
+}
+
+void SetBorderImage(std::wstring path)
+{
+	if (screenMode == fullscreen_mode)
+	{
+		return;
+	}
+
+	if (backgroundImage)
+	{
+		delete backgroundImage;
+		backgroundImage = nullptr;
+	}
+
+	if (FileExists(path))
+	{
+		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+		ULONG_PTR gdiplusToken;
+		Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+		backgroundImage = Gdiplus::Bitmap::FromFile(path.c_str());
 	}
 }

@@ -749,7 +749,7 @@ static void __cdecl InitMods()
 #endif /* MODLOADER_GIT_VERSION */
 	}
 
-	PatchWindow(loaderSettings, borderimage); // override window creation function
+	PatchWindow(loaderSettings); // override window creation function
 
 	// Other various settings.
 	if (loaderSettings.DisableCDCheck)
@@ -1194,6 +1194,10 @@ static void __cdecl InitMods()
 		modlist.push_back(modinf);
 	}
 
+	if (!FileExists(borderimage))
+		borderimage = L"mods\\Border_Default.png";
+	SetBorderImage(borderimage);
+	
 	if (loaderSettings.InputMod)
 		SDL2_Init();
 
