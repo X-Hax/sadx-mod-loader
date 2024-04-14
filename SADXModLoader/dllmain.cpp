@@ -61,6 +61,7 @@ using json = nlohmann::json;
 #include "jvList.h"
 #include "Gbix.h"
 #include "input.h"
+#include "video.h"
 #include <ShlObj.h>
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
@@ -764,9 +765,8 @@ static void __cdecl InitMods()
 	WriteCall((void*)0x437547, FixEKey);
 
 	InitAudio();
-
 	WriteJump(LoadSoundList, LoadSoundList_r);
-
+	Video_Init();
 	InitPatches();
 
 	texpack::init();

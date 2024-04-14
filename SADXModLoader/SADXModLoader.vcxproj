@@ -54,6 +54,7 @@
     <ClCompile Include="CrashGuard.cpp" />
     <ClCompile Include="TextureReplacement.cpp" />
     <ClCompile Include="uiscale.cpp" />
+    <ClCompile Include="video.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +122,7 @@
     <ClInclude Include="typedefs.h" />
     <ClInclude Include="uiscale.h" />
     <ClInclude Include="version.h" />
+    <ClInclude Include="video.h" />
     <ClInclude Include="VoiceDuration.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>
