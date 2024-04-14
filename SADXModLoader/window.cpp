@@ -16,6 +16,7 @@
 #include "json.hpp"
 #include "config.h"
 #include "UsercallFunctionHandler.h"
+#include "video.h"
 
 using std::deque;
 using std::ifstream;
@@ -327,11 +328,9 @@ static LRESULT CALLBACK WrapperWndProc(HWND wrapper, UINT uMsg, WPARAM wParam, L
 static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
-	{	
-
+	{
 	default:
 		break;
-
 	case WM_DESTROY:
 	case WM_CLOSE:
 		OnExit(0, 0, 0);
@@ -363,30 +362,44 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 		break;
 	}
 
-	// Switching to/from the window, only applicable to exclusive fullscreen
 	case WM_ACTIVATE:
+	case WM_ACTIVATEAPP:
 	{
+		// Video pausing
+		if (pauseWhenInactive && GameMode == GameModes_Movie)
+		{
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				PauseVideo();
+			}
+			else
+			{
+				ResumeVideo();
+			}
+		}
+
+		// Switching to/from the window, only applicable to exclusive fullscreen
 		if (screenMode != fullscreen_mode)
 			return 0;
-			// Alt+TAB from exclusive fullscreen to window
-			if (wParam == WA_INACTIVE && !IsWindowed)
-			{
-				direct3d::change_resolution(last_width, last_height, true);
-				enable_windowed_mode(handle);
-				SetWindowLongA(handle, GWL_STYLE, WS_CAPTION | WS_SYSMENU | WS_VISIBLE);
-				const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
-				const auto w = rect.right - rect.left;
-				const auto h = rect.bottom - rect.top;
-				SetWindowPos(handle, HWND_NOTOPMOST, rect.left+w/ 2-last_width/2, rect.top+h/2-last_height/2, last_width, last_height, 0);
-				return 0;
-			}
-			// Alt+TAB from window to exclusive fullscreen
-			else if (wParam != WA_INACTIVE && !switchingWindowMode) // In this WndProc, switchingWindowMode is on when Alt+Enter is used
-			{
-				direct3d::change_resolution(last_width, last_height, false);
-				enable_fullscreen_mode(handle);
-				return 0;
-			}
+		// Alt+TAB from exclusive fullscreen to window
+		if (wParam == WA_INACTIVE && !IsWindowed)
+		{
+			direct3d::change_resolution(last_width, last_height, true);
+			enable_windowed_mode(handle);
+			SetWindowLongA(handle, GWL_STYLE, WS_CAPTION | WS_SYSMENU | WS_VISIBLE);
+			const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
+			const auto w = rect.right - rect.left;
+			const auto h = rect.bottom - rect.top;
+			SetWindowPos(handle, HWND_NOTOPMOST, rect.left+w/ 2-last_width/2, rect.top+h/2-last_height/2, last_width, last_height, 0);
+			return 0;
+		}
+		// Alt+TAB from window to exclusive fullscreen
+		else if (wParam != WA_INACTIVE && !switchingWindowMode) // In this WndProc, switchingWindowMode is on when Alt+Enter is used
+		{
+			direct3d::change_resolution(last_width, last_height, false);
+			enable_fullscreen_mode(handle);
+			return 0;
+		}
 	}
 
 	// Alt+Enter for exclusive and borderless
@@ -445,6 +458,20 @@ LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lPar
 {
 	switch (Msg)
 	{
+	case WM_ACTIVATE:
+	case WM_ACTIVATEAPP:
+		if (pauseWhenInactive && GameMode == GameModes_Movie)
+		{
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				PauseVideo();
+			}
+			else
+			{
+				ResumeVideo();
+			}
+		}
+		break;
 	case WM_SYSKEYDOWN:
 	case WM_SYSKEYUP:
 		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN)
