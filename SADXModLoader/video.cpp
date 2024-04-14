@@ -11,6 +11,8 @@ DataPointer(Sint32, video_frame, 0x3C5FFF0);
 static int paused_frame = -1;
 static bool draw_border = false;
 
+FunctionHook<void, Sint32, Sint32> DrawMovieTex_h(DrawMovieTex);
+
 Bool PauseVideo()
 {
 	paused_frame = video_frame;
@@ -30,18 +32,26 @@ void DrawBorders(Sint32 video_width, Sint32 video_height)
 		return;
 	}
 
-	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_ALWAYS);
-	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ALPHABLENDENABLE, FALSE);
-	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_LIGHTING, FALSE);
-	IDirect3DDevice8_SetVertexShader(_st_d3d_device_, D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
+	float video_w = video_width;
+	float video_h = video_height;
+	float screen_w = HorizontalResolution;
+	float screen_h = VerticalResolution;
 
-	float screen_w = (float)HorizontalResolution;
-	float screen_h = (float)VerticalResolution;
-	float size_x, size_y, offset_x, offset_y;
+	float window_aspect_ratio = screen_w / screen_h;
+	float video_aspect_ratio = video_w / video_h;
 
-	if (screen_w / screen_h >= 1.333333333f)
+	if (window_aspect_ratio == video_aspect_ratio)
 	{
-		size_x = (screen_w - (video_width * ScreenRaitoY)) / 2;
+		return;
+	}
+
+	float ratio_w = screen_w / video_w;
+	float ratio_h = screen_h / video_h;
+
+	float size_x, size_y, offset_x, offset_y;
+	if (window_aspect_ratio > video_aspect_ratio)
+	{
+		size_x = (screen_w - (video_w * ratio_h)) / 2;
 		size_y = screen_h;
 		offset_x = screen_w - size_x;
 		offset_y = 0.0f;
@@ -49,10 +59,15 @@ void DrawBorders(Sint32 video_width, Sint32 video_height)
 	else
 	{
 		size_x = screen_w;
-		size_y = (screen_h - (video_height * ScreenRaitoX)) / 2;
+		size_y = (screen_h - (video_h * ratio_w)) / 2;
 		offset_x = 0.0f;
 		offset_y = screen_h - size_y;
 	}
+
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_ALWAYS);
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ALPHABLENDENABLE, FALSE);
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_LIGHTING, FALSE);
+	IDirect3DDevice8_SetVertexShader(_st_d3d_device_, D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
 
 	struct VERTEX {
 		D3DVECTOR position;
@@ -106,11 +121,11 @@ void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 		video_frame = paused_frame;
 	}
 	DrawBorders(max_width, max_height);
-	DrawMovieTex(max_width, max_height);
+	DrawMovieTex_h.Original(max_width, max_height);
 }
 
 void Video_Init(const LoaderSettings& settings)
 {
 	draw_border = settings.FmvFillMode == uiscale::FillMode_Fit;
-	WriteCall((void*)0x51330A, DrawMovieTex_r);
+	DrawMovieTex_h.Hook(DrawMovieTex_r);
 }
