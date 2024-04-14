@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include <DShow.h>
+#include <d3d8.h>
 #include <chrono>
 #include <thread>
 #include "bass_vgmstream.h"
 #include "sadx-ffmpeg-player.h"
 
+DataPointer(IDirect3DDevice8*, _st_d3d_device_, 0x03D128B0);
 DataPointer(IMediaControl*, g_pMC, 0x3C600F8);
 DataPointer(Sint32, nWidth, 0x10F1D68);
 DataPointer(Sint32, nHeight, 0x10F1D6C);
@@ -54,75 +56,126 @@ Bool GetNJTexture_r()
 	return TRUE;
 }
 
-void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
+void DrawBackground()
 {
-	NJS_QUAD_TEXTURE quad;
+	float screen_w = (float)HorizontalResolution;
+	float screen_h = (float)VerticalResolution;
 
-	float screen_w = 640.0f * ScreenRaitoX;
-	float screen_h = 480.0f * ScreenRaitoY;
+	struct VERTEX {
+		D3DVECTOR position;
+		Float rhw;
+		Uint32 diffuse;
+	} pool[4];
+
+	pool[0].position = { 0.0f, 0.0f, 1.0f };
+	pool[0].diffuse = 0xFF000000;
+	pool[0].rhw = 1.0f;
+
+	pool[1].position = { screen_w, 0.0f, 1.0f };
+	pool[1].diffuse = 0xFF000000;
+	pool[1].rhw = 1.0f;
+
+	pool[2].position = { 0.0f, screen_h, 1.0f };
+	pool[2].diffuse = 0xFF000000;
+	pool[2].rhw = 1.0f;
+
+	pool[3].position = { screen_w, screen_h, 1.0f };
+	pool[3].diffuse = 0xFF000000;
+	pool[3].rhw = 1.0f;
+
+	IDirect3DDevice8_SetVertexShader(_st_d3d_device_, D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
+	IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
+}
+
+void DrawVideo()
+{
+	float screen_w = (float)HorizontalResolution;
+	float screen_h = (float)VerticalResolution;
 	float screen_ratio = screen_w / screen_h;
 
 	float w = (float)ffPlayerWidth();
 	float h = (float)ffPlayerHeight();
 	float ratio = w / h;
 
+	float x1, x2, y1, y2;
+
 	if (ratio == screen_ratio)
 	{
-		quad.x1 = 0;
-		quad.y1 = 0;
-		quad.x2 = screen_w;
-		quad.y2 = screen_h;
+		x1 = 0.0f;
+		y1 = 0.0f;
+		x2 = screen_w;
+		y2 = screen_h;
 	}
 	else if (ratio < screen_ratio)
 	{
 		float scaled_w = w * (screen_h / h);
 		float gap = (screen_w - scaled_w) / 2.0f;
-		quad.x1 = gap;
-		quad.y1 = 0;
-		quad.x2 = scaled_w + gap;
-		quad.y2 = screen_h;
+		x1 = gap;
+		y1 = 0.0f;
+		x2 = scaled_w + gap;
+		y2 = screen_h;
 	}
 	else
 	{
 		float scaled_h = h * (screen_w / w);
 		float gap = (screen_h - scaled_h) / 2.0f;
-		quad.x1 = 0;
-		quad.y1 = gap;
-		quad.x2 = screen_w;
-		quad.y2 = scaled_h + gap;
+		x1 = 0.0f;
+		y1 = gap;
+		x2 = screen_w;
+		y2 = scaled_h + gap;
 	}
 
-	quad.u1 = 0.0f;
-	quad.v1 = 0.0f;
-	quad.u2 = 1.0f;
-	quad.v2 = 1.0f;
+	struct VERTEX {
+		D3DVECTOR position;
+		Float rhw;
+		Uint32 diffuse;
+		Float u;
+		Float v;
+	} pool[4];
 
-	// Draw border/background
-	NJS_POINT2COL border;
-	NJS_COLOR colors[4];
-	NJS_POINT2 points[4];
-	points[0] = { 0.0f, 0.0f };
-	colors[0].color = 0xFF000000;
-	points[1] = { screen_w, 0.0f };
-	colors[1].color = 0xFF000000;
-	points[2] = { 0.0f, screen_h };
-	colors[2].color = 0xFF000000;
-	points[3] = { screen_w, screen_h };
-	colors[3].color = 0xFF000000;
-	border.col = colors;
-	border.p = points;
-	border.num = 4;
-	border.tex = NULL;
-	njColorBlendingMode(NJD_SOURCE_COLOR, NJD_COLOR_BLENDING_SRCALPHA);
-	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_INVSRCALPHA);
-	___SAnjDrawPolygon2D(&border, 4, -1000.0f, NJD_FILL | NJD_DRAW_CONNECTED);
+	pool[0].position = { x1, y1, 1.0f };
+	pool[0].diffuse = 0xFFFFFFFF;
+	pool[0].rhw = 1.0f;
+	pool[0].u = 0.0f;
+	pool[0].v = 0.0f;
 
-	// Draw video
-	njSetTexture(&video_texlist);
-	njQuadTextureStart(0);
-	njSetQuadTexture(0, 0xFFFFFFFF);
-	njDrawQuadTexture(&quad, 1.0f);
-	njQuadTextureEnd();
+	pool[1].position = { x2, y1, 1.0f };
+	pool[1].diffuse = 0xFFFFFFFF;
+	pool[1].rhw = 1.0f;
+	pool[1].u = 1.0f;
+	pool[1].v = 0.0f;
+
+	pool[2].position = { x1, y2, 1.0f };
+	pool[2].diffuse = 0xFFFFFFFF;
+	pool[2].rhw = 1.0f;
+	pool[2].u = 0.0f;
+	pool[2].v = 1.0f;
+
+	pool[3].position = { x2, y2, 1.0f };
+	pool[3].diffuse = 0xFFFFFFFF;
+	pool[3].rhw = 1.0f;
+	pool[3].u = 1.0f;
+	pool[3].v = 1.0f;
+
+	IDirect3DDevice8_SetTexture(_st_d3d_device_, 0, (IDirect3DBaseTexture8*)((NJS_TEXMEMLIST*)video_texlist.textures[0].texaddr)->texinfo.texsurface.pSurface);
+	IDirect3DDevice8_SetVertexShader(_st_d3d_device_, D3DFVF_DIFFUSE | D3DFVF_XYZRHW | D3DFVF_TEX1);
+	IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
+}
+
+void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
+{
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_ALWAYS);
+	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ALPHABLENDENABLE, FALSE);
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_LIGHTING, FALSE);
+	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
+	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
+
+	DrawBackground();
+	DrawVideo();
+
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_LESS);
 }
 
 Bool StartDShowTextureRenderer_r()
