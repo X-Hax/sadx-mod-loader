@@ -16,6 +16,7 @@
 #include "json.hpp"
 #include "config.h"
 #include "UsercallFunctionHandler.h"
+#include "video.h"
 
 using std::deque;
 using std::ifstream;
@@ -74,9 +75,6 @@ static bool textureFilter = true;
 static bool pauseWhenInactive;
 static bool showMouse = false;
 static screenmodes screenMode;
-
-// Path to Border Image
-wstring borderimg;
 
 // Used for borderless windowed mode.
 // Defines the size of the inner-window on which the game is rendered.
@@ -369,24 +367,41 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 		if (screenMode != fullscreen_mode)
 			return 0;
 			// Alt+TAB from exclusive fullscreen to window
-			if (wParam == WA_INACTIVE && !IsWindowed)
+		if (wParam == WA_INACTIVE && !IsWindowed)
+		{
+			direct3d::change_resolution(last_width, last_height, true);
+			enable_windowed_mode(handle);
+			SetWindowLongA(handle, GWL_STYLE, WS_CAPTION | WS_SYSMENU | WS_VISIBLE);
+			const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
+			const auto w = rect.right - rect.left;
+			const auto h = rect.bottom - rect.top;
+			SetWindowPos(handle, HWND_NOTOPMOST, rect.left+w/ 2-last_width/2, rect.top+h/2-last_height/2, last_width, last_height, 0);
+			return 0;
+		}
+		// Alt+TAB from window to exclusive fullscreen
+		else if (wParam != WA_INACTIVE && !switchingWindowMode) // In this WndProc, switchingWindowMode is on when Alt+Enter is used
+		{
+			direct3d::change_resolution(last_width, last_height, false);
+			enable_fullscreen_mode(handle);
+			return 0;
+		}
+		break;
+	}
+
+	case WM_ACTIVATEAPP:
+	{
+		if (pauseWhenInactive)
+		{
+			if (wParam == FALSE)
 			{
-				direct3d::change_resolution(last_width, last_height, true);
-				enable_windowed_mode(handle);
-				SetWindowLongA(handle, GWL_STYLE, WS_CAPTION | WS_SYSMENU | WS_VISIBLE);
-				const auto& rect = screenBounds[screenNum == 0 ? 0 : screenNum - 1];
-				const auto w = rect.right - rect.left;
-				const auto h = rect.bottom - rect.top;
-				SetWindowPos(handle, HWND_NOTOPMOST, rect.left+w/ 2-last_width/2, rect.top+h/2-last_height/2, last_width, last_height, 0);
-				return 0;
+				PauseVideo();
 			}
-			// Alt+TAB from window to exclusive fullscreen
-			else if (wParam != WA_INACTIVE && !switchingWindowMode) // In this WndProc, switchingWindowMode is on when Alt+Enter is used
+			else
 			{
-				direct3d::change_resolution(last_width, last_height, false);
-				enable_fullscreen_mode(handle);
-				return 0;
+				ResumeVideo();
 			}
+		}
+		break;
 	}
 
 	// Alt+Enter for exclusive and borderless
@@ -445,6 +460,19 @@ LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lPar
 {
 	switch (Msg)
 	{
+	case WM_ACTIVATEAPP:
+		if (pauseWhenInactive)
+		{
+			if (wParam == FALSE)
+			{
+				PauseVideo();
+			}
+			else
+			{
+				ResumeVideo();
+			}
+		}
+		break;
 	case WM_SYSKEYDOWN:
 	case WM_SYSKEYUP:
 		if (wParam != VK_F4 && wParam != VK_F2 && wParam != VK_RETURN)
@@ -621,19 +649,6 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 		windowMode = IsWindowed ? windowed : fullscreen;
 
-		if (!FileExists(borderimg))
-		{
-			borderimg = L"mods\\Border_Default.png";
-		}
-
-		if (FileExists(borderimg))
-		{
-			Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-			ULONG_PTR gdiplusToken;
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
-			backgroundImage = Gdiplus::Bitmap::FromFile(borderimg.c_str());
-		}
-
 		// Register a window class for the wrapper window.
 		WNDCLASSA wrapper;
 
@@ -782,9 +797,8 @@ static __declspec(naked) void CreateSADXWindow_asm()
 }
 
 // Patches the window handler and several other graphical options related to the window's settings.
-void PatchWindow(const LoaderSettings& settings, wstring borderpath)
+void PatchWindow(const LoaderSettings& settings)
 {
-	borderimg = borderpath;
 	screenMode = (screenmodes)settings.ScreenMode;
 	screenNum = settings.ScreenNum;
 	windowResize = settings.ResizableWindow;
@@ -869,5 +883,27 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		// Don't pause music and sounds when the window is inactive
 		WriteData<5>(reinterpret_cast<void*>(0x00401939), 0x90u);
 		WriteData<5>(reinterpret_cast<void*>(0x00401920), 0x90u);
+	}
+}
+
+void SetBorderImage(std::wstring path)
+{
+	if (screenMode == fullscreen_mode)
+	{
+		return;
+	}
+
+	if (backgroundImage)
+	{
+		delete backgroundImage;
+		backgroundImage = nullptr;
+	}
+
+	if (FileExists(path))
+	{
+		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+		ULONG_PTR gdiplusToken;
+		Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+		backgroundImage = Gdiplus::Bitmap::FromFile(path.c_str());
 	}
 }
