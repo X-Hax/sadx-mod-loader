@@ -2121,7 +2121,8 @@ static void ProcessTikalMultiHint(const IniGroup* group, const wstring& mod_dir)
 				msgstring = (HintText_Text*)(entry + 8 * j);
 			msgstring->Message = strdup(DecodeUTF8(entdata->getString("Line"), l, 0).c_str());
 			msgstring->Time = entdata->getInt("Time");
-			entrypnt += 4;
+			if (doublepnt)
+				entrypnt += 4;
 		}
 	}
 }
