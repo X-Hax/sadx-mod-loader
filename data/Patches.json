@@ -84,6 +84,11 @@
       "Name": "CrashGuard",
       "Author": "PkR",
       "Category": "System"
+    },
+    {
+      "Name": "XInputFix",
+      "Author": "PkR",
+      "Category": "Input"
     }
   ]
 }

@@ -68,6 +68,7 @@ using json = nlohmann::json;
 #include "NodeLimit.h"
 #include "CrashGuard.h"
 #include "window.h"
+#include "XInputFix.h"
 
 wstring borderimage = L"mods\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
@@ -1200,6 +1201,9 @@ static void __cdecl InitMods()
 	
 	if (loaderSettings.InputMod)
 		SDL2_Init();
+
+	else if (loaderSettings.XInputFix)
+		XInputFix_Init();
 
 	if (!errors.empty())
 	{

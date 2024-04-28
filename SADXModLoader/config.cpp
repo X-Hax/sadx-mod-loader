@@ -94,6 +94,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->DisableCDCheck = json_patches.value("DisableCDCheck", true);
 		loaderSettings->ExtendedSaveSupport = json_patches.value("ExtendedSaveSupport", true);
 		loaderSettings->CrashGuard = json_patches.value("CrashGuard", true);
+		loaderSettings->XInputFix = json_patches.value("XInputFix", true);
 
 		// Debug settings
 		json json_debug = json_config["DebugSettings"];
@@ -176,6 +177,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->DisableCDCheck = setgrp->getBool("DisableCDCheck", false);
 		loaderSettings->ExtendedSaveSupport = setgrp->getBool("ExtendedSaveSupport", true);
 		loaderSettings->CrashGuard = setgrp->getBool("CrashGuard", true);
+		loaderSettings->XInputFix = setgrp->getBool("XInputFix", true);
 
 		for (unsigned int i = 1; i <= 999; i++)
 		{
