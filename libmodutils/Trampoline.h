@@ -51,3 +51,7 @@ public:
 		return originalSize + 5;
 	}
 };
+
+// Convenient macros for trampolines.
+#define TARGET_DYNAMIC(name) ((decltype(name##_r)*)name##_t->Target())
+#define TARGET_STATIC(name) ((decltype(name##_r)*)name##_t.Target())
