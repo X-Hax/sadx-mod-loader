@@ -466,3 +466,12 @@ write8 00442120 0xC3
 Author Sora
 Description Disable the gravity effect that attract the player, such as Item Box and the Twinkle Park platforms.
 Category Gameplay
+
+Patch "Invert Right Stick Y Axis in First Person"
+write8 00466183 0x29
+write8 00466184 0xC8
+write8 0046618E 0x01
+write8 0046618F 0xC8
+Author PkR
+Description Reverses the Y stick direction in first person mode. Useful with Better Input (SDL2). Not required with the Smooth Camera mod.
+Category Input
