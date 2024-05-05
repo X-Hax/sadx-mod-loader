@@ -762,6 +762,7 @@ static void __cdecl InitMods()
 
 	// Hijack a ton of functions in SADX.
 	*(void**)0x38A5DB8 = (void*)0x38A5D94; // depth buffer fix
+	WriteData((short*)0x50473E, (short)0x00EB); // File select bullshit lol
 	WriteCall((void*)0x402614, SetLanguage);
 	WriteCall((void*)0x437547, FixEKey);
 
