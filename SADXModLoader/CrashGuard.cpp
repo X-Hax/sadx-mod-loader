@@ -17,7 +17,6 @@ FastcallFunctionPointer(Sint32, njSetTexture_real, (NJS_TEXLIST* a1), 0x0077F3D0
 FastcallFunctionPointer(Sint32, stSetTexture, (NJS_TEXMEMLIST* a1), 0x0078CF20);
 
 // Texture loading hooks
-static Trampoline* njSetTexture_real_t = nullptr;
 FastcallFunctionHook<Sint32, NJS_TEXLIST*> njSetTexture_real_h(njSetTexture_real);
 FastcallFunctionHook<Sint32, NJS_TEXMEMLIST*> stSetTexture_h(stSetTexture);
 FastcallFunctionHook<Sint32, Sint32> njSetTextureNum_h(njSetTextureNum_);
@@ -216,8 +215,7 @@ Sint32 __fastcall njSetTexture_real_r(NJS_TEXLIST* a1)
 		SetDefaultTexture();
 		return 1;
 	}
-	//return njSetTexture_real_h.Original(a1);
-	return TARGET_DYNAMIC(njSetTexture_real)(a1);
+	return njSetTexture_real_h.Original(a1);
 }
 
 // Hack to get a global index value on invalid texlists without crashing
@@ -236,8 +234,7 @@ void CrashGuard_Init()
 	LoadFile_h.Hook(LoadFile_r);
 	// Main hooks for the texture
 	ghGetPvrTextureSize_h.Hook(ghGetPvrTextureSize_r);
-	njSetTexture_real_t = new Trampoline(0x0077F3D0, 0x0077F3D8, njSetTexture_real_r);
-	//njSetTexture_real_h.Hook(njSetTexture_real_r);
+	njSetTexture_real_h.Hook(njSetTexture_real_r);
 	stSetTexture_h.Hook(stSetTexture_r);
 	njSetTextureNum_h.Hook(njSetTextureNum_r);
 	ghGetPvrTexGlobalIndex_h.Hook(ghGetPvrTexGlobalIndex_r);
