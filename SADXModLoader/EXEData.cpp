@@ -12,6 +12,7 @@
 #include "ModelInfo.h"
 #include "AnimationFile.h"
 #include "EXEData.h"
+#include "FileSystem.h"
 
 using std::unordered_map;
 using std::vector;
@@ -2174,18 +2175,21 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 
 void ProcessEXEData(const wchar_t* filename, const wstring& mod_dir)
 {
-	auto exedata = new IniFile(filename);
-
-	for (const auto& iter : *exedata)
+	if (FileExists(filename))
 	{
-		IniGroup* group = iter.second;
-		auto type = exedatafuncmap.find(group->getString("type"));
+		auto exedata = new IniFile(filename);
 
-		if (type != exedatafuncmap.end())
+		for (const auto& iter : *exedata)
 		{
-			type->second(group, mod_dir);
-		}
-	}
+			IniGroup* group = iter.second;
+			auto type = exedatafuncmap.find(group->getString("type"));
 
-	delete exedata;
+			if (type != exedatafuncmap.end())
+			{
+				type->second(group, mod_dir);
+			}
+		}
+
+		delete exedata;
+	}
 }

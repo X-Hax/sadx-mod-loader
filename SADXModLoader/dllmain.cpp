@@ -686,7 +686,182 @@ BOOL WINAPI ConsoleHandler(DWORD dwType)
 	return FALSE;
 }
 
+
+static void Mod_CheckAndReplaceFiles(const string mod_dirA, const uint16_t i)
+{
+	const string modSysDirA = mod_dirA + "\\system";
+	if (DirectoryExists(modSysDirA))
+		sadx_fileMap.scanFolder(modSysDirA, i);
+
+	const string modTexDir = mod_dirA + "\\textures";
+	if (DirectoryExists(modTexDir))
+		sadx_fileMap.scanTextureFolder(modTexDir, i);
+
+	const string modRepTexDir = mod_dirA + "\\replacetex";
+	if (DirectoryExists(modRepTexDir))
+		ScanTextureReplaceFolder(modRepTexDir, i);
+}
+
+//todo convert to wstring
+static string _mainsavepath, _chaosavepath;
+static bool saveRedirectFound, chaosaveredirectFound = false;
+static void HandleModIniContent(IniFile* ini_mod, const IniGroup* const modinfo, const wstring& mod_dir, const string mod_dirA)
+{
+	// Check if the mod has EXE data replacements.
+	if (modinfo->hasKeyNonEmpty("EXEData"))
+	{
+		wchar_t filename[MAX_PATH];
+		swprintf(filename, LengthOfArray(filename), L"%s\\%s", mod_dir.c_str(), 
+			modinfo->getWString("EXEData").c_str());
+
+		ProcessEXEData(filename, mod_dir);
+	}
+
+	// Check if the mod has DLL data replacements.
+	for (unsigned int j = 0; j < LengthOfArray(dlldatakeys); j++)
+	{
+		if (modinfo->hasKeyNonEmpty(dlldatakeys[j]))
+		{
+			wchar_t filename[MAX_PATH];
+			swprintf(filename, LengthOfArray(filename), L"%s\\%s",
+				mod_dir.c_str(), modinfo->getWString(dlldatakeys[j]).c_str());
+
+			ProcessDLLData(filename, mod_dir);
+		}
+	}
+
+	if (ini_mod->hasGroup("CharacterWelds"))
+	{
+		const IniGroup* group = ini_mod->getGroup("CharacterWelds");
+		auto data = group->data();
+		for (const auto& iter : *data)
+			RegisterCharacterWelds(ParseCharacter(iter.first), (mod_dirA + "\\" + iter.second).c_str());
+	}
+
+	if (modinfo->getBool("RedirectMainSave") && !saveRedirectFound)
+	{
+		_mainsavepath = mod_dirA + "\\SAVEDATA";
+		if (DirectoryExists(_mainsavepath))
+			saveRedirectFound = true;
+	}
+
+	if (modinfo->getBool("RedirectChaoSave") && !chaosaveredirectFound)
+	{
+		_chaosavepath = mod_dirA + "\\SAVEDATA";
+
+		if (DirectoryExists(_chaosavepath))
+			chaosaveredirectFound = true;
+	}
+
+	const wstring borderPath = mod_dir + L'\\' + modinfo->getWString("BorderImage");
+	if (modinfo->hasKeyNonEmpty("BorderImage") && FileExists(borderPath))
+		borderimage = borderPath;
+
+
+	if (modinfo->getBool("SetExeIcon"))
+	{
+		const wstring mod_icon = mod_dir + L"\\mod.ico";
+
+		if (FileExists(mod_icon))
+		{
+			iconPathName = mod_icon.c_str();
+			PrintDebug("Setting icon from mod folder: %s\n", mod_dir.c_str());
+		}
+	}
+}
+
+static void ModIniProcessFilesCheck(IniFile* ini_mod, const int i, unordered_map<string, string>& filereplaces, vector<std::pair<string, string>>& fileswaps)
+{
+
+	if (ini_mod->hasGroup("IgnoreFiles"))
+	{
+		const IniGroup* group = ini_mod->getGroup("IgnoreFiles");
+		auto data = group->data();
+		for (const auto& iter : *data)
+		{
+			sadx_fileMap.addIgnoreFile(iter.first, i);
+			PrintDebug("Ignored file: %s\n", iter.first.c_str());
+		}
+	}
+
+	if (ini_mod->hasGroup("ReplaceFiles"))
+	{
+		const IniGroup* group = ini_mod->getGroup("ReplaceFiles");
+		auto data = group->data();
+		for (const auto& iter : *data)
+		{
+			filereplaces[FileMap::normalizePath(iter.first)] =
+				FileMap::normalizePath(iter.second);
+		}
+	}
+
+	if (ini_mod->hasGroup("SwapFiles"))
+	{
+		const IniGroup* group = ini_mod->getGroup("SwapFiles");
+		auto data = group->data();
+		for (const auto& iter : *data)
+		{
+			fileswaps.emplace_back(FileMap::normalizePath(iter.first),
+				FileMap::normalizePath(iter.second));
+		}
+	}
+}
+
+static void HandleRedirectSave()
+{
+	if (!_mainsavepath.empty())
+	{
+		if (!saveRedirectFound)
+			_mkdir(_mainsavepath.c_str());
+
+		char* buf = new char[_mainsavepath.size() + 1];
+		strncpy(buf, _mainsavepath.c_str(), _mainsavepath.size() + 1);
+		mainsavepath = buf;
+		string tmp = "./" + _mainsavepath + "/";
+		WriteData((char*)0x42213D, (char)(tmp.size() + 1)); // Write
+		buf = new char[tmp.size() + 1];
+		strncpy(buf, tmp.c_str(), tmp.size() + 1);
+		WriteData((char**)0x422020, buf); // Write
+		tmp = "./" + _mainsavepath + "/%s";
+		buf = new char[tmp.size() + 1];
+		strncpy(buf, tmp.c_str(), tmp.size() + 1);
+		WriteData((char**)0x421E4E, buf); // Load
+		WriteData((char**)0x421E6A, buf); // Load
+		WriteData((char**)0x421F07, buf); // Delete
+		WriteData((char**)0x42214E, buf); // Write
+		WriteData((char**)0x5050E5, buf); // Count
+		WriteData((char**)0x5051ED, buf); // Count
+		tmp = "./" + _mainsavepath + "/SonicDX%02d.snc";
+		WriteData((char*)0x422064, (char)(tmp.size() - 1)); // Write
+		buf = new char[tmp.size() + 1];
+		strncpy(buf, tmp.c_str(), tmp.size() + 1);
+		WriteData((char**)0x42210F, buf); // Write
+		tmp = "./" + _mainsavepath + "/SonicDX??.snc";
+		buf = new char[tmp.size() + 1];
+		strncpy(buf, tmp.c_str(), tmp.size() + 1);
+		WriteData((char**)0x5050AB, buf); // Count
+	}
+
+	if (!_chaosavepath.empty())
+	{
+		if (!chaosaveredirectFound)
+			_mkdir(_chaosavepath.c_str());
+
+		char* buf = new char[_chaosavepath.size() + 1];
+		strncpy(buf, _chaosavepath.c_str(), _chaosavepath.size() + 1);
+		chaosavepath = buf;
+		string tmp = "./" + _chaosavepath + "/SONICADVENTURE_DX_CHAOGARDEN.snc";
+		buf = new char[tmp.size() + 1];
+		strncpy(buf, tmp.c_str(), tmp.size() + 1);
+		WriteData((char**)0x7163EF, buf); // ALMC_Read
+		WriteData((char**)0x71AA6F, buf); // al_confirmsave
+		WriteData((char**)0x71ACDB, buf); // al_confirmload
+		WriteData((char**)0x71ADC5, buf); // al_confirmload
+	}
+}
+
 std::vector<Mod> modlist;
+
 
 static void __cdecl InitMods()
 {
@@ -844,9 +1019,6 @@ static void __cdecl InitMods()
 	vector<std::pair<ModInitFunc, string>> initfuncs;
 	vector<std::pair<wstring, wstring>> errors;
 
-	string _mainsavepath, _chaosavepath;
-
-	bool use_redirection = false; // Check whether save redirection is used by any mods
 
 	// It's mod loading time!
 	PrintDebug("Loading mods...\n");
@@ -862,6 +1034,8 @@ static void __cdecl InitMods()
 		const string mod_dirA = "mods\\" + mod_fname;
 		const wstring mod_dir = L"mods\\" + mod_fname_w;
 		const wstring mod_inifile = mod_dir + L"\\mod.ini";
+		saveRedirectFound = false;
+		chaosaveredirectFound = false;
 
 		FILE* f_mod_ini = _wfopen(mod_inifile.c_str(), L"r");
 
@@ -878,20 +1052,10 @@ static void __cdecl InitMods()
 
 		const string mod_nameA = modinfo->getString("Name");
 		const wstring mod_name = modinfo->getWString("Name");
-		const bool mod_hasIcon = modinfo->getBool("SetExeIcon");
 
 		PrintDebug("%u. %s\n", i, mod_nameA.c_str());
 
-		if (mod_hasIcon)
-		{
-			const wstring mod_icon = mod_dir + L"\\mod.ico";
 
-			if (FileExists(mod_icon))
-			{
-				iconPathName = mod_icon.c_str();
-				PrintDebug("Setting icon from mod folder: %s\n", mod_fname.c_str());
-			}
-		}
 
 		vector<ModDependency> moddeps;
 
@@ -924,60 +1088,29 @@ static void __cdecl InitMods()
 			}
 		};
 
-		if (ini_mod->hasGroup("IgnoreFiles"))
-		{
-			const IniGroup* group = ini_mod->getGroup("IgnoreFiles");
-			auto data = group->data();
-			for (const auto& iter : *data)
-			{
-				sadx_fileMap.addIgnoreFile(iter.first, i);
-				PrintDebug("Ignored file: %s\n", iter.first.c_str());
-			}
-		}
+		ModIniProcessFilesCheck(ini_mod.get(), i, filereplaces, fileswaps);
 
-		if (ini_mod->hasGroup("ReplaceFiles"))
+		//basic Mod Config, includes file replacement without custom code
+		int dirs = ini_mod->getInt("Config", "IncludeDirCount", -1);
+		if (dirs != -1)
 		{
-			const IniGroup* group = ini_mod->getGroup("ReplaceFiles");
-			auto data = group->data();
-			for (const auto& iter : *data)
+			for (uint16_t md = 0; md < dirs; md++)
 			{
-				filereplaces[FileMap::normalizePath(iter.first)] =
-					FileMap::normalizePath(iter.second);
+				auto incDirPath = ini_mod->getString("Config", "IncludeDir" + std::to_string(md));
+				const string modIncDir = mod_dirA + "\\" + incDirPath;
+				const wstring modIncDirW = mod_dir + L"\\" + ini_mod->getWString("Config", "IncludeDir" + std::to_string(md));
+				if (DirectoryExists(modIncDir))
+				{
+					PrintDebug("Mod Config: use path: '%s'\n", modIncDir.c_str());
+					Mod_CheckAndReplaceFiles(modIncDir, i);
+					HandleModIniContent(ini_mod.get(), modinfo, modIncDirW, modIncDir);
+				}
 			}
-		}
-
-		if (ini_mod->hasGroup("SwapFiles"))
-		{
-			const IniGroup* group = ini_mod->getGroup("SwapFiles");
-			auto data = group->data();
-			for (const auto& iter : *data)
-			{
-				fileswaps.emplace_back(FileMap::normalizePath(iter.first),
-					FileMap::normalizePath(iter.second));
-			}
-		}
-
-		if (ini_mod->hasGroup("CharacterWelds"))
-		{
-			const IniGroup* group = ini_mod->getGroup("CharacterWelds");
-			auto data = group->data();
-			for (const auto& iter : *data)
-				RegisterCharacterWelds(ParseCharacter(iter.first), (mod_dirA + "\\" + iter.second).c_str());
 		}
 
 		// Check for SYSTEM replacements.
 		// TODO: Convert to WString.
-		const string modSysDirA = mod_dirA + "\\system";
-		if (DirectoryExists(modSysDirA))
-			sadx_fileMap.scanFolder(modSysDirA, i);
-
-		const string modTexDir = mod_dirA + "\\textures";
-		if (DirectoryExists(modTexDir))
-			sadx_fileMap.scanTextureFolder(modTexDir, i);
-
-		const string modRepTexDir = mod_dirA + "\\replacetex";
-		if (DirectoryExists(modRepTexDir))
-			ScanTextureReplaceFolder(modRepTexDir, i);
+		Mod_CheckAndReplaceFiles(mod_dirA, i);
 
 		// Check if a custom EXE is required.
 		if (modinfo->hasKeyNonEmpty("EXEFile"))
@@ -1144,60 +1277,20 @@ static void __cdecl InitMods()
 		CodepageGerman = modinfo->getInt("CodepageGerman", 1252);
 		CodepageSpanish = modinfo->getInt("CodepageSpanish", 1252);
 
-		// Check if the mod has EXE data replacements.
-		if (modinfo->hasKeyNonEmpty("EXEData"))
-		{
-			wchar_t filename[MAX_PATH];
-			swprintf(filename, LengthOfArray(filename), L"%s\\%s",
-				mod_dir.c_str(), modinfo->getWString("EXEData").c_str());
-			ProcessEXEData(filename, mod_dir);
-		}
 
-		// Check if the mod has DLL data replacements.
-		for (unsigned int j = 0; j < LengthOfArray(dlldatakeys); j++)
-		{
-			if (modinfo->hasKeyNonEmpty(dlldatakeys[j]))
-			{
-				wchar_t filename[MAX_PATH];
-				swprintf(filename, LengthOfArray(filename), L"%s\\%s",
-					mod_dir.c_str(), modinfo->getWString(dlldatakeys[j]).c_str());
-				ProcessDLLData(filename, mod_dir);
-			}
-		}
-
-		if (modinfo->getBool("RedirectMainSave")) {
-			_mainsavepath = mod_dirA + "\\SAVEDATA";
-
-			if (Exists(_mainsavepath))
-			{
-				_mkdir(_mainsavepath.c_str());
-			}
-			use_redirection = true;
-		}
-
-		if (modinfo->getBool("RedirectChaoSave")) {
-
-			_chaosavepath = mod_dirA + "\\SAVEDATA";
-
-			if (!Exists(_chaosavepath))
-			{
-				_mkdir(_chaosavepath.c_str());
-			}
-			use_redirection = true;
-		}
+		HandleModIniContent(ini_mod.get(), modinfo, mod_dir, mod_dirA);
 
 		if (modinfo->hasKeyNonEmpty("WindowTitle"))
 			windowtitle = modinfo->getString("WindowTitle");
 
-		if (modinfo->hasKeyNonEmpty("BorderImage"))
-			borderimage = mod_dir + L'\\' + modinfo->getWString("BorderImage");
+
 		modlist.push_back(modinf);
 	}
 
 	if (!FileExists(borderimage))
 		borderimage = L"mods\\Border_Default.png";
 	SetBorderImage(borderimage);
-	
+
 	if (loaderSettings.InputMod)
 		SDL2_Init();
 
@@ -1347,49 +1440,7 @@ static void __cdecl InitMods()
 	}
 	_TrialSubgames.clear();
 
-	if (!_mainsavepath.empty())
-	{
-		char* buf = new char[_mainsavepath.size() + 1];
-		strncpy(buf, _mainsavepath.c_str(), _mainsavepath.size() + 1);
-		mainsavepath = buf;
-		string tmp = "./" + _mainsavepath + "/";
-		WriteData((char*)0x42213D, (char)(tmp.size() + 1)); // Write
-		buf = new char[tmp.size() + 1];
-		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x422020, buf); // Write
-		tmp = "./" + _mainsavepath + "/%s";
-		buf = new char[tmp.size() + 1];
-		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x421E4E, buf); // Load
-		WriteData((char**)0x421E6A, buf); // Load
-		WriteData((char**)0x421F07, buf); // Delete
-		WriteData((char**)0x42214E, buf); // Write
-		WriteData((char**)0x5050E5, buf); // Count
-		WriteData((char**)0x5051ED, buf); // Count
-		tmp = "./" + _mainsavepath + "/SonicDX%02d.snc";
-		WriteData((char*)0x422064, (char)(tmp.size() - 1)); // Write
-		buf = new char[tmp.size() + 1];
-		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x42210F, buf); // Write
-		tmp = "./" + _mainsavepath + "/SonicDX??.snc";
-		buf = new char[tmp.size() + 1];
-		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x5050AB, buf); // Count
-	}
-
-	if (!_chaosavepath.empty())
-	{
-		char* buf = new char[_chaosavepath.size() + 1];
-		strncpy(buf, _chaosavepath.c_str(), _chaosavepath.size() + 1);
-		chaosavepath = buf;
-		string tmp = "./" + _chaosavepath + "/SONICADVENTURE_DX_CHAOGARDEN.snc";
-		buf = new char[tmp.size() + 1];
-		strncpy(buf, tmp.c_str(), tmp.size() + 1);
-		WriteData((char**)0x7163EF, buf); // ALMC_Read
-		WriteData((char**)0x71AA6F, buf); // al_confirmsave
-		WriteData((char**)0x71ACDB, buf); // al_confirmload
-		WriteData((char**)0x71ADC5, buf); // al_confirmload
-	}
+	HandleRedirectSave();
 
 	if (!windowtitle.empty())
 	{
