@@ -705,20 +705,20 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			nullptr								// No Other Paramters
 		);
 
+		std::wstring failed = L"Failed to Create SADX Window with Borderless settings, game won't work.";
 		if (WindowHandle == nullptr)
 		{
-			MessageBox(nullptr, L"Failed to Create SADX Window with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
+			MessageBox(nullptr, failed.c_str(), L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
 			return;
 		}
 
 		SetFocus(WindowHandle);
-		ShowWindow(parentWindow, nCmdShow);
-		UpdateWindow(parentWindow);
-		SetForegroundWindow(parentWindow);
+		if (ShowWindow(parentWindow, nCmdShow) && UpdateWindow(parentWindow) && SetForegroundWindow(parentWindow))
+			PrintDebug("Successfully created SADX Borderless Window: outer %dx%d, inner %dx%d\n", outerSize.width, outerSize.height, innerSize.width, innerSize.height);
+		else
+			PrintDebug("SADX Borderless Window got created, but a few functions call failed. Warning, the game may crash. Outer %dx%d, inner %dx%d\n", outerSize.width, outerSize.height, innerSize.width, innerSize.height);
 
-		PrintDebug("Successfully created SADX Borderless Window: outer %dx%d, inner %dx%d\n", outerSize.width, outerSize.height, innerSize.width, innerSize.height);
 		IsWindowed = true;
-
 		WriteData((void*)0x402C61, wndpatch);
 	}
 	else
@@ -764,16 +764,14 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			enable_fullscreen_mode(WindowHandle);
 		}
 
-		ShowWindow(WindowHandle, nCmdShow);
-		UpdateWindow(WindowHandle);
-		SetForegroundWindow(WindowHandle);
+		if (ShowWindow(WindowHandle, nCmdShow) && UpdateWindow(WindowHandle))
+			PrintDebug("Successfully created SADX Window: %dx%d\n", w, h);
+		else
+			PrintDebug("SADX Window got created, but a few functions call failed. Warning, the game may crash. Res: %dx%d\n", w, h);
 
 		parentWindow = WindowHandle;
-
 		WriteCall((void*)0x00401920, ResumeAllSoundsPause);
-		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);
-
-		PrintDebug("Successfully created SADX Window: %dx%d\n", w, h);
+		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);	
 	}
 
 	// Hook the window message handler.
