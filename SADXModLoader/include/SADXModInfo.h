@@ -97,6 +97,7 @@ struct LoaderSettings
 	bool DisableCDCheck;
 	bool ExtendedSaveSupport;
 	bool CrashGuard;
+	bool XInputFix;
 	// Graphics
 	int ScreenMode;				// Window Mode (Windowed, Fullscreen, Borderless Fullscren, or Custom Window); requires version 20+
 	bool ShowMouseInFullscreen;	// Displays Cursor when in Fullscreen; requires version 20+

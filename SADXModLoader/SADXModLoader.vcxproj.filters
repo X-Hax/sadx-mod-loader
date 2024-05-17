@@ -162,6 +162,9 @@
     <ClCompile Include="video.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="XInputFix.cpp">
+      <Filter>Source Files\Patches</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MediaFns.hpp">
@@ -364,6 +367,9 @@
     </ClInclude>
     <ClInclude Include="video.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XInputFix.h">
+      <Filter>Header Files\Patches</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

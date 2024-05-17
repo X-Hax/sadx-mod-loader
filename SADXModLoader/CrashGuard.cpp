@@ -212,7 +212,7 @@ Sint32 __fastcall njSetTexture_real_r(NJS_TEXLIST* a1)
 		njds_texList = &checker_texlist;
 		nj_texture_current_memlist_ = (NJS_TEXMEMLIST*)checker_texlist.textures->texaddr;
 		CurrentTextureNum = 0;
-		stSetTexture(nj_texture_current_memlist_);
+		SetDefaultTexture();
 		return 1;
 	}
 	return njSetTexture_real_h.Original(a1);
