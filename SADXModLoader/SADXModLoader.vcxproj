@@ -204,7 +204,8 @@
       <Command>"C:\Program Files\Git\bin\bash.exe" ../git_version.sh &gt;git_version.h</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>"$(SolutionDir)bin\SADX Copy Mod Loader Files.bat"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
