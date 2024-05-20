@@ -943,7 +943,6 @@ static void __cdecl InitMods()
 
 	InitAudio();
 	WriteJump(LoadSoundList, LoadSoundList_r);
-	Video_Init(loaderSettings);
 	InitPatches();
 
 	texpack::init();
@@ -1292,6 +1291,8 @@ static void __cdecl InitMods()
 	if (!FileExists(borderimage))
 		borderimage = L"mods\\Border_Default.png";
 	SetBorderImage(borderimage);
+
+	Video_Init(loaderSettings, borderimage);
 
 	if (loaderSettings.InputMod)
 		SDL2_Init();
