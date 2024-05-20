@@ -12,8 +12,6 @@ static int paused_frame = -1;
 static bool draw_border = false;
 static std::wstring border_image_path;
 
-static bool DisableBorderImage = false; // To do: add config for it
-
 FunctionHook<void, Sint32, Sint32> DrawMovieTex_h(DrawMovieTex);
 FunctionHook<Bool> StartDShowTextureRenderer_h(StartDShowTextureRenderer);
 FunctionHook<Bool> EndDShowTextureRenderer_h(EndDShowTextureRenderer);
@@ -237,12 +235,11 @@ Bool EndDShowTextureRenderer_r()
 void Video_Init(const LoaderSettings& settings, const std::wstring& borderpath)
 {
 	draw_border = settings.FmvFillMode == uiscale::FillMode_Fit;
-	border_image_path = borderpath;
-
 	DrawMovieTex_h.Hook(DrawMovieTex_r);
 
-	if (!DisableBorderImage)
+	if (!settings.DisableBorderImage)
 	{
+		border_image_path = borderpath;
 		StartDShowTextureRenderer_h.Hook(StartDShowTextureRenderer_r);
 		EndDShowTextureRenderer_h.Hook(EndDShowTextureRenderer_r);
 	}
