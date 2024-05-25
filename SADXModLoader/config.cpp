@@ -64,6 +64,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->TextureFilter = json_graphics.value("EnableForcedTextureFilter", true);
 		loaderSettings->ScreenMode = json_graphics.value("ScreenMode", 0);
 		loaderSettings->ShowMouseInFullscreen = json_graphics.value("ShowMouseInFullscreen", false);
+		loaderSettings->DisableBorderImage = json_graphics.value("DisableBorderImage", false);
 
 		// Controller settings
 		json json_controller = json_config["Controller"];
@@ -94,6 +95,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->DisableCDCheck = json_patches.value("DisableCDCheck", true);
 		loaderSettings->ExtendedSaveSupport = json_patches.value("ExtendedSaveSupport", true);
 		loaderSettings->CrashGuard = json_patches.value("CrashGuard", true);
+		loaderSettings->XInputFix = json_patches.value("XInputFix", false);
 		loaderSettings->EnableFFMPEG = json_patches.value("EnableFFMPEG", true);
 
 		// Debug settings
@@ -177,6 +179,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->DisableCDCheck = setgrp->getBool("DisableCDCheck", false);
 		loaderSettings->ExtendedSaveSupport = setgrp->getBool("ExtendedSaveSupport", true);
 		loaderSettings->CrashGuard = setgrp->getBool("CrashGuard", true);
+		loaderSettings->XInputFix = setgrp->getBool("XInputFix", false);
 
 		for (unsigned int i = 1; i <= 999; i++)
 		{

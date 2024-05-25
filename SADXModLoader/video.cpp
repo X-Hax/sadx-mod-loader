@@ -13,9 +13,21 @@ DataPointer(Sint32, nHeight, 0x10F1D6C);
 DataPointer(Uint8*, video_tex, 0x3C600E8);
 DataPointer(NJS_TEXNAME, video_texname, 0x3C600DC);
 DataPointer(NJS_TEXLIST, video_texlist, 0x3C60094);
+DataPointer(Sint32, video_frame, 0x3C5FFF0);
 
 static bool b_ffmpeg = false;
+static int paused_frame = -1;
+static bool draw_border = false;
+static bool border_image = false;
+static std::wstring border_image_path;
 
+FunctionHook<void, Sint32, Sint32> DrawMovieTex_h(DrawMovieTex);
+FunctionHook<Bool> StartDShowTextureRenderer_h(StartDShowTextureRenderer);
+FunctionHook<Bool> EndDShowTextureRenderer_h(EndDShowTextureRenderer);
+
+LPDIRECT3DTEXTURE8 pBorderTexture = NULL;
+
+#pragma region Utilities
 Bool PauseVideo()
 {
 	if (b_ffmpeg)
@@ -23,7 +35,11 @@ Bool PauseVideo()
 		ffPlayerPause();
 		return TRUE;
 	}
-	return g_pMC && SUCCEEDED(g_pMC->Pause());
+	else
+	{
+		paused_frame = video_frame;
+		return g_pMC && SUCCEEDED(g_pMC->Pause());
+	}
 }
 
 Bool ResumeVideo()
@@ -33,60 +49,205 @@ Bool ResumeVideo()
 		ffPlayerPlay();
 		return TRUE;
 	}
-	return g_pMC && SUCCEEDED(g_pMC->Run());
-}
-
-Bool PlayDShowTextureRenderer_r()
-{
-	ffPlayerPlay();
-	return TRUE;
-}
-
-Bool CheckMovieStatus_r()
-{
-	return !ffPlayerFinished();
-}
-
-Bool GetNJTexture_r()
-{
-	if (ffPlayerGetFrameBuffer((uint8_t*)video_tex))
+	else
 	{
-		njReLoadTextureNumG(0xD00000D0, (Uint16*)video_tex, NJD_TEXATTR_GLOBALINDEX | NJD_TEXATTR_TYPE_MEMORY, 0);
+		paused_frame = -1;
+		return g_pMC && SUCCEEDED(g_pMC->Run());
 	}
-	return TRUE;
 }
+#pragma endregion
 
-void DrawBackground()
+#pragma region Video border
+void DrawBorders(Sint32 video_width, Sint32 video_height)
 {
-	float screen_w = (float)HorizontalResolution;
-	float screen_h = (float)VerticalResolution;
+	if (!draw_border)
+	{
+		return;
+	}
 
-	struct VERTEX {
-		D3DVECTOR position;
-		Float rhw;
-		Uint32 diffuse;
-	} pool[4];
+	float video_w = video_width;
+	float video_h = video_height;
+	float screen_w = HorizontalResolution;
+	float screen_h = VerticalResolution;
 
-	pool[0].position = { 0.0f, 0.0f, 1.0f };
-	pool[0].diffuse = 0xFF000000;
-	pool[0].rhw = 1.0f;
+	float window_aspect_ratio = screen_w / screen_h;
+	float video_aspect_ratio = video_w / video_h;
 
-	pool[1].position = { screen_w, 0.0f, 1.0f };
-	pool[1].diffuse = 0xFF000000;
-	pool[1].rhw = 1.0f;
+	if (window_aspect_ratio == video_aspect_ratio)
+	{
+		return;
+	}
 
-	pool[2].position = { 0.0f, screen_h, 1.0f };
-	pool[2].diffuse = 0xFF000000;
-	pool[2].rhw = 1.0f;
+	float ratio_w = screen_w / video_w;
+	float ratio_h = screen_h / video_h;
 
-	pool[3].position = { screen_w, screen_h, 1.0f };
-	pool[3].diffuse = 0xFF000000;
-	pool[3].rhw = 1.0f;
+	float size_x, size_y, offset_x, offset_y;
+	if (window_aspect_ratio > video_aspect_ratio)
+	{
+		size_x = (screen_w - (video_w * ratio_h)) / 2;
+		size_y = screen_h;
+		offset_x = screen_w - size_x;
+		offset_y = 0.0f;
+	}
+	else
+	{
+		size_x = screen_w;
+		size_y = (screen_h - (video_h * ratio_w)) / 2;
+		offset_x = 0.0f;
+		offset_y = screen_h - size_y;
+	}
 
-	IDirect3DDevice8_SetVertexShader(_st_d3d_device_, D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
-	IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_ALWAYS);
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ALPHABLENDENABLE, FALSE);
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_LIGHTING, FALSE);
+
+	if (pBorderTexture)
+	{
+		float u2, v2;
+		if (window_aspect_ratio > video_aspect_ratio)
+		{
+			u2 = 1.0f - offset_x / screen_w;
+			v2 = 1.0f;
+		}
+		else
+		{
+			u2 = 1.0f;
+			v2 = 1.0f - offset_y / screen_h;
+		}
+
+		IDirect3DDevice8_SetVertexShader(_st_d3d_device_, D3DFVF_DIFFUSE | D3DFVF_XYZRHW | D3DFVF_TEX1);
+		IDirect3DDevice8_SetTexture(_st_d3d_device_, 0, pBorderTexture);
+
+		struct VERTEX {
+			D3DVECTOR position;
+			Float rhw;
+			Uint32 diffuse;
+			Float u, v;
+		} pool[4];
+
+		pool[0].position = { 0.0f, 0.0f, 0.0f };
+		pool[0].diffuse = 0xFFFFFFFF;
+		pool[0].rhw = 1.0f;
+		pool[0].u = 0.0f;
+		pool[0].v = 0.0f;
+
+		pool[1].position = { size_x, 0.0f, 0.0f };
+		pool[1].diffuse = 0xFFFFFFFF;
+		pool[1].rhw = 1.0f;
+		pool[1].u = u2;
+		pool[1].v = 0.0f;
+
+		pool[2].position = { 0.0f, size_y, 0.0f };
+		pool[2].diffuse = 0xFFFFFFFF;
+		pool[2].rhw = 1.0f;
+		pool[2].u = 0.0f;
+		pool[2].v = v2;
+
+		pool[3].position = { size_x, size_y, 0.0f };
+		pool[3].diffuse = 0xFFFFFFFF;
+		pool[3].rhw = 1.0f;
+		pool[3].u = u2;
+		pool[3].v = v2;
+
+		IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
+
+		pool[0].position = { offset_x, offset_y, 0.0f };
+		pool[0].diffuse = 0xFFFFFFFF;
+		pool[0].rhw = 1.0f;
+		pool[0].u = 1.0f - u2;
+		pool[0].v = 1.0f - v2;
+
+		pool[1].position = { offset_x + size_x, offset_y, 0.0f };
+		pool[1].diffuse = 0xFFFFFFFF;
+		pool[1].rhw = 1.0f;
+		pool[1].u = 1.0f;
+		pool[1].v = 1.0f - v2;
+
+		pool[2].position = { offset_x, offset_y + size_y, 0.0f };
+		pool[2].diffuse = 0xFFFFFFFF;
+		pool[2].rhw = 1.0f;
+		pool[2].u = 1.0f - u2;
+		pool[2].v = 1.0f;
+
+		pool[3].position = { offset_x + size_x, offset_y + size_y, 0.0f };
+		pool[3].diffuse = 0xFFFFFFFF;
+		pool[3].rhw = 1.0f;
+		pool[3].u = 1.0f;
+		pool[3].v = 1.0f;
+
+		IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
+	}
+	else
+	{
+		IDirect3DDevice8_SetVertexShader(_st_d3d_device_, D3DFVF_DIFFUSE | D3DFVF_XYZRHW);
+
+		struct VERTEX {
+			D3DVECTOR position;
+			Float rhw;
+			Uint32 diffuse;
+		} pool[4];
+
+		pool[0].position = { 0.0f, 0.0f, 0.0f };
+		pool[0].diffuse = 0xFF000000;
+		pool[0].rhw = 1.0f;
+
+		pool[1].position = { size_x, 0.0f, 0.0f };
+		pool[1].diffuse = 0xFF000000;
+		pool[1].rhw = 1.0f;
+
+		pool[2].position = { 0.0f, size_y, 0.0f };
+		pool[2].diffuse = 0xFF000000;
+		pool[2].rhw = 1.0f;
+
+		pool[3].position = { size_x, size_y, 0.0f };
+		pool[3].diffuse = 0xFF000000;
+		pool[3].rhw = 1.0f;
+
+		IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
+
+		pool[0].position = { offset_x, offset_y, 0.0f };
+		pool[0].diffuse = 0xFF000000;
+		pool[0].rhw = 1.0f;
+
+		pool[1].position = { offset_x + size_x, offset_y, 0.0f };
+		pool[1].diffuse = 0xFF0000000;
+		pool[1].rhw = 1.0f;
+
+		pool[2].position = { offset_x, offset_y + size_y, 0.0f };
+		pool[2].diffuse = 0xFF000000;
+		pool[2].rhw = 1.0f;
+
+		pool[3].position = { offset_x + size_x, offset_y + size_y, 0.0f };
+		pool[3].diffuse = 0xFF000000;
+		pool[3].rhw = 1.0f;
+
+		IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
+	}
+
+	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_LESS);
 }
 
+void LoadBorderTexture()
+{
+	if (!pBorderTexture)
+	{
+		D3DXCreateTextureFromFileW(_st_d3d_device_, border_image_path.c_str(), &pBorderTexture);
+	}
+}
+
+void FreeBorderTexture()
+{
+	if (pBorderTexture)
+	{
+		pBorderTexture->Release();
+		pBorderTexture = nullptr;
+	}
+}
+#pragma endregion
+
+StdcallFunctionPointer(float, stCalcRHWtoZ, (float rhw), 0x78DBE0);
+
+#pragma region ffmpeg
 void DrawVideo()
 {
 	float screen_w = (float)HorizontalResolution;
@@ -133,25 +294,27 @@ void DrawVideo()
 		Float v;
 	} pool[4];
 
-	pool[0].position = { x1, y1, 1.0f };
+	float depth = stCalcRHWtoZ(-1.0f / -1000.0f);
+
+	pool[0].position = { x1, y1, depth };
 	pool[0].diffuse = 0xFFFFFFFF;
 	pool[0].rhw = 1.0f;
 	pool[0].u = 0.0f;
 	pool[0].v = 0.0f;
 
-	pool[1].position = { x2, y1, 1.0f };
+	pool[1].position = { x2, y1, depth };
 	pool[1].diffuse = 0xFFFFFFFF;
 	pool[1].rhw = 1.0f;
 	pool[1].u = 1.0f;
 	pool[1].v = 0.0f;
 
-	pool[2].position = { x1, y2, 1.0f };
+	pool[2].position = { x1, y2, depth };
 	pool[2].diffuse = 0xFFFFFFFF;
 	pool[2].rhw = 1.0f;
 	pool[2].u = 0.0f;
 	pool[2].v = 1.0f;
 
-	pool[3].position = { x2, y2, 1.0f };
+	pool[3].position = { x2, y2, depth };
 	pool[3].diffuse = 0xFFFFFFFF;
 	pool[3].rhw = 1.0f;
 	pool[3].u = 1.0f;
@@ -162,28 +325,7 @@ void DrawVideo()
 	IDirect3DDevice8_DrawPrimitiveUP(_st_d3d_device_, D3DPT_TRIANGLESTRIP, 2, pool, sizeof(struct VERTEX));
 }
 
-void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
-{
-	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_ALWAYS);
-	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
-	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
-	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ALPHABLENDENABLE, FALSE);
-	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_LIGHTING, FALSE);
-	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
-	IDirect3DDevice8_SetTextureStageState(_st_d3d_device_, 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
-
-	DrawBackground();
-	DrawVideo();
-
-	IDirect3DDevice8_SetRenderState(_st_d3d_device_, D3DRS_ZFUNC, D3DCMP_LESS);
-}
-
-Bool StartDShowTextureRenderer_r()
-{
-	return TRUE;
-}
-
-Bool EndDShowTextureRenderer_r()
+void FreeVideo()
 {
 	ffPlayerClose();
 
@@ -193,7 +335,25 @@ Bool EndDShowTextureRenderer_r()
 		video_tex = NULL;
 		njReleaseTexture(&video_texlist);
 	}
+}
 
+Bool PlayDShowTextureRenderer_r()
+{
+	ffPlayerPlay();
+	return TRUE;
+}
+
+Bool CheckMovieStatus_r()
+{
+	return !ffPlayerFinished();
+}
+
+Bool GetNJTexture_r()
+{
+	if (ffPlayerGetFrameBuffer((uint8_t*)video_tex))
+	{
+		njReLoadTextureNumG(0xD00000D0, (Uint16*)video_tex, NJD_TEXATTR_GLOBALINDEX | NJD_TEXATTR_TYPE_MEMORY, 0);
+	}
 	return TRUE;
 }
 
@@ -246,18 +406,89 @@ Bool LoadDShowTextureRenderer_r(const char* filename)
 	video_texlist.textures = &video_texname;
 	video_texlist.nbTexture = 1;
 	njLoadTexture(&video_texlist);
-	
+
 	return TRUE;
 }
+#pragma endregion
 
-void Video_Init()
+void DrawMovieTex_r(Sint32 max_width, Sint32 max_height)
 {
-	WriteJump((void*)0x513850, StartDShowTextureRenderer_r);
-	WriteJump((void*)0x513990, GetNJTexture_r);
-	WriteJump((void*)0x5139F0, DrawMovieTex_r);
-	WriteJump((void*)0x513C50, EndDShowTextureRenderer_r);
-	WriteJump((void*)0x513D30, PlayDShowTextureRenderer_r);
-	WriteJump((void*)0x513D50, CheckMovieStatus_r);
-	WriteJump((void*)0x513ED0, LoadDShowTextureRenderer_r);
-	b_ffmpeg = true;
+	// Prevent fade timer from continuing while game is paused
+	if (paused_frame >= 0)
+	{
+		video_frame = paused_frame;
+	}
+
+	DrawBorders(max_width, max_height);
+
+	if (b_ffmpeg)
+	{
+		DrawVideo();
+	}
+	else
+	{
+		DrawMovieTex_h.Original(max_width, max_height);
+	}
+}
+
+Bool StartDShowTextureRenderer_r()
+{
+	if (border_image)
+	{
+		LoadBorderTexture();
+	}
+
+	if (b_ffmpeg)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return StartDShowTextureRenderer_h.Original();
+	}
+}
+
+Bool EndDShowTextureRenderer_r()
+{
+	if (border_image)
+	{
+		FreeBorderTexture();
+	}
+
+	if (b_ffmpeg)
+	{
+		FreeVideo();
+		return TRUE;
+	}
+	else
+	{
+		return EndDShowTextureRenderer_h.Original();
+	}
+}
+
+void Video_Init(const LoaderSettings& settings, const std::wstring& borderpath)
+{
+	draw_border = settings.FmvFillMode == uiscale::FillMode_Fit;
+	border_image = !settings.DisableBorderImage;
+	b_ffmpeg = settings.EnableFFMPEG;
+
+	DrawMovieTex_h.Hook(DrawMovieTex_r);
+	StartDShowTextureRenderer_h.Hook(StartDShowTextureRenderer_r);
+	EndDShowTextureRenderer_h.Hook(EndDShowTextureRenderer_r);
+
+	if (border_image)
+	{
+		border_image_path = borderpath;
+	}
+
+	if (b_ffmpeg)
+	{
+		WriteJump((void*)0x513850, StartDShowTextureRenderer_r);
+		WriteJump((void*)0x513990, GetNJTexture_r);
+		WriteJump((void*)0x5139F0, DrawMovieTex_r);
+		WriteJump((void*)0x513C50, EndDShowTextureRenderer_r);
+		WriteJump((void*)0x513D30, PlayDShowTextureRenderer_r);
+		WriteJump((void*)0x513D50, CheckMovieStatus_r);
+		WriteJump((void*)0x513ED0, LoadDShowTextureRenderer_r);
+	}
 }

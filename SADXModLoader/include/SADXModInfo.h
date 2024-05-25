@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 24;
+static const int ModLoaderVer = 26;
 struct PatchInfo
 {
 	void* address;
@@ -97,10 +97,12 @@ struct LoaderSettings
 	bool DisableCDCheck;
 	bool ExtendedSaveSupport;
 	bool CrashGuard;
+	bool XInputFix;
 	// Graphics
 	int ScreenMode;				// Window Mode (Windowed, Fullscreen, Borderless Fullscren, or Custom Window); requires version 20+
 	bool ShowMouseInFullscreen;	// Displays Cursor when in Fullscreen; requires version 20+
-	bool EnableFFMPEG;
+	bool DisableBorderImage; // Requires version >= 25.
+	bool EnableFFMPEG; // Requires version >= 26.
 };
 
 struct ModDependency

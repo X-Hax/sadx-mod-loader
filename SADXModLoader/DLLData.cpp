@@ -175,6 +175,9 @@ static vector<string> split(const string& s, char delim)
 
 void ProcessDLLData(const wchar_t* filename, const wstring& mod_dir)
 {
+	if (!FileExists(filename))
+		return;
+	
 	auto dlldata = new IniFile(filename);
 	IniGroup* group;
 	wstring dllname = dlldata->getWString("", "name");

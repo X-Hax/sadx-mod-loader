@@ -54,8 +54,9 @@
     <ClCompile Include="CrashGuard.cpp" />
     <ClCompile Include="TextureReplacement.cpp" />
     <ClCompile Include="uiscale.cpp" />
-    <ClCompile Include="window.cpp" />
     <ClCompile Include="video.cpp" />
+    <ClCompile Include="window.cpp" />
+    <ClCompile Include="XInputFix.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoMipmap.h" />
@@ -125,6 +126,7 @@
     <ClInclude Include="video.h" />
     <ClInclude Include="VoiceDuration.h" />
     <ClInclude Include="window.h" />
+    <ClInclude Include="XInputFix.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libmodutils\libmodutils.vcxproj">

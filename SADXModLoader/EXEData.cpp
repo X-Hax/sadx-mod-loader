@@ -12,6 +12,7 @@
 #include "ModelInfo.h"
 #include "AnimationFile.h"
 #include "EXEData.h"
+#include "FileSystem.h"
 
 using std::unordered_map;
 using std::vector;
@@ -881,7 +882,10 @@ static vector<char*> ProcessStringArrayINI_Internal(const wchar_t* filename, uin
 		string str;
 		getline(fstr, str);
 		str = DecodeUTF8(UnescapeNewlines(str), language, codepage);
-		strs.push_back(strdup(str.c_str()));
+		if (strlen(str.c_str()) == 0)
+			strs.push_back(NULL);
+		else
+			strs.push_back(strdup(str.c_str()));
 	}
 	fstr.close();
 	return strs;
@@ -1827,6 +1831,52 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 	WriteData((char**)addr, strs);
 }
 
+static void ProcessFixedStringArray(const IniGroup* group, const wstring& mod_dir)
+{
+	if (!group->hasKeyNonEmpty("filename"))
+	{
+		return;
+	}
+
+	auto addr = (char*)group->getIntRadix("address", 16);
+
+	int length = group->getInt("length", 0);
+
+	int count = group->getInt("count", 0);
+
+	if (addr == nullptr || length <= 0 || count <= 0)
+	{
+		return;
+	}
+	
+	addr = (char*)((intptr_t)addr + 0x400000);
+
+	int lang = ParseLanguage(group->getString("language"));
+
+	wchar_t filename[MAX_PATH]{};
+
+	const wstring pathbase = mod_dir + L'\\' + group->getWString("filename");
+
+	swprintf(filename, LengthOfArray(filename), L"%s",pathbase.c_str());
+
+	vector <char*> strs = ProcessStringArrayINI_Internal(filename, lang, 0);
+
+	for (int i = 0;i < count;i++)
+	{
+		int charaddr = (int)addr + i * length;
+		// Clear the whole string before writing
+		for (int c = 0; c < length; c++)
+		{
+			WriteData<1>((char*)(charaddr + c), 0i8);
+		}
+		// Write the string
+		for (int c2 = 0; c2 < strlen(strs[i]); c2++)
+		{
+			WriteData<1>((char*)(charaddr + c2), strs[i][c2]);
+		}
+	}
+}
+
 static void ProcessMultiString(const IniGroup* group, const wstring& mod_dir)
 {
 	if (!group->hasKeyNonEmpty("filename"))
@@ -2072,7 +2122,8 @@ static void ProcessTikalMultiHint(const IniGroup* group, const wstring& mod_dir)
 				msgstring = (HintText_Text*)(entry + 8 * j);
 			msgstring->Message = strdup(DecodeUTF8(entdata->getString("Line"), l, 0).c_str());
 			msgstring->Time = entdata->getInt("Time");
-			entrypnt += 4;
+			if (doublepnt)
+				entrypnt += 4;
 		}
 	}
 }
@@ -2118,23 +2169,27 @@ static const unordered_map<string, exedatafunc_t> exedatafuncmap = {
 	{ "tikalhintmulti",		ProcessTikalMultiHint },
 	{ "missiontutorial",	ProcessMissionTutoText },
 	{ "missiondescription",	ProcessMissionDescriptions },
+	{ "fixedstringarray",	ProcessFixedStringArray },
 	// { "bmitemattrlist",     ProcessBMItemAttrListINI },
 };
 
 void ProcessEXEData(const wchar_t* filename, const wstring& mod_dir)
 {
-	auto exedata = new IniFile(filename);
-
-	for (const auto& iter : *exedata)
+	if (FileExists(filename))
 	{
-		IniGroup* group = iter.second;
-		auto type = exedatafuncmap.find(group->getString("type"));
+		auto exedata = new IniFile(filename);
 
-		if (type != exedatafuncmap.end())
+		for (const auto& iter : *exedata)
 		{
-			type->second(group, mod_dir);
-		}
-	}
+			IniGroup* group = iter.second;
+			auto type = exedatafuncmap.find(group->getString("type"));
 
-	delete exedata;
+			if (type != exedatafuncmap.end())
+			{
+				type->second(group, mod_dir);
+			}
+		}
+
+		delete exedata;
+	}
 }

@@ -76,9 +76,6 @@ static bool pauseWhenInactive;
 static bool showMouse = false;
 static screenmodes screenMode;
 
-// Path to Border Image
-wstring borderimg;
-
 // Used for borderless windowed mode.
 // Defines the size of the inner-window on which the game is rendered.
 static windowsize innerSizes[2] = {};
@@ -381,7 +378,7 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 		// Switching to/from the window, only applicable to exclusive fullscreen
 		if (screenMode != fullscreen_mode)
 			return 0;
-		// Alt+TAB from exclusive fullscreen to window
+			// Alt+TAB from exclusive fullscreen to window
 		if (wParam == WA_INACTIVE && !IsWindowed)
 		{
 			direct3d::change_resolution(last_width, last_height, true);
@@ -400,6 +397,7 @@ static LRESULT CALLBACK WndProc_New(HWND handle, UINT Msg, WPARAM wParam, LPARAM
 			enable_fullscreen_mode(handle);
 			return 0;
 		}
+		break;
 	}
 
 	// Alt+Enter for exclusive and borderless
@@ -458,11 +456,10 @@ LRESULT __stdcall WndProc_hook(HWND handle, UINT Msg, WPARAM wParam, LPARAM lPar
 {
 	switch (Msg)
 	{
-	case WM_ACTIVATE:
 	case WM_ACTIVATEAPP:
-		if (pauseWhenInactive && GameMode == GameModes_Movie)
+		if (pauseWhenInactive)
 		{
-			if (LOWORD(wParam) == WA_INACTIVE)
+			if (wParam == FALSE)
 			{
 				PauseVideo();
 			}
@@ -648,19 +645,6 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 
 		windowMode = IsWindowed ? windowed : fullscreen;
 
-		if (!FileExists(borderimg))
-		{
-			borderimg = L"mods\\Border_Default.png";
-		}
-
-		if (FileExists(borderimg))
-		{
-			Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-			ULONG_PTR gdiplusToken;
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
-			backgroundImage = Gdiplus::Bitmap::FromFile(borderimg.c_str());
-		}
-
 		// Register a window class for the wrapper window.
 		WNDCLASSA wrapper;
 
@@ -717,20 +701,20 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			nullptr								// No Other Paramters
 		);
 
+		std::wstring failed = L"Failed to Create SADX Window with Borderless settings, game won't work.";
 		if (WindowHandle == nullptr)
 		{
-			MessageBox(nullptr, L"Failed to Create SADX Window with Borderless settings, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
+			MessageBox(nullptr, failed.c_str(), L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
 			return;
 		}
 
 		SetFocus(WindowHandle);
-		ShowWindow(parentWindow, nCmdShow);
-		UpdateWindow(parentWindow);
-		SetForegroundWindow(parentWindow);
+		if (ShowWindow(parentWindow, nCmdShow) && UpdateWindow(parentWindow) && SetForegroundWindow(parentWindow))
+			PrintDebug("Successfully created SADX Borderless Window: outer %dx%d, inner %dx%d\n", outerSize.width, outerSize.height, innerSize.width, innerSize.height);
+		else
+			PrintDebug("SADX Borderless Window got created, but a few functions call failed. Warning, the game may crash. Outer %dx%d, inner %dx%d\n", outerSize.width, outerSize.height, innerSize.width, innerSize.height);
 
-		PrintDebug("Successfully created SADX Borderless Window: outer %dx%d, inner %dx%d\n", outerSize.width, outerSize.height, innerSize.width, innerSize.height);
 		IsWindowed = true;
-
 		WriteData((void*)0x402C61, wndpatch);
 	}
 	else
@@ -776,16 +760,14 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			enable_fullscreen_mode(WindowHandle);
 		}
 
-		ShowWindow(WindowHandle, nCmdShow);
-		UpdateWindow(WindowHandle);
-		SetForegroundWindow(WindowHandle);
+		if (ShowWindow(WindowHandle, nCmdShow) && UpdateWindow(WindowHandle))
+			PrintDebug("Successfully created SADX Window: %dx%d\n", w, h);
+		else
+			PrintDebug("SADX Window got created, but a few functions call failed. Warning, the game may crash. Res: %dx%d\n", w, h);
 
 		parentWindow = WindowHandle;
-
 		WriteCall((void*)0x00401920, ResumeAllSoundsPause);
-		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);
-
-		PrintDebug("Successfully created SADX Window: %dx%d\n", w, h);
+		WriteCall((void*)0x00401939, PauseAllSoundsAndMusic);	
 	}
 
 	// Hook the window message handler.
@@ -809,9 +791,8 @@ static __declspec(naked) void CreateSADXWindow_asm()
 }
 
 // Patches the window handler and several other graphical options related to the window's settings.
-void PatchWindow(const LoaderSettings& settings, wstring borderpath)
+void PatchWindow(const LoaderSettings& settings)
 {
-	borderimg = borderpath;
 	screenMode = (screenmodes)settings.ScreenMode;
 	screenNum = settings.ScreenNum;
 	windowResize = settings.ResizableWindow;
@@ -896,5 +877,27 @@ void PatchWindow(const LoaderSettings& settings, wstring borderpath)
 		// Don't pause music and sounds when the window is inactive
 		WriteData<5>(reinterpret_cast<void*>(0x00401939), 0x90u);
 		WriteData<5>(reinterpret_cast<void*>(0x00401920), 0x90u);
+	}
+}
+
+void SetBorderImage(std::wstring path)
+{
+	if (screenMode == fullscreen_mode)
+	{
+		return;
+	}
+
+	if (backgroundImage)
+	{
+		delete backgroundImage;
+		backgroundImage = nullptr;
+	}
+
+	if (FileExists(path))
+	{
+		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+		ULONG_PTR gdiplusToken;
+		Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+		backgroundImage = Gdiplus::Bitmap::FromFile(path.c_str());
 	}
 }

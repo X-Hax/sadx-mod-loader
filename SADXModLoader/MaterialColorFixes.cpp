@@ -35,7 +35,15 @@ static void FixMaterialColors(NJS_OBJECT* obj)
 
 static void FixMaterialColorsDll(LPCWSTR dllname, const char* exportname, int arraysize, DLLExportType DLLExportType)
 {
+	wchar_t buf[512];
 	void** exp = (void**)GetProcAddress(GetModuleHandle(dllname), exportname);
+	if (exp == nullptr)
+	{
+		wsprintf(buf, L"Critical error: %s.DLL isn't loaded. Please reinstall the game and try again.", dllname);
+		MessageBoxW(nullptr, buf, L"SADX Mod Loader Error", MB_ICONERROR | MB_OK);
+		OnExit(0, 0, 0);
+		ExitProcess(1);
+	}
 	for (int i = 0; i < arraysize; i++)
 	{
 		if (!exp[i])
