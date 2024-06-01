@@ -69,6 +69,7 @@ using json = nlohmann::json;
 #include "CrashGuard.h"
 #include "window.h"
 #include "XInputFix.h"
+#include "dpi.h"
 
 wstring borderimage = L"mods\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
@@ -866,6 +867,9 @@ std::vector<Mod> modlist;
 
 static void __cdecl InitMods()
 {
+	// Set process DPI awareness (silent crash fix on High DPI)
+	DPIFix_Init();
+
 	// Hook present function to handle device lost/reset states
 	direct3d::init();
 
