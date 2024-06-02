@@ -101,6 +101,9 @@ struct LoaderSettings
 	// Graphics
 	int ScreenMode;				// Window Mode (Windowed, Fullscreen, Borderless Fullscren, or Custom Window); requires version 20+
 	bool ShowMouseInFullscreen;	// Displays Cursor when in Fullscreen; requires version 20+
+	// Videos
+	bool DisableBorderImage;
+	bool EnableFFMPEG;
 };
 
 struct ModDependency

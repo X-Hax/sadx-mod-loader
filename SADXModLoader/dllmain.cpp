@@ -449,26 +449,20 @@ void ProcessVoiceDurationRegisters()
 //Following order for the BASS dlls is REALLY important, NEVER touch it or BASS will FAIL to load.
 const std::wstring bassDLLs[] =
 {
-	L"bass.dll",
-	L"libatrac9.dll",
-	L"libcelt-0061.dll",
-	L"libcelt-0110.dll",
-	L"libg719_decode.dll",
-	L"libmpg123-0.dll",
-	L"libspeex-1.dll",
-	L"libvorbis.dll",
-	L"avutil-vgmstream-57.dll",
-	L"avcodec-vgmstream-59.dll",
-	L"avformat-vgmstream-59.dll",
-	L"jansson.dll",
-	L"swresample-vgmstream-4.dll",
-	L"bass_vgmstream.dll",
+	L"sadx-media-player.dll",
 };
 
 static void __cdecl InitAudio()
 {
-	// BASS stuff
-	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
+	// Check for Steam data
+	if (!Exists("system\\sa1.mpg"))
+		loaderSettings.EnableFFMPEG = true;
+	if (!Exists("system\\sounddata\\bgm"))
+		loaderSettings.EnableBassMusic = true;
+	if (!Exists("system\\sounddata\\se"))
+		loaderSettings.EnableBassSFX = true;
+	// Check settings and initialize
+	if (loaderSettings.EnableFFMPEG || loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX)
 	{
 		wstring bassFolder = extLibPath + L"BASS\\";
 
@@ -481,7 +475,12 @@ static void __cdecl InitAudio()
 		for (uint8_t i = 0; i < LengthOfArray(bassDLLs); i++)
 		{
 			wstring fullPath = bassFolder + bassDLLs[i];
-			bassDLL = LoadLibrary(fullPath.c_str());
+			bassDLL = LoadLibraryEx(fullPath.c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+			if (!bassDLL)
+			{
+				int err = GetLastError();
+				PrintDebug("Error loading DLL %d: %X (%d)\n", i, err, err);
+			}
 		}
 
 		if (bassDLL)
@@ -947,7 +946,16 @@ static void __cdecl InitMods()
 
 	InitAudio();
 	WriteJump(LoadSoundList, LoadSoundList_r);
-	Video_Init(loaderSettings);
+
+	if (!loaderSettings.DisableBorderImage)
+	{
+		if (!FileExists(borderimage))
+			borderimage = L"mods\\Border_Default.png";
+		SetBorderImage(borderimage);
+	}
+
+	Video_Init(loaderSettings, borderimage);
+
 	InitPatches();
 
 	texpack::init();
