@@ -3,7 +3,7 @@
 #include <d3d8.h>
 #include <chrono>
 #include <thread>
-#include "bass_vgmstream.h"
+#include "sadx-media-player.h"
 
 DataPointer(IDirect3DDevice8*, _st_d3d_device_, 0x03D128B0);
 DataPointer(IMediaControl*, g_pMC, 0x3C600F8);

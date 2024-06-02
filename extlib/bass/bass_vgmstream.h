@@ -33,14 +33,6 @@
 extern "C"
 {
 #endif
-	BASS_VGMSTREAM_API void ffPlayerPlay();
-	BASS_VGMSTREAM_API void ffPlayerPause();
-	BASS_VGMSTREAM_API bool ffPlayerFinished();
-	BASS_VGMSTREAM_API bool ffPlayerOpen(const char* path, bool sfd);
-	BASS_VGMSTREAM_API void ffPlayerClose();
-	BASS_VGMSTREAM_API bool ffPlayerGetFrameBuffer(unsigned char* pBuffer);
-	BASS_VGMSTREAM_API unsigned int ffPlayerWidth();
-	BASS_VGMSTREAM_API unsigned int ffPlayerHeight();
 	BASS_VGMSTREAM_API HSTREAM BASS_VGMSTREAM_StreamCreate(const char* file, DWORD flags);
 	BASS_VGMSTREAM_API HSTREAM BASS_VGMSTREAM_StreamCreateFromMemory(unsigned char* buf, int bufsize, const char* name, DWORD flags);
 	BASS_VGMSTREAM_API void* BASS_VGMSTREAM_InitVGMStreamFromMemory(void* data, int size, const char* name);
