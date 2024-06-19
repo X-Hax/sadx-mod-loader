@@ -64,6 +64,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->TextureFilter = json_graphics.value("EnableForcedTextureFilter", true);
 		loaderSettings->ScreenMode = json_graphics.value("ScreenMode", 0);
 		loaderSettings->ShowMouseInFullscreen = json_graphics.value("ShowMouseInFullscreen", false);
+		loaderSettings->DisableBorderImage = json_graphics.value("DisableBorderImage", false);
 
 		// Controller settings
 		json json_controller = json_config["Controller"];
