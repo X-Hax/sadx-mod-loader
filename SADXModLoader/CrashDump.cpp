@@ -23,7 +23,8 @@ static const unordered_map<intptr_t, string> crashes_addresses_map = {
 	{ 0x7B293A85, "DirectX error: You most likely reached a tex ID out of range."},
 	{ 0x40E380, "Font loading error: the game failed to load FONTDATA files.\nCheck game health in the Mod Manager and make sure the game has no missing files."},
 	{ 0x434614, "Camera error: the game failed to load a cam file for the stage."},
-	{ 0x787148, "Model error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."}
+	{ 0x787148, "Model error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."},
+	{ 0x644EB1, "Write file error: The game crashed trying to write a save file."}
 };
 
 struct addressRange
