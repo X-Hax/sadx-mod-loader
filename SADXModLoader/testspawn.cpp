@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 
+bool useTestSpawn = false;
 static bool testspawn_eventenabled = false;
 static bool testspawn_posenabled = false;
 static bool testspawn_charenabled = false;
@@ -1028,6 +1029,7 @@ void ProcessTestSpawn(const HelperFunctions& helperFunctions)
 
 void ApplyTestSpawn()
 {
+	useTestSpawn = testspawn_eventenabled || testspawn_levelenabled;
 	if (testspawn_eventenabled)
 	{
 		WriteJump(reinterpret_cast<void*>(0x0040C106), ForceEventMode_asm);

@@ -34,6 +34,12 @@
     <Filter Include="Header Files\Graphics">
       <UniqueIdentifier>{db19121e-ae36-4677-af6b-06a2a30c926f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Lib">
+      <UniqueIdentifier>{e0ac0f87-a8ef-49e9-abf1-68c4c14cfc77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Lib">
+      <UniqueIdentifier>{59d0e049-94c7-45ac-a196-1b24ad58b584}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TextureReplacement.cpp">
