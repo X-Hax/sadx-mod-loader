@@ -64,7 +64,7 @@ static const unordered_map<uint8_t, wstring> char_map
 {
 	{ 0, L"Sonic"},
 	{ 1, L"Eggman"},
-	{ 2, L"Tais"},
+	{ 2, L"Tails"},
 	{ 3, L"Knuckles"},
 	{ 4, L"Tikal"},
 	{ 5, L"Amy"},
