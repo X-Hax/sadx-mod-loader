@@ -205,7 +205,7 @@ static void SetErrorMessage(string& fullMsg, const string address, const string 
 	if (dllName.find("chrmodels") != std::string::npos)
 		fullMsg += "\nThis is a crash in the Mod Loader, if you are making a mod, there is a chance that you did something very wrong.";
 
-	fullMsg += "\nA crash dump and a mod list have been added to your game's CrashDumps folder.\n\nIf you want to report this crash, please include the dump (.dmp file) and the mod list (.json file) in your report.\n";
+	fullMsg += "\nA crash dump, a mod list and a text file have been added to your game's CrashDumps folder.\n\nIf you want to report this crash, please include the dump (.dmp file), the mod list (.json file) and the info (.txt file) in your report.\n";
 }
 
 //extra info
