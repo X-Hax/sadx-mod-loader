@@ -475,3 +475,9 @@ write8 0046618F 0xC8
 Author PkR
 Description Reverses the Y stick direction in first person mode. Useful with Better Input (SDL2). Not required with the Smooth Camera mod.
 Category Input
+
+Patch "Disable High Speed Music"
+writenop 00441DD8 5
+Author Hyper
+Description Disables the music that plays when acquiring the high speed power-up.
+Category Audio
