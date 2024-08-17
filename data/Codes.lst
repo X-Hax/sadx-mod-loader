@@ -481,3 +481,9 @@ writenop 00441DD8 5
 Author Hyper
 Description Disables the music that plays when acquiring the high speed power-up.
 Category Audio
+
+Patch "Disable Invincibility Music"
+write8 00441F67 0xC3
+Author Hyper
+Description Disables the music that plays when acquiring the invincibility power-up.
+Category Audio
