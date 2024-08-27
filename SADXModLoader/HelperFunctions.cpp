@@ -532,6 +532,8 @@ namespace ModListImpl
 
 	ModList::iterator find_by_dll(HMODULE handle)
 	{
+		if (handle == nullptr)
+			return nullptr;
 		for (auto& iter : modlist)
 			if (iter.DLLHandle == handle)
 				return &iter;
