@@ -891,21 +891,6 @@ static vector<char*> ProcessStringArrayINI_Internal(const wchar_t* filename, uin
 	return strs;
 }
 
-static char* ProcessSingleStringInternal(const wchar_t* filename, uint8_t language)
-{
-	ifstream fstr(filename);
-	vector<char*> strs;
-	string str;
-	if (fstr.good())
-	{
-		getline(fstr, str);
-		str = DecodeUTF8(UnescapeNewlines(str), language, 0);
-		fstr.close();
-		return strdup(str.c_str());
-	}
-	return NULL;
-}
-
 static void ProcessStringArrayINI(const IniGroup* group, const wstring& mod_dir)
 {
 	if (!group->hasKeyNonEmpty("filename") || !group->hasKeyNonEmpty("address"))
@@ -1797,6 +1782,8 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 
 	auto addr = (char*)group->getIntRadix("address", 16);
 
+	int length = group->getInt("length", 1);
+
 	if (addr == nullptr)
 	{
 		return;
@@ -1826,9 +1813,12 @@ static void ProcessSingleString(const IniGroup* group, const wstring& mod_dir)
 	swprintf(filename, LengthOfArray(filename), L"%s\\%s.txt",
 		pathbase.c_str(), language);
 
-	char* strs = ProcessSingleStringInternal(filename, langid);
+	vector<char*> strs = ProcessStringArrayINI_Internal(filename, langid, 0);
 
-	WriteData((char**)addr, strs);
+	for (int line = 0; line < length; line++)
+	{
+		WriteData((char**)(addr + 4 * line), strs[line]);
+	}
 }
 
 static void ProcessFixedStringArray(const IniGroup* group, const wstring& mod_dir)
