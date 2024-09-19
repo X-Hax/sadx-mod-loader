@@ -224,7 +224,7 @@ inline void setup_vsync()
 
 	if (vsync)
 	{
-		p.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC;
+		p.SwapEffect = d3d9 ? D3DSWAPEFFECT_DISCARD : D3DSWAPEFFECT_COPY_VSYNC;
 		p.FullScreen_PresentationInterval = (IsWindowed && !d3d9) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_ONE;
 	}
 	else
