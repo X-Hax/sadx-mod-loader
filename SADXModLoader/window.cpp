@@ -17,6 +17,7 @@
 #include "config.h"
 #include "UsercallFunctionHandler.h"
 #include "video.h"
+#include "DisableRoundedCorners.h"
 
 using std::deque;
 using std::ifstream;
@@ -690,6 +691,8 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			return;
 		}
 
+		DisableRoundedCorners(parentWindow);
+
 		// Game Render Window Setup
 		const auto& innerSize = innerSizes[windowMode];
 		WindowHandle = CreateWindowExA(
@@ -757,7 +760,6 @@ static void CreateSADXWindow_r(HINSTANCE hInstance, int nCmdShow)
 			MessageBox(nullptr, L"Failed to Create SADX Window, game won't work.", L"Failed to create SADX Window", MB_OK | MB_ICONERROR);
 			return;
 		}
-
 
 		if (!IsWindowed)
 		{
