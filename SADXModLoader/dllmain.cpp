@@ -522,7 +522,7 @@ static void __cdecl InitAudio()
 	}
 
 	// Allow HRTF 3D sound
-	if (loaderSettings.HRTFSound)
+	if (IsGamePatchEnabled("HRTFSound"))
 	{
 		WriteData<uint8_t>(reinterpret_cast<uint8_t*>(0x00402773), 0xEBu);
 	}
@@ -530,8 +530,8 @@ static void __cdecl InitAudio()
 
 void InitPatches()
 {
-	//Fix the game not saving camera setting properly 
-	if (loaderSettings.CCEF)
+	// Fix the game not saving camera setting properly 
+	if (IsGamePatchEnabled("KeepCamSettings"))
 	{
 		WriteData((int16_t*)0x438330, (int16_t)0x0D81);
 		WriteData((int16_t*)0x434870, (int16_t)0x0D81);
@@ -540,7 +540,7 @@ void InitPatches()
 	// Fixes N-sided polygons (Gamma's headlight) by using
 	// triangle strip vertex buffer initializers.
 
-	if (loaderSettings.E102PolyFix)
+	if (IsGamePatchEnabled("E102NGonFix"))
 	{
 		for (size_t i = 0; i < MeshSetInitFunctions.size(); ++i)
 		{
@@ -561,7 +561,7 @@ void InitPatches()
 		}
 	}
 
-	if (loaderSettings.PixelOffsetFix)
+	if (IsGamePatchEnabled("PixelOffSetFix"))
 	{
 		// Replaces half-pixel offset addition with subtraction
 		WriteData((uint8_t*)0x0077DE1E, (uint8_t)0x25); // njDrawQuadTextureEx
@@ -580,13 +580,13 @@ void InitPatches()
 		WriteData((uint8_t*)0x0078E90E, (uint8_t)0x25); // njDrawLine2D_Direct3D
 	}
 
-	if (loaderSettings.ChaoPanelFix)
+	if (IsGamePatchEnabled("ChaoPanelFix"))
 	{
 		// Chao stat panel screen dimensions fix
 		WriteData((float**)0x007377FE, (float*)&_nj_screen_.w);
 	}
 
-	if (loaderSettings.LightFix)
+	if (IsGamePatchEnabled("LightFix"))
 	{
 		// Fix light incorrectly being applied on LandTables
 		WriteCall(reinterpret_cast<void*>(0x0043A6D5), FixLandTableLightType);
@@ -598,14 +598,13 @@ void InitPatches()
 		WriteData<2>(reinterpret_cast<void*>(0x004088A6), 0x90i8);
 	}
 
-	if (loaderSettings.NodeLimit)
+	if (IsGamePatchEnabled("NodeLimit"))
 		IncreaseNodeLimit();
-
-	if (loaderSettings.ChunkSpecFix)
+	
+	if (IsGamePatchEnabled("ChunkSpecularFix"))
 		ChunkSpecularFix_Init();
 
-
-	if (loaderSettings.KillGbix)
+	if (IsGamePatchEnabled("KillGBIX"))
 		Init_NOGbixHack();
 }
 
@@ -933,7 +932,7 @@ static void __cdecl InitMods()
 	PatchWindow(loaderSettings); // override window creation function
 
 	// Other various settings.
-	if (loaderSettings.DisableCDCheck)
+	if (IsGamePatchEnabled("DisableCDCheck"))
 		WriteJump((void*)0x402621, (void*)0x402664);
 
 	if (loaderSettings.AutoMipmap)
@@ -993,17 +992,17 @@ static void __cdecl InitMods()
 		uiscale::fmv_fill = static_cast<uiscale::FillMode>(fmvFill);
 		uiscale::setup_fmv_scale();
 	}
-
-	// This is different from the rewrite portion of the polybuff namespace!
-	polybuff::init();
-
-	if (loaderSettings.PolyBuff)
+	
+	if (IsGamePatchEnabled("FixVertexColorRendering"))
+	{	
+		polybuff::init(); // This is different from the rewrite portion of the polybuff namespace!
 		polybuff::rewrite_init();
+	}
 
 	if (loaderSettings.DebugCrashLog)
 		initCrashDump();
 
-	if (loaderSettings.MaterialColorFix)
+	if (IsGamePatchEnabled("MaterialColorFix"))
 		MaterialColorFixes_Init();
 
 	//init interpol fix for helperfunctions
@@ -1012,7 +1011,7 @@ static void __cdecl InitMods()
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_jp\\wma");
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_us\\wma");
 
-	if (loaderSettings.Chaos2CrashFix)
+	if (IsGamePatchEnabled("Chaos2CrashFix"))
 		MinorPatches_Init();
 
 	// Map of files to replace.
@@ -1304,7 +1303,7 @@ static void __cdecl InitMods()
 	if (loaderSettings.InputMod)
 		SDL2_Init();
 
-	else if (loaderSettings.XInputFix)
+	else if (IsGamePatchEnabled("XInputFix"))
 		XInputFix_Init();
 
 	if (!errors.empty())
@@ -1478,6 +1477,9 @@ static void __cdecl InitMods()
 
 	RaiseEvents(modInitEndEvents);
 	PrintDebug("Finished loading mods\n");
+#ifdef DEBUG
+	ListPatches();
+#endif
 
 	// Check for patches.
 	ifstream patches_str("mods\\Patches.dat", ifstream::binary);
@@ -1579,10 +1581,10 @@ static void __cdecl InitMods()
 	ApplyTestSpawn();
 	GVR_Init();
 
-	if (loaderSettings.ExtendedSaveSupport)
+	if (IsGamePatchEnabled("ExtendedSaveSupport"))
 		ExtendedSaveSupport_Init();
 
-	if (loaderSettings.CrashGuard)
+	if (IsGamePatchEnabled("CrashGuard"))
 		CrashGuard_Init();
 
 	if (FileExists(L"sonic.ico"))
@@ -1597,7 +1599,7 @@ DataPointer(HMODULE, chrmodelshandle, 0x3AB9170);
 void EventGameLoopInit()
 {
 	RaiseEvents(modInitGameLoopEvents);
-	if (loaderSettings.CrashGuard)
+	if (IsGamePatchEnabled("CrashGuard"))
 		InitDefaultTexture();
 }
 

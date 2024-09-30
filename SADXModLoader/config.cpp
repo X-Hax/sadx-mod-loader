@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "json.hpp"
 #include "IniFile.hpp"
+#include "GamePatchesLegacy.h"
 
 using json = nlohmann::json;
 using std::string;
@@ -10,6 +11,7 @@ using std::unique_ptr;
 
 wstring currentProfilePath; // Used for crash dumps
 vector<std::string> ModList;
+vector<std::string> GamePatchList;
 
 void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 {	
@@ -76,26 +78,34 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->EnableBassSFX = json_sound.value("EnableBassSFX", true);
 		loaderSettings->SEVolume = json_sound.value("SEVolume", 100);
 
-		// Patches settings
-		json json_patches = json_config["Patches"];
-		loaderSettings->HRTFSound = json_patches.value("HRTFSound", false);
-		loaderSettings->CCEF = json_patches.value("KeepCamSettings", true);
-		loaderSettings->PolyBuff = json_patches.value("FixVertexColorRendering", true);
-		loaderSettings->MaterialColorFix = json_patches.value("MaterialColorFix", true);
-		loaderSettings->NodeLimit = json_patches.value("NodeLimit", true);
-		loaderSettings->FovFix = json_patches.value("FOVFix", true);
-		loaderSettings->SCFix = json_patches.value("SkyChaseResolutionFix", true);
-		loaderSettings->Chaos2CrashFix = json_patches.value("Chaos2CrashFix", true);
-		loaderSettings->ChunkSpecFix = json_patches.value("ChunkSpecularFix", true);
-		loaderSettings->E102PolyFix = json_patches.value("E102NGonFix", true);
-		loaderSettings->ChaoPanelFix = json_patches.value("ChaoPanelFix", true);
-		loaderSettings->PixelOffsetFix = json_patches.value("PixelOffSetFix", true);
-		loaderSettings->LightFix = json_patches.value("LightFix", true);
-		loaderSettings->KillGbix = json_patches.value("KillGBIX", false);
-		loaderSettings->DisableCDCheck = json_patches.value("DisableCDCheck", true);
-		loaderSettings->ExtendedSaveSupport = json_patches.value("ExtendedSaveSupport", true);
-		loaderSettings->CrashGuard = json_patches.value("CrashGuard", true);
-		loaderSettings->XInputFix = json_patches.value("XInputFix", false);
+		// Patches settings (for compatibility)
+		json json_oldpatches = json_config["Patches"];
+		loaderSettings->HRTFSound = json_oldpatches.value("HRTFSound", false);
+		loaderSettings->CCEF = json_oldpatches.value("KeepCamSettings", true);
+		loaderSettings->PolyBuff = json_oldpatches.value("FixVertexColorRendering", true);
+		loaderSettings->MaterialColorFix = json_oldpatches.value("MaterialColorFix", true);
+		loaderSettings->NodeLimit = json_oldpatches.value("NodeLimit", true);
+		loaderSettings->FovFix = json_oldpatches.value("FOVFix", true);
+		loaderSettings->SCFix = json_oldpatches.value("SkyChaseResolutionFix", true);
+		loaderSettings->Chaos2CrashFix = json_oldpatches.value("Chaos2CrashFix", true);
+		loaderSettings->ChunkSpecFix = json_oldpatches.value("ChunkSpecularFix", true);
+		loaderSettings->E102PolyFix = json_oldpatches.value("E102NGonFix", true);
+		loaderSettings->ChaoPanelFix = json_oldpatches.value("ChaoPanelFix", true);
+		loaderSettings->PixelOffsetFix = json_oldpatches.value("PixelOffSetFix", true);
+		loaderSettings->LightFix = json_oldpatches.value("LightFix", true);
+		loaderSettings->KillGbix = json_oldpatches.value("KillGBIX", false);
+		loaderSettings->DisableCDCheck = json_oldpatches.value("DisableCDCheck", true);
+		loaderSettings->ExtendedSaveSupport = json_oldpatches.value("ExtendedSaveSupport", true);
+		loaderSettings->CrashGuard = json_oldpatches.value("CrashGuard", true);
+		loaderSettings->XInputFix = json_oldpatches.value("XInputFix", false);
+		// Add old patches to the new system
+		for (int p = 0; p < LengthOfArray(LegacyGamePatchList); p++)
+		{
+			if (json_oldpatches.value(LegacyGamePatchList[p].PatchName, LegacyGamePatchList[p].DefaultValue))
+			{
+				GamePatchList.push_back(LegacyGamePatchList[p].PatchName);
+			}
+		}
 
 		// Debug settings
 		json json_debug = json_config["DebugSettings"];
@@ -115,6 +125,15 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		{
 			std::string mod_fname = json_mods.at(i - 1);
 			ModList.push_back(mod_fname);
+		}
+		// Game Patches (current system)
+		json json_patches = json_config["EnabledPatches"];
+		for (unsigned int i = 1; i <= json_patches.size(); i++)
+		{
+			std::string patch_name = json_patches.at(i - 1);
+			// Check if it isn't on the list already (legacy patches can be there)
+			if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
+				GamePatchList.push_back(patch_name);
 		}
 	}
 	// If the profiles path doesn't exist, assume old SADX Mod Manager
@@ -199,4 +218,18 @@ std::string GetModName(int index)
 unsigned int GetModCount()
 {
 	return ModList.size();
+}
+
+bool IsGamePatchEnabled(const char* patchName)
+{
+	return (std::find(std::begin(GamePatchList), std::end(GamePatchList), patchName) != std::end(GamePatchList));
+}
+
+void ListPatches()
+{
+	PrintDebug("Enabling %d game patches:\n", GamePatchList.size());
+	for (std::string s : GamePatchList)
+	{
+		PrintDebug("Enabled game patch: %s\n", s.c_str());
+	}
 }
