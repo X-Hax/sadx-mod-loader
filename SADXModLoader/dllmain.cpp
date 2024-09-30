@@ -446,25 +446,6 @@ void ProcessVoiceDurationRegisters()
 	_JPVoiceDurationList.clear();
 }
 
-//Following order for the BASS dlls is REALLY important, NEVER touch it or BASS will FAIL to load.
-const std::wstring bassDLLs[] =
-{
-	L"bass.dll",
-	L"libatrac9.dll",
-	L"libcelt-0061.dll",
-	L"libcelt-0110.dll",
-	L"libg719_decode.dll",
-	L"libmpg123-0.dll",
-	L"libspeex-1.dll",
-	L"libvorbis.dll",
-	L"avutil-vgmstream-57.dll",
-	L"avcodec-vgmstream-59.dll",
-	L"avformat-vgmstream-59.dll",
-	L"jansson.dll",
-	L"swresample-vgmstream-4.dll",
-	L"bass_vgmstream.dll",
-};
-
 static void __cdecl InitAudio()
 {
 	// BASS stuff
@@ -476,21 +457,18 @@ static void __cdecl InitAudio()
 		if (!FileExists(bassFolder + L"bass.dll"))
 			bassFolder = L"";
 
-		bool bassDLL = false;
+		bool bassDLL = false; // Handle of the DLL
+		wstring fullPath = bassFolder + L"bass_vgmstream.dll"; // Path to the DLL
 
-		for (uint8_t i = 0; i < LengthOfArray(bassDLLs); i++)
-		{
-			wstring fullPath = bassFolder + bassDLLs[i];
-			bassDLL = LoadLibrary(fullPath.c_str());
-		}
+		// Attempt to load the DLL
+		bassDLL = LoadLibraryEx(fullPath.c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 
 		if (bassDLL)
-		{
 			PrintDebug("Loaded Bass DLLs dependencies\n");
-		}
 		else
 		{
-			PrintDebug("Failed to load bass DLL dependencies\n");
+			int err = GetLastError();
+			PrintDebug("Error loading BASS DLL %X (%d)\n", err, err);
 			MessageBox(nullptr, L"Error loading BASS.\n\n"
 				L"Make sure the Mod Loader is installed properly.",
 				L"BASS Load Error", MB_OK | MB_ICONERROR);
