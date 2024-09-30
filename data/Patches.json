@@ -100,7 +100,7 @@
       "Name": "LightFix",
       "Author": "Exant, Kell & SF94",
       "Category": "Graphics",
-      "InternalName": "Ligthing Fixes",
+      "InternalName": "Lighting Fixes",
       "Description": "Fixes incorrect light selection on levels and enables light type preservation for queued models.",
       "IsChecked": true
     },
