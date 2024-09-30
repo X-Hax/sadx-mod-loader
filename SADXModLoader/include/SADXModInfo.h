@@ -13,6 +13,8 @@
 
  // SADX Mod Loader API version.
 static const int ModLoaderVer = 25;
+
+// Patch-type codes
 struct PatchInfo
 {
 	void* address;
@@ -79,7 +81,7 @@ struct LoaderSettings
 	int TestSpawnGameMode;
 	int TestSpawnSaveID;
 	bool InputMod;
-	// Patches (legacy)
+	// Game Patches (legacy)
 	bool HRTFSound;
 	bool CCEF;
 	bool PolyBuff;

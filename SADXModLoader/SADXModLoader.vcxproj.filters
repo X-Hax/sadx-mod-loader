@@ -19,12 +19,6 @@
     <Filter Include="Header Files\SDL2">
       <UniqueIdentifier>{16ccb489-5023-47b3-8e4a-7c740d8f7955}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Patches">
-      <UniqueIdentifier>{9cb91469-fad5-4eb6-a949-93059959cfc8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Patches">
-      <UniqueIdentifier>{6be6c797-e431-4669-8a7b-ee67941bc747}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\SDL2">
       <UniqueIdentifier>{c9388e64-e438-4cd8-a1a3-03e66706349d}</UniqueIdentifier>
     </Filter>
@@ -39,6 +33,12 @@
     </Filter>
     <Filter Include="Header Files\Lib">
       <UniqueIdentifier>{59d0e049-94c7-45ac-a196-1b24ad58b584}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GamePatches">
+      <UniqueIdentifier>{9cb91469-fad5-4eb6-a949-93059959cfc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GamePatches">
+      <UniqueIdentifier>{6be6c797-e431-4669-8a7b-ee67941bc747}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -63,9 +63,6 @@
     <ClCompile Include="FileReplacement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AutoMipmap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="pvmx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -73,9 +70,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="EXEData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="direct3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="prs.cpp">
@@ -99,38 +93,29 @@
     <ClCompile Include="BasicWeights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bgscale.cpp">
-      <Filter>Source Files\Patches</Filter>
-    </ClCompile>
     <ClCompile Include="ChunkSpecularFix.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="FixFOV.cpp">
-      <Filter>Source Files\Patches</Filter>
-    </ClCompile>
-    <ClCompile Include="hudscale.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="InterpolationFixes.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="MaterialColorFixes.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="polybuff.cpp">
-      <Filter>Source Files\Patches</Filter>
-    </ClCompile>
-    <ClCompile Include="uiscale.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="Gbix.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="SkyChaseFixes.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
-    <ClCompile Include="MinorPatches.cpp">
-      <Filter>Source Files\Patches</Filter>
+    <ClCompile Include="MinorGamePatches.cpp">
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="DreamPad.cpp">
       <Filter>Source Files\SDL2</Filter>
@@ -151,10 +136,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ExtendedSaveSupport.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="NodeLimit.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="config.cpp">
       <Filter>Source Files</Filter>
@@ -163,19 +148,34 @@
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="CrashGuard.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
     </ClCompile>
     <ClCompile Include="video.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="XInputFix.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files\GamePatches</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoMipmap.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="direct3d.cpp">
+      <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="dpi.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bgscale.cpp">
+      <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="DisableRoundedCorners.cpp">
-      <Filter>Source Files\Patches</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hudscale.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="uiscale.cpp">
+      <Filter>Source Files\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -183,9 +183,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TextureReplacement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FileMap.hpp">
@@ -204,9 +201,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FileReplacement.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AutoMipmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="version.h">
@@ -243,9 +237,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EXEData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="direct3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="prs.h">
@@ -323,47 +314,38 @@
     <ClInclude Include="typedefs.h">
       <Filter>Header Files\SDL2</Filter>
     </ClInclude>
-    <ClInclude Include="bgscale.h">
-      <Filter>Header Files\Patches</Filter>
-    </ClInclude>
     <ClInclude Include="ChunkSpecularFix.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="FixFOV.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="Gbix.h">
-      <Filter>Header Files\Patches</Filter>
-    </ClInclude>
-    <ClInclude Include="hudscale.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="InterpolationFixes.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="MaterialColorFixes.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="polybuff.h">
-      <Filter>Header Files\Patches</Filter>
-    </ClInclude>
-    <ClInclude Include="uiscale.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="SkyChaseFixes.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
-    <ClInclude Include="MinorPatches.h">
-      <Filter>Header Files\Patches</Filter>
+    <ClInclude Include="MinorGamePatches.h">
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="gvm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExtendedSaveSupport.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="NodeLimit.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="json.hpp">
       <Filter>Header Files</Filter>
@@ -375,22 +357,37 @@
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="CrashGuard.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="video.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="XInputFix.h">
-      <Filter>Header Files\Patches</Filter>
-    </ClInclude>
-    <ClInclude Include="dpi.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
     <ClInclude Include="DisableRoundedCorners.h">
-      <Filter>Header Files\Patches</Filter>
+      <Filter>Header Files\GamePatches</Filter>
     </ClInclude>
-    <ClInclude Include="GamePatchesLegacy.h">
+    <ClInclude Include="dpi.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AutoMipmap.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="bgscale.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="direct3d.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="hudscale.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureReplacement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uiscale.h">
+      <Filter>Header Files\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

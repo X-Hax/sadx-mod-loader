@@ -57,7 +57,7 @@ using json = nlohmann::json;
 #include "MaterialColorFixes.h"
 #include "sound.h"
 #include "InterpolationFixes.h"
-#include "MinorPatches.h"
+#include "MinorGamePatches.h"
 #include "jvList.h"
 #include "Gbix.h"
 #include "input.h"
@@ -506,7 +506,7 @@ static void __cdecl InitAudio()
 	}
 }
 
-void InitPatches()
+void InitGamePatches()
 {
 	// Fix the game not saving camera setting properly 
 	if (IsGamePatchEnabled("KeepCamSettings"))
@@ -924,7 +924,7 @@ static void __cdecl InitMods()
 
 	InitAudio();
 	WriteJump(LoadSoundList, LoadSoundList_r);
-	InitPatches();
+	InitGamePatches();
 
 	texpack::init();
 
@@ -990,7 +990,7 @@ static void __cdecl InitMods()
 	sadx_fileMap.scanSoundFolder("system\\sounddata\\voice_us\\wma");
 
 	if (IsGamePatchEnabled("Chaos2CrashFix"))
-		MinorPatches_Init();
+		MinorGamePatches_Init();
 
 	// Map of files to replace.
 	// This is done with a second map instead of sadx_fileMap directly
@@ -1456,10 +1456,10 @@ static void __cdecl InitMods()
 	RaiseEvents(modInitEndEvents);
 	PrintDebug("Finished loading mods\n");
 #ifdef _DEBUG
-	ListPatches();
+	ListGamePatches();
 #endif
 
-	// Check for patches.
+	// Check for patch-type codes.
 	ifstream patches_str("mods\\Patches.dat", ifstream::binary);
 	if (patches_str.is_open())
 	{
@@ -1471,21 +1471,21 @@ static void __cdecl InitMods()
 		{
 			int codecount_header;
 			patches_str.read((char*)&codecount_header, sizeof(codecount_header));
-			PrintDebug("Loading %d patches...\n", codecount_header);
+			PrintDebug("Loading %d patch-type codes...\n", codecount_header);
 			patches_str.seekg(0);
 			int codecount = patchParser.readCodes(patches_str);
 			if (codecount >= 0)
 			{
-				PrintDebug("Loaded %d patches.\n", codecount);
+				PrintDebug("Loaded %d patch-type codes.\n", codecount);
 				patchParser.processCodeList();
 			}
 			else
 			{
-				PrintDebug("ERROR loading patches: ");
+				PrintDebug("ERROR loading patch-type codes: ");
 				switch (codecount)
 				{
 				case -EINVAL:
-					PrintDebug("Patch file is not in the correct format.\n");
+					PrintDebug("Patch-type code file is not in the correct format.\n");
 					break;
 				default:
 					PrintDebug("%s\n", strerror(-codecount));
@@ -1495,7 +1495,7 @@ static void __cdecl InitMods()
 		}
 		else
 		{
-			PrintDebug("Patch file is not in the correct format.\n");
+			PrintDebug("Patch-type code file is not in the correct format.\n");
 		}
 		patches_str.close();
 	}

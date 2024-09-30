@@ -23,7 +23,7 @@ void LoadDelayedSoundBGM_r(int index)
 	Load_DelayedSound_BGM(index);
 }
 
-void MinorPatches_Init()
+void MinorGamePatches_Init()
 {
 	WriteData<1>((char*)0x006ED184, 0x03u); // Fix effect_cons (Big intro, Knuckles outro) texture ID going out of range
 	SetLocalPathCamera_t.Hook(SetLocalPathCamera_r);

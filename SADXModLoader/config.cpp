@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "json.hpp"
 #include "IniFile.hpp"
-#include "GamePatchesLegacy.h"
 
 using json = nlohmann::json;
 using std::string;
@@ -12,6 +11,29 @@ using std::unique_ptr;
 wstring currentProfilePath; // Used for crash dumps
 vector<std::string> ModList;
 vector<std::string> GamePatchList;
+
+// List of game patches that may be using the old system
+std::string LegacyGamePatchList[] =
+{
+	"HRTFSound",
+	"KeepCamSettings",
+	"FixVertexColorRendering",
+	"MaterialColorFix",
+	"NodeLimit",
+	"FOVFix",
+	"SkyChaseResolutionFix",
+	"Chaos2CrashFix",
+	"ChunkSpecularFix",
+	"E102NGonFix",
+	"ChaoPanelFix",
+	"PixelOffSetFix",
+	"LightFix",
+	"KillGBIX",
+	"DisableCDCheck",
+	"ExtendedSaveSupport",
+	"CrashGuard",
+	"XInputFix",
+};
 
 void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 {	
@@ -78,7 +100,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->EnableBassSFX = json_sound.value("EnableBassSFX", true);
 		loaderSettings->SEVolume = json_sound.value("SEVolume", 100);
 
-		// Patches settings (for compatibility)
+		// Game Patches settings (for compatibility)
 		json json_oldpatches = json_config["Patches"];
 		loaderSettings->HRTFSound = json_oldpatches.value("HRTFSound", false);
 		loaderSettings->CCEF = json_oldpatches.value("KeepCamSettings", true);
@@ -98,12 +120,12 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->ExtendedSaveSupport = json_oldpatches.value("ExtendedSaveSupport", true);
 		loaderSettings->CrashGuard = json_oldpatches.value("CrashGuard", true);
 		loaderSettings->XInputFix = json_oldpatches.value("XInputFix", false);
-		// Add old patches to the new system
+		// Add old game patches to the new system
 		for (int p = 0; p < LengthOfArray(LegacyGamePatchList); p++)
 		{
-			if (json_oldpatches.value(LegacyGamePatchList[p].PatchName, LegacyGamePatchList[p].DefaultValue))
+			if (json_oldpatches.value(LegacyGamePatchList[p], false)) // Old game patches are stored in the json regardless of whether they are enabled or not
 			{
-				GamePatchList.push_back(LegacyGamePatchList[p].PatchName);
+				GamePatchList.push_back(LegacyGamePatchList[p]);
 			}
 		}
 
@@ -127,7 +149,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 			ModList.push_back(mod_fname);
 		}
 		// Game Patches (current system)
-		json json_patches = json_config["EnabledPatches"];
+		json json_patches = json_config["EnabledGamePatches"];
 		for (unsigned int i = 1; i <= json_patches.size(); i++)
 		{
 			std::string patch_name = json_patches.at(i - 1);
@@ -136,7 +158,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 				GamePatchList.push_back(patch_name);
 		}
 	}
-	// If the profiles path doesn't exist, assume old SADX Mod Manager
+	// If the profiles path doesn't exist, assume old SADX Mod Manager (to be removed soon)
 	else
 	{
 		FILE* f_ini = _wfopen(L"mods\\SADXModLoader.ini", L"r");
@@ -179,7 +201,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->EnableBassSFX = setgrp->getBool("EnableBassSFX", false);
 		loaderSettings->SEVolume = setgrp->getInt("SEVolume", 100);
 
-		//Patches
+		// Game Patches (this broke with the new system but it's on the way out anyway)
 		loaderSettings->HRTFSound = setgrp->getBool("HRTFSound", true);
 		loaderSettings->CCEF = setgrp->getBool("CCEF", true);
 		loaderSettings->PolyBuff = setgrp->getBool("PolyBuff", true);
@@ -225,7 +247,7 @@ bool IsGamePatchEnabled(const char* patchName)
 	return (std::find(std::begin(GamePatchList), std::end(GamePatchList), patchName) != std::end(GamePatchList));
 }
 
-void ListPatches()
+void ListGamePatches()
 {
 	PrintDebug("Enabling %d game patches:\n", GamePatchList.size());
 	for (std::string s : GamePatchList)
