@@ -1455,7 +1455,7 @@ static void __cdecl InitMods()
 
 	RaiseEvents(modInitEndEvents);
 	PrintDebug("Finished loading mods\n");
-#ifdef DEBUG
+#ifdef _DEBUG
 	ListPatches();
 #endif
 
