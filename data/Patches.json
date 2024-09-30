@@ -5,126 +5,144 @@
       "Author": "SF94",
       "Category": "Audio",
       "InternalName": "Enable HRTF Sound",
-      "Description": "Sets DirectSound to use more advanced algorithms to process 3D sounds. This patch is unnecessary when BASS for SFX is enabled."
+      "Description": "Sets DirectSound to use more advanced algorithms to process 3D sounds. This patch is unnecessary when BASS for SFX is enabled.",
+      "IsChecked": true
     },
     {
       "Name": "KeepCamSettings",
       "Author": "VeritasDL & SF94",
       "Category": "Gameplay",
       "InternalName": "Keep Camera Mode",
-      "Description": "Fixes a vanilla bug that prevents Free Cam Settings from being saved properly when dying or loading a zone/act."
+      "Description": "Fixes a vanilla bug that prevents Free Cam Settings from being saved properly when dying or loading a zone/act.",
+      "IsChecked": true
     },
     {
       "Name": "FixVertexColorRendering",
       "Author": "SF94",
       "Category": "Graphics",
       "InternalName": "Object Vertex Color Fix",
-      "Description": "Vanilla SADX ignores built-in object vertex colors and uses the material color instead. This patch reimplements functions to process vertex colors correctly."
+      "Description": "Vanilla SADX ignores built-in object vertex colors and uses the material color instead. This patch reimplements functions to process vertex colors correctly.",
+      "IsChecked": true
     },
     {
       "Name": "MaterialColorFix",
       "Author": "PkR",
       "Category": "Graphics",
       "InternalName": "Material Color Fix",
-      "Description": "This loops through all models in the game and replaces their material colors with white. This fixes various inconsistencies and makes the models look more like they do in the Gamecube and Dreamcast versions of the game."
+      "Description": "This loops through all models in the game and replaces their material colors with white. This fixes various inconsistencies and makes the models look more like they do in the Gamecube and Dreamcast versions of the game.",
+      "IsChecked": true
     },
     {
       "Name": "NodeLimit",
       "Author": "Sora",
       "Category": "Miscellaneous",
       "InternalName": "Remove Node Limit",
-      "Description": "SADX originally has a limit of 111 nodes per object for models and animations. This patch increases the limit to 255, enabling the integration of more modern and complex models into the game."
+      "Description": "SADX originally has a limit of 111 nodes per object for models and animations. This patch increases the limit to 255, enabling the integration of more modern and complex models into the game.",
+      "IsChecked": true
     },
     {
       "Name": "FOVFix",
       "Author": "SF94",
       "Category": "Graphics",
       "InternalName": "Camera FOV Fix",
-      "Description": "Improves the field of view and allows for vertical/portrait resolutions/dimensions."
+      "Description": "Improves the field of view and allows for vertical/portrait resolutions/dimensions.",
+      "IsChecked": true
     },
     {
       "Name": "SkyChaseResolutionFix",
       "Author": "PkR & SF94",
       "Category": "Gameplay",
       "InternalName": "Sky Chase Gameplay Fix",
-      "Description": "Makes Sky Chase work the same way at all screen resolutions. This fixes Tornado and reticle movement, as well as enemy fire rate. Obtaining score for emblems at resolutions higher than 640x480 is easier with this patch than in the vanilla game."
+      "Description": "Makes Sky Chase work the same way at all screen resolutions. This fixes Tornado and reticle movement, as well as enemy fire rate. Obtaining score for emblems at resolutions higher than 640x480 is easier with this patch than in the vanilla game.",
+      "IsChecked": true
     },
     {
       "Name": "Chaos2CrashFix",
       "Author": "Sora",
       "Category": "Gameplay",
       "InternalName": "Chaos 2 Crash Fix",
-      "Description": "Fixes a vanilla bug where beating Chaos 2 and restarting the boss was crashing the game."
+      "Description": "Fixes a vanilla bug where beating Chaos 2 and restarting the boss was crashing the game.",
+      "IsChecked": true
     },
     {
       "Name": "ChunkSpecularFix",
       "Author": "Exant",
       "Category": "Graphics",
       "InternalName": "Chunk Specular Color Fix",
-      "Description": "Fixes Specular Color property on Chunk Models."
+      "Description": "Fixes Specular Color property on Chunk Models.",
+      "IsChecked":  true
     },
     {
       "Name": "E102NGonFix",
       "Author": "SF94",
       "Category": "Graphics",
       "InternalName": "E-102 Polygon Fix",
-      "Description": "Fixes N-sided polygons (Gamma's headlight) by using a triangle strip vertex buffer."
+      "Description": "Fixes N-sided polygons (Gamma's headlight) by using a triangle strip vertex buffer.",
+      "IsChecked": true
     },
     {
       "Name": "ChaoPanelFix",
       "Author": "Kell",
       "Category": "Graphics",
       "InternalName": "Chao Stat Panel Fix",
-      "Description": "Fixes the UI Panel for Chao Stats to display properly."
+      "Description": "Fixes the UI Panel for Chao Stats to display properly.",
+      "IsChecked": true
     },
     {
       "Name": "PixelOffSetFix",
       "Author": "SF94",
       "Category": "Graphics",
       "InternalName": "Screen Fade Offset Fix",
-      "Description": "Fixes subpixel misplacement of most 2D elements that can be noticed at higher resolutions."
+      "Description": "Fixes subpixel misplacement of most 2D elements that can be noticed at higher resolutions.",
+      "IsChecked": true
     },
     {
       "Name": "LightFix",
       "Author": "Exant, Kell & SF94",
       "Category": "Graphics",
       "InternalName": "Ligthing Fixes",
-      "Description": "Fixes incorrect light selection on levels and enables light type preservation for queued models."
+      "Description": "Fixes incorrect light selection on levels and enables light type preservation for queued models.",
+      "IsChecked": true
     },
     {
       "Name": "KillGBIX",
       "Author": "Sora",
       "Category": "Graphics",
       "InternalName": "GBIX Patch",
-      "Description": "This patch currently does nothing."
+      "Description": "This patch currently does nothing.",
+      "IsChecked": false
     },
     {
       "Name": "DisableCDCheck",
       "Author": "MainMemory",
       "Category": "System",
       "InternalName": "Disable CD Check",
-      "Description": "Disables the game's CD check."
+      "Description": "Disables the game's CD check.",
+      "IsChecked": true
     },
     {
       "Name": "ExtendedSaveSupport",
       "Author": "PkR",
       "Category": "System",
       "InternalName": "Extended Save Support",
-      "Description": "Enables support for saved games from the Steam version and allows custom save names up to 48 characters."
+      "Description": "Enables support for saved games from the Steam version and allows custom save names up to 48 characters.",
+      "IsChecked": true
     },
     {
       "Name": "CrashGuard",
       "Author": "PkR",
       "Category": "System",
       "InternalName": "Crash Guard",
-      "Description": "Prevents common crashes with missing textures and missing binary files. This will not prevent the game from crashing in all circumstances."
+      "Description": "Prevents common crashes with missing textures and missing binary files. This will not prevent the game from crashing in all circumstances.",
+      "IsChecked": true
     },
     {
       "Name": "XInputFix",
       "Author": "PkR",
       "Category": "Input",
       "InternalName": "XInput Fix",
-      "Description": "Fixes spinning camera with XInput controllers when Vanilla Input is used. This patch is unnecessary with SDL Input."
+      "Description": "Fixes spinning camera with XInput controllers when Vanilla Input is used. This patch is unnecessary with SDL Input.",
+      "IsChecked": false
     }
   ]
 }
