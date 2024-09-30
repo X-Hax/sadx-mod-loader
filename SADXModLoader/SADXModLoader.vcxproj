@@ -78,6 +78,7 @@
     <ClInclude Include="FileMap.hpp" />
     <ClInclude Include="FileReplacement.h" />
     <ClInclude Include="FixFOV.h" />
+    <ClInclude Include="GamePatchesLegacy.h" />
     <ClInclude Include="Gbix.h" />
     <ClInclude Include="gvm.h" />
     <ClInclude Include="include\AudioFile.h" />

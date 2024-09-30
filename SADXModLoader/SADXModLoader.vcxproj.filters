@@ -389,6 +389,9 @@
     <ClInclude Include="DisableRoundedCorners.h">
       <Filter>Header Files\Patches</Filter>
     </ClInclude>
+    <ClInclude Include="GamePatchesLegacy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SADXModLoader.rc">
