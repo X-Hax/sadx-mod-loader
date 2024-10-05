@@ -222,9 +222,11 @@ inline void setup_vsync()
 
 	bool d3d9 = GetModuleHandle(L"d3d9.dll") != nullptr;
 
-	if (vsync)
+	if (vsync) 
 	{
-		p.SwapEffect = d3d9 ? D3DSWAPEFFECT_DISCARD : D3DSWAPEFFECT_COPY_VSYNC;
+		//using D3DSWAPEFFECT_DISCARD here causes stuttering, consider adding a toggle if you really want it. 
+		//p.SwapEffect = d3d9 ? D3DSWAPEFFECT_DISCARD : D3DSWAPEFFECT_COPY_VSYNC;
+		p.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC;
 		p.FullScreen_PresentationInterval = (IsWindowed && !d3d9) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_ONE;
 	}
 	else
