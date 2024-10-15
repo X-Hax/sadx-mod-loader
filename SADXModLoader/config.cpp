@@ -101,34 +101,36 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->SEVolume = json_sound.value("SEVolume", 100);
 
 		// Game Patches settings (for compatibility)
-		json json_oldpatches = json_config["Patches"];
-		loaderSettings->HRTFSound = json_oldpatches.value("HRTFSound", false);
-		loaderSettings->CCEF = json_oldpatches.value("KeepCamSettings", true);
-		loaderSettings->PolyBuff = json_oldpatches.value("FixVertexColorRendering", true);
-		loaderSettings->MaterialColorFix = json_oldpatches.value("MaterialColorFix", true);
-		loaderSettings->NodeLimit = json_oldpatches.value("NodeLimit", true);
-		loaderSettings->FovFix = json_oldpatches.value("FOVFix", true);
-		loaderSettings->SCFix = json_oldpatches.value("SkyChaseResolutionFix", true);
-		loaderSettings->Chaos2CrashFix = json_oldpatches.value("Chaos2CrashFix", true);
-		loaderSettings->ChunkSpecFix = json_oldpatches.value("ChunkSpecularFix", true);
-		loaderSettings->E102PolyFix = json_oldpatches.value("E102NGonFix", true);
-		loaderSettings->ChaoPanelFix = json_oldpatches.value("ChaoPanelFix", true);
-		loaderSettings->PixelOffsetFix = json_oldpatches.value("PixelOffSetFix", true);
-		loaderSettings->LightFix = json_oldpatches.value("LightFix", true);
-		loaderSettings->KillGbix = json_oldpatches.value("KillGBIX", false);
-		loaderSettings->DisableCDCheck = json_oldpatches.value("DisableCDCheck", true);
-		loaderSettings->ExtendedSaveSupport = json_oldpatches.value("ExtendedSaveSupport", true);
-		loaderSettings->CrashGuard = json_oldpatches.value("CrashGuard", true);
-		loaderSettings->XInputFix = json_oldpatches.value("XInputFix", false);
-		// Add old game patches to the new system
-		for (int p = 0; p < LengthOfArray(LegacyGamePatchList); p++)
+		if (json_config.contains("Patches"))
 		{
-			if (json_oldpatches.value(LegacyGamePatchList[p], false)) // Old game patches are stored in the json regardless of whether they are enabled or not
+			json json_oldpatches = json_config["Patches"];
+			loaderSettings->HRTFSound = json_oldpatches.value("HRTFSound", false);
+			loaderSettings->CCEF = json_oldpatches.value("KeepCamSettings", true);
+			loaderSettings->PolyBuff = json_oldpatches.value("FixVertexColorRendering", true);
+			loaderSettings->MaterialColorFix = json_oldpatches.value("MaterialColorFix", true);
+			loaderSettings->NodeLimit = json_oldpatches.value("NodeLimit", true);
+			loaderSettings->FovFix = json_oldpatches.value("FOVFix", true);
+			loaderSettings->SCFix = json_oldpatches.value("SkyChaseResolutionFix", true);
+			loaderSettings->Chaos2CrashFix = json_oldpatches.value("Chaos2CrashFix", true);
+			loaderSettings->ChunkSpecFix = json_oldpatches.value("ChunkSpecularFix", true);
+			loaderSettings->E102PolyFix = json_oldpatches.value("E102NGonFix", true);
+			loaderSettings->ChaoPanelFix = json_oldpatches.value("ChaoPanelFix", true);
+			loaderSettings->PixelOffsetFix = json_oldpatches.value("PixelOffSetFix", true);
+			loaderSettings->LightFix = json_oldpatches.value("LightFix", true);
+			loaderSettings->KillGbix = json_oldpatches.value("KillGBIX", false);
+			loaderSettings->DisableCDCheck = json_oldpatches.value("DisableCDCheck", true);
+			loaderSettings->ExtendedSaveSupport = json_oldpatches.value("ExtendedSaveSupport", true);
+			loaderSettings->CrashGuard = json_oldpatches.value("CrashGuard", true);
+			loaderSettings->XInputFix = json_oldpatches.value("XInputFix", false);
+			// Add old game patches to the new system
+			for (int p = 0; p < LengthOfArray(LegacyGamePatchList); p++)
 			{
-				GamePatchList.push_back(LegacyGamePatchList[p]);
+				if (json_oldpatches.value(LegacyGamePatchList[p], false)) // Old game patches are stored in the json regardless of whether they are enabled or not
+				{
+					GamePatchList.push_back(LegacyGamePatchList[p]);
+				}
 			}
 		}
-
 		// Debug settings
 		json json_debug = json_config["DebugSettings"];
 		loaderSettings->DebugConsole = json_debug.value("EnableDebugConsole", false);
