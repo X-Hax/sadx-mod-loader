@@ -435,6 +435,7 @@ HANDLE __stdcall ChaoCreateFileHook(LPCSTR lpFileName, DWORD dwDesiredAccess, DW
 {
 	if (SteamSave && SteamDataPresent)
 		_wchdir(WorkingDirSteam);
+	CreateDirectoryA(chaosavepath, 0);
 	HANDLE result = CreateFileA(ChaoSavePath, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	_wchdir(WorkingDir2004);
 	return result;
