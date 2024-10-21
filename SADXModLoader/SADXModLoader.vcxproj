@@ -240,7 +240,8 @@
       <Command>"C:\Program Files\Git\bin\bash.exe" ../git_version.sh &gt;git_version.h</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy /b /y "$(SolutionDir)bin\SADXModLoader.dll" "$(SolutionDir)extlib\ModLoaders\SADXModLoader.dll"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
