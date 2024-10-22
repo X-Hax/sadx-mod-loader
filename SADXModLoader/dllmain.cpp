@@ -454,7 +454,7 @@ static void __cdecl InitAudio()
 		wstring bassFolder = extLibPath + L"BASS\\";
 
 		// If the file doesn't exist, assume it's in the game folder like with the old Manager
-		if (!FileExists(bassFolder + L"bass.dll"))
+		if (!FileExists(bassFolder + L"bass_vgmstream.dll"))
 			bassFolder = L"";
 
 		bool bassDLL = false; // Handle of the DLL
