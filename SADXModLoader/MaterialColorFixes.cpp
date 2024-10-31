@@ -39,7 +39,7 @@ static void FixMaterialColorsDll(LPCWSTR dllname, const char* exportname, int ar
 	void** exp = (void**)GetProcAddress(GetModuleHandle(dllname), exportname);
 	if (exp == nullptr)
 	{
-		wsprintf(buf, L"Critical error: %s.DLL isn't loaded. Please reinstall the game and try again.", dllname);
+		wsprintf(buf, L"Critical error: data is missing in %s.DLL. Please reinstall the game and try again.", dllname);
 		MessageBoxW(nullptr, buf, L"SADX Mod Loader Error", MB_ICONERROR | MB_OK);
 		OnExit(0, 0, 0);
 		ExitProcess(1);

@@ -1593,6 +1593,12 @@ static void __cdecl LoadChrmodels()
 	}
 	SetDLLHandle(L"CHRMODELS", chrmodelshandle);
 	SetDLLHandle(L"CHRMODELS_orig", chrmodelshandle);
+	if (GetProcAddress(GetModuleHandle(L"CHRMODELS_orig"), "___SONIC_OBJECTS") == nullptr)
+	{
+		MessageBoxW(nullptr, L"Critical error: data is missing in CHRMODELS_orig.DLL. Please reinstall the game and try again.", L"SADX Mod Loader Error", MB_ICONERROR | MB_OK);
+		OnExit(0, 0, 0);
+		ExitProcess(1);
+	}
 	SetDLLHandle(L"CHAOSTGGARDEN02MR_DAYTIME", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_DAYTIME.DLL"));
 	SetDLLHandle(L"CHAOSTGGARDEN02MR_EVENING", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_EVENING.DLL"));
 	SetDLLHandle(L"CHAOSTGGARDEN02MR_NIGHT", LoadLibrary(L".\\system\\CHAOSTGGARDEN02MR_NIGHT.DLL"));
