@@ -329,7 +329,8 @@ static void CopyAndRename_SADXLoaderProfile(std::wstring crashDumpFolder, std::w
 
 	try 
 	{
-		std::filesystem::copy_file(sourcePath, destinationPath, std::filesystem::copy_options::overwrite_existing);
+		// Was: std::filesystem::copy_file(sourcePath, destinationPath, std::filesystem::copy_options::overwrite_existing);
+		CopyFile(sourcePath.c_str(), destinationPath.c_str(), false);
 		PrintDebug("CrashDump: Successfully copied and renamed SADX Profile.\n");
 	}
 	catch (const std::exception& e) {
@@ -374,7 +375,9 @@ LONG WINAPI HandleException(struct _EXCEPTION_POINTERS* apExceptionInfo)
 
 	wstring curCrashDumpFolder = L"CrashDump\\" + dateStr;
 
-	std::filesystem::create_directories(curCrashDumpFolder);
+	// Was: std::filesystem::create_directories(curCrashDumpFolder);
+	CreateDirectory(L"CrashDump", NULL);
+	CreateDirectory(curCrashDumpFolder.c_str(), NULL);
 
 	std::wstring chara = GetCharName();
 	std::wstring lvl = GetLevelName();
