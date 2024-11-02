@@ -89,6 +89,7 @@
     <ClInclude Include="LandTableInfo.h" />
     <ClInclude Include="ModelInfo.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
     <ClInclude Include="Trampoline.h" />
   </ItemGroup>
   <ItemGroup>

@@ -120,6 +120,7 @@
     <ClInclude Include="sound.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="ExtendedSaveSupport.h" />
+    <ClInclude Include="targetver.h" />
     <ClInclude Include="testspawn.h" />
     <ClInclude Include="CrashGuard.h" />
     <ClInclude Include="TextureReplacement.h" />
