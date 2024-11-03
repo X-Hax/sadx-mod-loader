@@ -1,0 +1,54 @@
+version: '{build}'
+pull_requests:
+  do_not_increment_build_number: true
+image: Visual Studio 2019
+configuration: Release
+platform: x86
+init:
+- cmd: >-
+    choco install wget --version 1.20
+
+    cd \
+
+    wget -np --no-parent -nH --cut-dirs 4 -nc "https://dcmods.unreliable.network/owncloud/data/PiKeyAr/files/Various/dx81sdk.7z"
+
+    7z x dx81sdk.7z -o"C:\Program Files (x86)\DirectX 8.1 SDK"
+
+    cd C:\projects\sadx-mod-loader
+before_build:
+- cmd: git submodule update --init --recursive
+build:
+  project: SADXModLoader.sln
+  verbosity: minimal
+after_build:
+- cmd: >-
+    mkdir C:\sadxmm
+
+    mkdir C:\sadxmm\extlib
+
+    mkdir C:\sadxmm\extlib\BASS
+
+    mkdir C:\sadxmm\extlib\D3D8M
+
+    mkdir C:\sadxmm\extlib\SDL2
+
+    copy C:\projects\sadx-mod-loader\bin\SADXModLoader.dll C:\sadxmm\SADXModLoader.dll
+
+    copy C:\projects\sadx-mod-loader\data\*.* C:\sadxmm\
+
+    copy C:\projects\sadx-mod-loader\extlib\bass\*.dll C:\sadxmm\extlib\BASS\
+
+    copy C:\projects\sadx-mod-loader\extlib\d3d8to9\d3d8.dll C:\sadxmm\extlib\D3D8M\d3d8m.dll
+
+    copy C:\projects\sadx-mod-loader\extlib\SDL2\lib\x86\*.dll C:\sadxmm\extlib\SDL2\
+
+    7z a C:\projects\sadx-mod-loader\bin\SADXModLoader.7z C:\sadxmm\*
+artifacts:
+- path: bin\SADXModLoader.7z
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: 3U0hYOvkeEJsoN2b4U/c9RTDxjcj9txunvCbWfkg5qvOSB1qOnh4fnIE9EK5yAXi2m8RJMO4Zr/UqiVMB9CDPulfPRcJSJ83rsmh1EXBipUs4K/RQmQHaDG6UiiNQ1Xg
+  artifact: bin/SADXModLoader.7z
+  on:
+    branch: master
