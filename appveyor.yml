@@ -53,7 +53,7 @@ artifacts:
 before_deploy:
 - ps: |-
       if (!$env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED) {
-        $env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED = "* $env:APPVEYOR_REPO_COMMIT_MESSAGE"
+        $env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED = "$env:APPVEYOR_REPO_COMMIT_MESSAGE"
       }
 
 deploy:
