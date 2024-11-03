@@ -49,6 +49,13 @@ after_build:
     7z a C:\projects\sadx-mod-loader\bin\SADXModLoader.7z C:\sadxmm\*
 artifacts:
 - path: bin\SADXModLoader.7z
+
+before_deploy:
+- ps: |-
+      if (!$env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED) {
+        $env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED = "* $env:APPVEYOR_REPO_COMMIT_MESSAGE"
+      }
+
 deploy:
 - provider: GitHub
   description: $(APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)
