@@ -1,7 +1,5 @@
 #include "stdafx.h"
-
 #include "direct3d.h"
-
 #include "include/d3d8types.h"
 #include "FixFOV.h"
 #include "uiscale.h"
@@ -10,6 +8,8 @@ DataPointer(D3DVIEWPORT8, Direct3D_ViewPort, 0x3D12780);
 DataPointer(D3DCAPS8, Direct3D_DeviceCaps, 0x03D127C0);
 
 static bool vsync = false;
+static D3DMULTISAMPLE_TYPE antialiasing = D3DMULTISAMPLE_NONE;
+static int anisotropy = 0;
 
 // oh god
 static const D3DRENDERSTATETYPE D3DRENDERSTATE_TYPES[] = {
@@ -224,8 +224,6 @@ inline void setup_vsync()
 
 	if (vsync) 
 	{
-		//using D3DSWAPEFFECT_DISCARD here causes stuttering, consider adding a toggle if you really want it. 
-		//p.SwapEffect = d3d9 ? D3DSWAPEFFECT_DISCARD : D3DSWAPEFFECT_COPY_VSYNC;
 		p.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC;
 		p.FullScreen_PresentationInterval = (IsWindowed && !d3d9) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_ONE;
 	}
@@ -233,6 +231,31 @@ inline void setup_vsync()
 	{
 		p.SwapEffect = D3DSWAPEFFECT_DISCARD;
 		p.FullScreen_PresentationInterval = (IsWindowed && !d3d9) ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_IMMEDIATE;
+	}
+}
+
+inline void setup_aa()
+{
+	if (!antialiasing)
+		return;
+
+	auto& p = PresentParameters;
+
+	D3DMULTISAMPLE_TYPE MSType = D3DMULTISAMPLE_NONE;
+
+	if (antialiasing >= 16 && SUCCEEDED(Direct3D_Object->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, PresentParameters.BackBufferFormat, PresentParameters.Windowed, D3DMULTISAMPLE_16_SAMPLES)))
+		MSType = D3DMULTISAMPLE_16_SAMPLES;
+	else if (antialiasing >= 8 && SUCCEEDED(Direct3D_Object->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, PresentParameters.BackBufferFormat, PresentParameters.Windowed, D3DMULTISAMPLE_8_SAMPLES)))
+		MSType = D3DMULTISAMPLE_8_SAMPLES;
+	else if (antialiasing >= 4 && SUCCEEDED(Direct3D_Object->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, PresentParameters.BackBufferFormat, PresentParameters.Windowed, D3DMULTISAMPLE_4_SAMPLES)))
+		MSType = D3DMULTISAMPLE_4_SAMPLES;
+	else if (antialiasing >= 2 && SUCCEEDED(Direct3D_Object->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, PresentParameters.BackBufferFormat, PresentParameters.Windowed, D3DMULTISAMPLE_2_SAMPLES)))
+		MSType = D3DMULTISAMPLE_2_SAMPLES;
+
+	if (MSType != D3DMULTISAMPLE_NONE)
+	{
+		p.SwapEffect = D3DSWAPEFFECT_DISCARD;
+		p.MultiSampleType = MSType;
 	}
 }
 
@@ -245,6 +268,8 @@ void __fastcall CreateDirect3DDevice_r(void*, int behavior, D3DDEVTYPE type)
 
 	setup_vsync();
 
+	setup_aa();
+
 	auto result = Direct3D_Object->CreateDevice(DisplayAdapter, type, PresentParameters.hDeviceWindow,
 	                                            behavior, &PresentParameters, &Direct3D_Device);
 
@@ -252,6 +277,13 @@ void __fastcall CreateDirect3DDevice_r(void*, int behavior, D3DDEVTYPE type)
 	{
 		Direct3D_Device = nullptr;
 	}
+	else
+	{
+		if (antialiasing != D3DMULTISAMPLE_NONE)
+			Direct3D_Device->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, TRUE);
+		if (anisotropy)
+			Direct3D_Device->SetTextureStageState(0, D3DTSS_MAXANISOTROPY, anisotropy);
+	}	
 }
 
 void __cdecl Direct3D_EndScene_r();
@@ -298,6 +330,16 @@ void direct3d::set_vsync(bool value)
 	vsync = value;
 }
 
+void direct3d::set_aa(int value)
+{
+	antialiasing = (D3DMULTISAMPLE_TYPE)value;
+}
+
+void direct3d::set_af(int value)
+{
+	anisotropy = value;
+}
+
 void direct3d::reset_device()
 {
 	const auto retry_count = 5;
@@ -306,6 +348,7 @@ void direct3d::reset_device()
 	Uint32 tries = 0;
 
 	setup_vsync();
+	setup_aa();
 
 	auto level = D3DERR_DEVICENOTRESET;
 	RaiseEvents(modRenderDeviceLost);

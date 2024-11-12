@@ -71,6 +71,8 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->VerticalResolution = json_graphics.value("VerticalResolution", 480);
 		loaderSettings->ForceAspectRatio = json_graphics.value("Enable43ResolutionRatio", false);
 		loaderSettings->EnableVsync = json_graphics.value("EnableVsync", true);
+		loaderSettings->Antialiasing = json_graphics.value("Antialiasing", 0);
+		loaderSettings->Anisotropic = json_graphics.value("Anisotropic", 0);
 		loaderSettings->PauseWhenInactive = json_graphics.value("EnablePauseOnInactive", true);
 		//loaderSettings->WindowedFullscreen = json_graphics.value("EnableBorderless", true);
 		//loaderSettings->CustomWindowSize = json_graphics.value("EnableCustomWindow", false);

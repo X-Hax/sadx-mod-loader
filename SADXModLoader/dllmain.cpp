@@ -384,6 +384,12 @@ void __cdecl Direct3D_TextureFilterPoint_ForceLinear()
 	Direct3D_Device->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
 	Direct3D_Device->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
 	Direct3D_Device->SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTEXF_LINEAR);
+	// Maybe use D3DTEXF_ANISOTROPIC here instead? Not sure
+	/*
+	Direct3D_Device->SetTextureStageState(0, D3DTSS_MAGFILTER, loaderSettings.Anisotropic ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR);
+	Direct3D_Device->SetTextureStageState(0, D3DTSS_MINFILTER, loaderSettings.Anisotropic ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR);
+	Direct3D_Device->SetTextureStageState(0, D3DTSS_MIPFILTER, loaderSettings.Anisotropic ? D3DTEXF_ANISOTROPIC : D3DTEXF_LINEAR);
+	*/
 }
 
 void __cdecl SetPreferredFilterOption()
@@ -909,12 +915,20 @@ static void __cdecl InitMods()
 
 	PatchWindow(loaderSettings); // override window creation function
 
-	// Other various settings.
+	// Other various settings
 	if (IsGamePatchEnabled("DisableCDCheck"))
 		WriteJump((void*)0x402621, (void*)0x402664);
 
 	if (loaderSettings.AutoMipmap)
 		mipmap::enable_auto_mipmaps();
+
+	if (loaderSettings.Anisotropic)
+	{
+		// gjRender2DReset: set MIN/MIP/MAG filter to anisotropic instead of linear
+		WriteData<1>((char*)0x0078B808, (char)D3DTEXF_ANISOTROPIC);
+		WriteData<1>((char*)0x0078B81C, (char)D3DTEXF_ANISOTROPIC);
+		WriteData<1>((char*)0x0078B830, (char)D3DTEXF_ANISOTROPIC);
+	}
 
 	// Hijack a ton of functions in SADX.
 	*(void**)0x38A5DB8 = (void*)0x38A5D94; // depth buffer fix
@@ -949,6 +963,8 @@ static void __cdecl InitMods()
 	}
 
 	direct3d::set_vsync(loaderSettings.EnableVsync);
+	direct3d::set_aa(loaderSettings.Antialiasing);
+	direct3d::set_af(loaderSettings.Anisotropic);
 
 	if (loaderSettings.ScaleHud)
 	{

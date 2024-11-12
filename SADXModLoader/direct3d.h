@@ -89,6 +89,8 @@ namespace direct3d
 {
 	void init();
 	void set_vsync(bool value);
+	void set_aa(int value);
+	void set_af(int value);
 	void reset_device();
 	void change_resolution(uint32_t width, uint32_t height);
 	void change_resolution(uint32_t width, uint32_t height, bool windowed);
