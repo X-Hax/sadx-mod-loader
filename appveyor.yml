@@ -46,6 +46,8 @@ after_build:
 
     copy C:\projects\sadx-mod-loader\extlib\SDL2\lib\x86\*.dll C:\sadxmm\extlib\SDL2\
 
+    echo | set /p dummyName="%APPVEYOR_BUILD_VERSION%" > "C:\sadxmm\sadxmlver.txt"
+
     7z a C:\projects\sadx-mod-loader\bin\SADXModLoader.7z C:\sadxmm\*
 artifacts:
 - path: bin\SADXModLoader.7z
