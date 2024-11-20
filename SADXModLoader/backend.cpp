@@ -28,7 +28,7 @@ IDirect3D8* __stdcall CreateDirect3D8Hook(UINT SDKVersion)
 	return result;
 }
 
-static void __cdecl InitRenderBackend(int mode, std::wstring gamePath, std::wstring extLibPath)
+void __cdecl InitRenderBackend(int mode, std::wstring gamePath, std::wstring extLibPath)
 {
 	switch ((RenderBackend)mode)
 	{
