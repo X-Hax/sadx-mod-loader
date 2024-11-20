@@ -33,6 +33,7 @@ void __cdecl InitRenderBackend(int mode, std::wstring gamePath, std::wstring ext
 	switch ((RenderBackend)mode)
 	{
 	case DirectX8:
+	default:
 		break;
 	case DirectX9:
 		wstring d3d8oldpath = gamePath + L"\\d3d8.dll";
