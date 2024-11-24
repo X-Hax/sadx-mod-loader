@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 26;
+static const int ModLoaderVer = 27;
 
 // Patch-type codes
 struct PatchInfo
@@ -106,6 +106,7 @@ struct LoaderSettings
 	bool DisableBorderImage; // Requires version >= 25
 	int Antialiasing; // Requires version >= 26
 	int Anisotropic; // Requires version >= 26
+	int RenderBackend; // Requires version >= 27
 };
 
 struct ModDependency

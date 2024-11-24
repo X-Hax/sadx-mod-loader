@@ -70,6 +70,7 @@ using json = nlohmann::json;
 #include "window.h"
 #include "XInputFix.h"
 #include "dpi.h"
+#include "backend.h"
 
 wstring borderimage = L"mods\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
@@ -253,8 +254,8 @@ static void __cdecl ProcessCodes()
 }
 
 //used to get external lib location and extra config
-std::wstring appPath;
-std::wstring extLibPath;
+std::wstring appPath; // "AppData\SAManager\" with trailing slash
+std::wstring extLibPath; // "AppData\SAManager\extlib\" with trailing slash
 
 void SetAppPathConfig(std::wstring gamepath)
 {
@@ -468,7 +469,7 @@ static void __cdecl InitAudio()
 
 		// Attempt to load the DLL
 		bassDLL = LoadLibraryEx(fullPath.c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-
+		
 		if (bassDLL)
 			PrintDebug("Loaded Bass DLLs dependencies\n");
 		else
@@ -859,7 +860,7 @@ static void __cdecl InitMods()
 	// Get sonic.exe's path and filename.
 	wchar_t pathbuf[MAX_PATH];
 	GetModuleFileName(nullptr, pathbuf, MAX_PATH);
-	wstring exepath(pathbuf);
+	wstring exepath(pathbuf); // "C:\SADX" etc. without trailing slash
 	wstring exefilename;
 	string::size_type slash_pos = exepath.find_last_of(L"/\\");
 	if (slash_pos != string::npos)
@@ -914,6 +915,7 @@ static void __cdecl InitMods()
 	}
 
 	PatchWindow(loaderSettings); // override window creation function
+	InitRenderBackend(loaderSettings.RenderBackend, exepath, extLibPath);
 
 	// Other various settings
 	if (IsGamePatchEnabled("DisableCDCheck"))

@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AutoMipmap.cpp" />
+    <ClCompile Include="backend.cpp" />
     <ClCompile Include="BasicWeights.cpp" />
     <ClCompile Include="bgscale.cpp" />
     <ClCompile Include="ChunkSpecularFix.cpp" />
@@ -67,6 +68,7 @@
     <ClInclude Include="ChunkSpecularFix.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="CrashDump.h" />
+    <ClInclude Include="backend.h" />
     <ClInclude Include="DDS.h" />
     <ClInclude Include="direct3d.h" />
     <ClInclude Include="DisableRoundedCorners.h" />

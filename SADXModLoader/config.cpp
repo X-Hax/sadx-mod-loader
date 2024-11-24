@@ -83,6 +83,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
 		loaderSettings->ResizableWindow = json_graphics.value("EnableResizableWindow", true);
 		loaderSettings->BackgroundFillMode = json_graphics.value("FillModeBackground", 2);
 		loaderSettings->FmvFillMode = json_graphics.value("FillModeFMV", 1);
+		loaderSettings->RenderBackend = json_graphics.value("RenderBackend", 0);
 		// ModeTextureFiltering ?
 		// ModeUIFiltering ?
 		loaderSettings->ScaleHud = json_graphics.value("EnableUIScaling", true);
