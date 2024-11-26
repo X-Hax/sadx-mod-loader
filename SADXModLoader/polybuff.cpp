@@ -4,6 +4,9 @@
 
 #include "polybuff.h"
 
+float uv_multiply = 0.00390625f; // 0.0039215689f in vanilla
+float uv_divide = 256.0f; // 255.0f in vanilla
+
 namespace polybuff
 {
 	int alignment_probably = 0;
@@ -457,8 +460,8 @@ void __cdecl polybuff_normal_vcolor_uv_strip_r(NJS_MESHSET_SADX* meshset, NJS_PO
 				normal->z = *(float*)((char*)&normals->z + a1f);
 				buffer->diffuse = v3.color;
 				v29 = buffer + 1;
-				v29[-1].u = (float)uv->u * 0.0039215689f;
-				v29[-1].v = (float)uv->v * 0.0039215689f;
+				v29[-1].u = (float)uv->u * uv_multiply;
+				v29[-1].v = (float)uv->v * uv_multiply;
 				if (n_masked)
 				{
 					a1b = n_masked;
@@ -479,9 +482,9 @@ void __cdecl polybuff_normal_vcolor_uv_strip_r(NJS_MESHSET_SADX* meshset, NJS_PO
 						++v29;
 						++meshes;
 						++uv;
-						v29[-1].u = (float)v33 * 0.0039215689f;
+						v29[-1].u = (float)v33 * uv_multiply;
 						done = a1b-- == 1;
-						v29[-1].v = (float)uv[-1].v * 0.0039215689f;
+						v29[-1].v = (float)uv[-1].v * uv_multiply;
 					} while (!done);
 				}
 				v34 = *(meshes - 1);
@@ -500,8 +503,8 @@ void __cdecl polybuff_normal_vcolor_uv_strip_r(NJS_MESHSET_SADX* meshset, NJS_PO
 				buffer = v29 + 1;
 				uv = v37 + 1;
 				done = j-- == 1;
-				buffer[-1].u = (float)a1h * 0.0039215689f;
-				buffer[-1].v = (float)uv[-1].v * 0.0039215689f;
+				buffer[-1].u = (float)a1h * uv_multiply;
+				buffer[-1].v = (float)uv[-1].v * uv_multiply;
 			} while (!done);
 		}
 	}
@@ -527,8 +530,8 @@ void __cdecl polybuff_normal_vcolor_uv_strip_r(NJS_MESHSET_SADX* meshset, NJS_PO
 				++c;
 
 				buffer->diffuse = vertcolor;
-				buffer->u = static_cast<float>(vertuv.u) / 255.0f;
-				buffer->v = static_cast<float>(vertuv.v) / 255.0f;
+				buffer->u = static_cast<float>(vertuv.u) / uv_divide;
+				buffer->v = static_cast<float>(vertuv.v) / uv_divide;
 				++buffer;
 			}
 
@@ -581,8 +584,8 @@ void __cdecl polybuff_normal_vcolor_uv_tri_r(NJS_MESHSET* a1, NJS_POINT3* points
 					++buffer;
 					++meshes;
 					++uv;
-					buffer[-1].u = (float)v17 * 0.0039215689f;
-					buffer[-1].v = (float)uv[-1].v * 0.0039215689f;
+					buffer[-1].u = (float)v17 * uv_multiply;
+					buffer[-1].v = (float)uv[-1].v * uv_multiply;
 				} while (a1c-- != 1);
 			}
 		}
@@ -607,8 +610,8 @@ void __cdecl polybuff_normal_vcolor_uv_tri_r(NJS_MESHSET* a1, NJS_POINT3* points
 				++meshes;
 				++vertcolor;
 				++uv;
-				buffer[-1].u = (float)v12 * 0.0039215689f;
-				buffer[-1].v = (float)uv[-1].v * 0.0039215689f;
+				buffer[-1].u = (float)v12 * uv_multiply;
+				buffer[-1].v = (float)uv[-1].v * uv_multiply;
 			} while (a1b-- != 1);
 		}
 	}
@@ -616,6 +619,409 @@ void __cdecl polybuff_normal_vcolor_uv_tri_r(NJS_MESHSET* a1, NJS_POINT3* points
 	PolyBuff_Unlock(&stru_3D0FF20);
 	PolyBuff_DrawTriangleList(&stru_3D0FF20);
 }
+
+static IDirect3DVertexBuffer8* particle_quad = nullptr;
+
+struct ParticleData
+{
+	NJS_COLOR diffuse = { 0xFFFFFFFF };
+	float u1 = 0.0f;
+	float v1 = 0.0f;
+	float u2 = 1.0f;
+	float v2 = 1.0f;
+
+	bool operator==(const ParticleData& other) const
+	{
+		return diffuse.color == other.diffuse.color &&
+			u1 == other.u1 &&
+			v1 == other.v1 &&
+			u2 == other.u2 &&
+			v2 == other.v2;
+	}
+
+	bool operator!=(const ParticleData& other) const
+	{
+		return !(*this == other);
+	}
+};
+
+ParticleData last_particle;
+
+#pragma pack(push, 1)
+struct ParticleVertex
+{
+	static const UINT format = D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1;
+	D3DXVECTOR3 position{};
+	uint32_t diffuse = 0;
+	D3DXVECTOR2 tex_coord{};
+};
+#pragma pack(pop)
+
+static void draw_particle(NJS_SPRITE* sp, int n, uint32_t attr)
+{
+	ParticleData particle;
+
+	if (attr & NJD_SPRITE_COLOR)
+	{
+		particle.diffuse.argb.b = static_cast<uint8_t>(_nj_constant_material_.b * 255.0);
+		particle.diffuse.argb.g = static_cast<uint8_t>(_nj_constant_material_.g * 255.0);
+		particle.diffuse.argb.r = static_cast<uint8_t>(_nj_constant_material_.r * 255.0);
+		particle.diffuse.argb.a = static_cast<uint8_t>(_nj_constant_material_.a * 255.0);
+	}
+
+	const auto& tanim = sp->tanim[n];
+
+	particle.u1 = tanim.u1 / uv_divide;
+	particle.v1 = tanim.v1 / uv_divide;
+
+	particle.u2 = tanim.u2 / uv_divide;
+	particle.v2 = tanim.v2 / uv_divide;
+
+	if (attr & NJD_SPRITE_HFLIP)
+	{
+		std::swap(particle.u1, particle.u2);
+	}
+
+	if ((!(attr & NJD_SPRITE_VFLIP) && (attr & NJD_SPRITE_SCALE)) || attr & NJD_SPRITE_VFLIP)
+	{
+		std::swap(particle.v1, particle.v2);
+	}
+
+	// diffuse color should probably just be done with a material since this is fixed function stuff!
+	if (particle != last_particle || particle_quad == nullptr)
+	{
+		last_particle = particle;
+
+		if (particle_quad == nullptr)
+		{
+			Direct3D_Device->CreateVertexBuffer(4 * sizeof(ParticleVertex), 0, ParticleVertex::format, D3DPOOL_MANAGED, &particle_quad);
+		}
+
+		BYTE* ppbData;
+		particle_quad->Lock(0, 4 * sizeof(ParticleVertex), &ppbData, D3DLOCK_DISCARD);
+
+		auto quad = reinterpret_cast<ParticleVertex*>(ppbData);
+
+		// top left
+		quad[0].position = D3DXVECTOR3(-0.5f, -0.5f, 0.0f);
+		quad[0].diffuse = particle.diffuse.color;
+		quad[0].tex_coord = D3DXVECTOR2(particle.u1, particle.v1);
+
+		// top right
+		quad[1].position = D3DXVECTOR3(0.5f, -0.5f, 0.0f);
+		quad[1].diffuse = particle.diffuse.color;
+		quad[1].tex_coord = D3DXVECTOR2(particle.u2, particle.v1);
+
+		// bottom left
+		quad[2].position = D3DXVECTOR3(-0.5f, 0.5f, 0.0f);
+		quad[2].diffuse = particle.diffuse.color;
+		quad[2].tex_coord = D3DXVECTOR2(particle.u1, particle.v2);
+
+		// bottom right
+		quad[3].position = D3DXVECTOR3(0.5f, 0.5f, 0.0f);
+		quad[3].diffuse = particle.diffuse.color;
+		quad[3].tex_coord = D3DXVECTOR2(particle.u2, particle.v2);
+
+		particle_quad->Unlock();
+	}
+
+	const auto old_world = WorldMatrix;
+
+	if (attr & NJD_SPRITE_SCALE)
+	{
+		njAlphaMode((attr & NJD_SPRITE_ALPHA) ? 2 : 0);
+		ProjectToWorldSpace();
+
+		auto m = WorldMatrix;
+
+		// translate to world position
+		njTranslateV(&m._11, &sp->p);
+
+		// identity-ify the rotation so it can be replaced with the camera's
+		// rotation; we don't need it anymore in billboard mode
+		*reinterpret_cast<NJS_VECTOR*>(&m._11) = { 1.0f, 0.0f, 0.0f };
+		*reinterpret_cast<NJS_VECTOR*>(&m._21) = { 0.0f, 1.0f, 0.0f };
+		*reinterpret_cast<NJS_VECTOR*>(&m._31) = { 0.0f, 0.0f, 1.0f };
+
+		njPushMatrix(&m._11);
+		{
+			const float scale_x = tanim.sx * sp->sx;
+			const float scale_y = tanim.sy * sp->sy;
+			const float offset_x = scale_x * ((static_cast<float>(tanim.cx) / static_cast<float>(tanim.sx)) - 0.5f);
+			const float offset_y = scale_y * ((static_cast<float>(tanim.cy) / static_cast<float>(tanim.sy)) - 0.5f);
+
+			// match camera's rotation
+			const auto& cam_rot = Camera_Data1->Rotation;
+			njRotateEx(&cam_rot.x, 1);
+
+			// rotate in screen space around the z axis
+			if (attr & NJD_SPRITE_ANGLE && sp->ang)
+			{
+				njRotateZ(nullptr, -sp->ang);
+			}
+
+			// apply center-offset
+			njTranslate(nullptr, offset_x, offset_y, 0.0f);
+
+			// scale to size
+			njScale(nullptr, scale_x, scale_y, 1.0f);
+
+			njGetMatrix(&WorldMatrix._11);
+			Direct3D_SetWorldTransform();
+		}
+		njPopMatrix(1);
+	}
+	else
+	{
+		njTextureShadingMode(attr & NJD_SPRITE_ALPHA ? 2 : 0);
+		ProjectToWorldSpace();
+
+		njPushMatrix(&WorldMatrix._11);
+		{
+			const float scale_x = tanim.sx * sp->sx;
+			const float scale_y = tanim.sy * sp->sy;
+			const float offset_x = scale_x * ((static_cast<float>(tanim.cx) / static_cast<float>(tanim.sx)) - 0.5f);
+			const float offset_y = scale_y * ((static_cast<float>(tanim.cy) / static_cast<float>(tanim.sy)) - 0.5f);
+
+			// translate to world position (if applicable)
+			njTranslateEx(&sp->p);
+
+			// rotate in screen space
+			if (attr & NJD_SPRITE_ANGLE && sp->ang)
+			{
+				njRotateZ(nullptr, -sp->ang);
+			}
+
+			// apply center-offset
+			njTranslate(nullptr, -offset_x, -offset_y, 0.0f);
+
+			// scale to size
+			njScale(nullptr, scale_x, scale_y, 1.0f);
+
+			njGetMatrix(&WorldMatrix._11);
+			Direct3D_SetWorldTransform();
+		}
+		njPopMatrixEx();
+	}
+
+	// save original vbuffer
+	IDirect3DVertexBuffer8* stream;
+	UINT stride;
+	Direct3D_Device->GetStreamSource(0, &stream, &stride);
+
+	// store original FVF
+	DWORD FVF;
+	Direct3D_Device->GetVertexShader(&FVF);
+
+	// draw
+	Direct3D_Device->SetVertexShader(ParticleVertex::format);
+	Direct3D_Device->SetStreamSource(0, particle_quad, sizeof(ParticleVertex));
+	Direct3D_Device->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
+
+	// restore original vbuffer
+	Direct3D_Device->SetStreamSource(0, stream, stride);
+
+	// restore original FVF
+	Direct3D_Device->SetVertexShader(FVF);
+
+	if (stream)
+	{
+		stream->Release();
+	}
+
+	WorldMatrix = old_world;
+	Direct3D_SetWorldTransform();
+}
+
+void __cdecl njDrawSprite3D_DrawNow_r(NJS_SPRITE* sp, int n, NJD_SPRITE attr);
+static Trampoline njDrawSprite3D_DrawNow_t(0x0077E390, 0x0077E398, &njDrawSprite3D_DrawNow_r);
+
+void __cdecl njDrawSprite3D_DrawNow_r(NJS_SPRITE* sp, int n, NJD_SPRITE attr)
+{
+	if (!sp)
+	{
+		return;
+	}
+
+	const auto tlist = sp->tlist;
+
+	if (tlist)
+	{
+		const auto tanim = &sp->tanim[n];
+		Direct3D_SetTexList(tlist);
+		njSetTextureNum_(tanim->texid);
+
+		Direct3D_Device->SetTextureStageState(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+		Direct3D_Device->SetTextureStageState(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+		Direct3D_DiffuseSourceVertexColor();
+	}
+	else
+	{
+		return;
+	}
+
+#ifdef _DEBUG
+	if (ControllerPointers[0] && ControllerPointers[0]->HeldButtons & Buttons_Z)
+	{
+		auto original = reinterpret_cast<decltype(njDrawSprite3D_DrawNow_r)*>(njDrawSprite3D_DrawNow_t.Target());
+		original(sp, n, attr);
+		return;
+	}
+#endif
+
+	draw_particle(sp, n, attr);
+}
+
+Uint32 uvPatchList[] = 
+{
+	// polybuff_uv_strip
+	0x007823D4,
+	0x007823ED,
+	0x00782438,
+	0x00782456,
+	0x0078249E,
+	0x007824BC,
+	// polybuff_uv_tri
+	0x00782578,
+	0x00782596,
+	// polybuff_uv_quad
+	0x007826B4,
+	0x007826C9,
+	// polybuff_vcolor_uv_strip
+	0x00782DC7,
+	0x00782DDC,
+	0x00782E38,
+	0x00782E51,
+	0x00782EAA,
+	0x00782EC4,
+	// polybuff_vcolor_uv_tri
+	0x00783017,
+	0x00783031,
+	0x00782FA3,
+	0x00782FBC,
+	// polybuff_vcolor_uv_quad
+	0x007831DE,
+	0x007831FC,
+	// polybuff_normal_uv_strip
+	0x007836CF,
+	0x007836E4,
+	0x0078375C,
+	0x00783775,
+	0x007837E1,
+	0x007837FA,
+	// polybuff_normal_uv_tri
+	0x007838DE,
+	0x007838F7,
+	// polybuff_normal_uv_quad
+	0x00783A39,
+	0x00783A57,
+	// polybuff_normal_vcolor_uv_strip
+	0x0078431E,
+	0x00784333,
+	0x007843A7,
+	0x007843C5,
+	0x00784435,
+	0x0078444E,
+	0x00784160,
+	0x00784175,
+	0x007841E7,
+	0x00784205,
+	0x00784275,
+	0x0078428E,
+	// polybuff_normal_vcolor_uv_tri
+	0x007845DC,
+	0x007845F5,
+	0x0078454C,
+	0x00784565,
+	// polybuff_normal_vcolor_uv_quad
+	0x007847BD,
+	0x007847DF,
+	// meshset_uv_strip
+	0x00785B66,
+	0x00785B82,
+	0x00785BD4,
+	0x00785BEE,
+	0x00785C2D,
+	0x00785C42,
+	0x00785A28,
+	0x00785A41,
+	0x00785A89,
+	0x00785AA7,
+	0x00785AEF,
+	0x00785B0D,
+	// meshset_uv_tri
+	0x00785D91,
+	0x00785DAF,
+	0x00785D22,
+	0x00785D3B,
+	// meshset_uv_quad
+	0x0078601E,
+	0x0078603C,
+	0x00785EF5,
+	0x00785F0A,
+	// meshset_uv_normal_strip
+	0x007869CA,
+	0x007869E6,
+	0x00786A61,
+	0x00786A7F,
+	0x00786AFB,
+	0x00786B19,
+	0x0078680E,
+	0x00786823,
+	0x0078689C,
+	0x007868B5,
+	0x00786921,
+	0x0078693A,
+	// meshset_uv_normal_tri
+	0x00786CAC,
+	0x00786CCA,
+	0x00786C1C,
+	0x00786C35,
+	// meshset_uv_normal_quad
+	0x00786F8D,
+	0x00786FAF,
+	0x00786E39,
+	0x00786E57,
+	// njDrawSprite2D
+	0x0077E0A5,
+	0x0077E0C4,
+	0x0077E0DE,
+	0x0077E0F4,
+	// njDrawSprite3D
+	0x0077E4FF,
+	0x0077E511,
+	0x0077E523,
+	0x0077E531,
+	// __SAnjDrawPolygon2D
+	0x0040126E,
+	0x0040127C,
+	0x0040128A,
+	0x00401294,
+	// Point3ColToVertexBuffer_UV
+	0x0077E90D,
+	0x0077E922,
+	// sub_78F1B0
+	0x0078F28D,
+	0x0078F2A5,
+	0x0078F32C,
+	0x0078F312,
+	0x0078F3AF,
+	0x0078F3CB,
+	// sub_790290
+	0x00790361,
+	0x00790379,
+	0x007903FF,
+	0x007903E2,
+	0x00790480,
+	0x00790499,
+	// sub_790950
+	0x00790A24,
+	0x00790A39,
+	0x00790A79,
+	0x00790A9A,
+	0x00790AE2,
+	0x00790B06
+};
 
 void polybuff::rewrite_init()
 {
@@ -625,4 +1031,12 @@ void polybuff::rewrite_init()
 	WriteJump(polybuff_normal_vcolor_tri, polybuff_normal_vcolor_tri_r);
 	WriteJump(polybuff_normal_vcolor_uv_strip, polybuff_normal_vcolor_uv_strip_r);
 	WriteJump(polybuff_normal_vcolor_uv_tri, polybuff_normal_vcolor_uv_tri_r);
+	for (int i = 0; i < LengthOfArray(uvPatchList); i++)
+	{
+#ifdef DEBUG
+		Uint32& orig = *(Uint32*)uvPatchList[i];
+		PrintDebug("UV fix at %X: %X\n", uvPatchList[i], orig);
+#endif // DEBUG
+		WriteData((float**)uvPatchList[i], &uv_multiply);
+	}
 }
