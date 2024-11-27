@@ -197,7 +197,9 @@ if [ "x$git_repo_dir" != "x" ]; then
 	# dkorth changes [2013/07/21 10:18 AM EDT]
 	# Get the current git description.
 	# (String will be empty if no description is available or if git is too old.)
-	git_describe=`$GIT describe --abbrev=8`
+    # Edited by PkR [2024/27/11]
+    # Added --tags to retrieve the latest description rather than the old annotated tag
+	git_describe=`$GIT describe --tags --abbrev=8`
     fi
 fi
 
