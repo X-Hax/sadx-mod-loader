@@ -3,6 +3,33 @@
 #include <ninja.h>
 #include <SADXStructs.h>
 
+struct KeyboardMapping
+{
+	Sint16 Analog1_Up[3];
+	Sint16 Analog1_Down[3];
+	Sint16 Analog1_Left[3];
+	Sint16 Analog1_Right[3];
+	Sint16 Analog2_Up[3];
+	Sint16 Analog2_Down[3];
+	Sint16 Analog2_Left[3];
+	Sint16 Analog2_Right[3];
+	Sint16 LT[3];
+	Sint16 RT[3];
+	Sint16 DPad_Up[3];
+	Sint16 DPad_Down[3];
+	Sint16 DPad_Left[3];
+	Sint16 DPad_Right[3];
+	Sint16 Button_A[3];
+	Sint16 Button_B[3];
+	Sint16 Button_X[3];
+	Sint16 Button_Y[3];
+	Sint16 Button_Start[3];
+	Sint16 Button_LeftShoulder[3];
+	Sint16 Button_RightShoulder[3];
+	Sint16 Button_Back[3];
+	Sint16 Button_LeftStick[3];
+	Sint16 Button_RightStick[3];
+};
 
 struct KeyboardKey
 {

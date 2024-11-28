@@ -347,37 +347,40 @@ void KeyboardMouse::update_keyboard_buttons(Uint32 key, bool down)
 {
 	// Update vanilla SADX array
 	update_sadx_key(key, down);
-	// Half press
-	if (key == input::keys.Button_RightStick) half_press = down;
-	// Center camera
-	else if (key == input::keys.Button_LeftStick) e_held = down;
-	// Buttons
-	else if (key == input::keys.Button_A) set_button(pad.HeldButtons, Buttons_A, down);
-	else if (key == input::keys.Button_B) set_button(pad.HeldButtons, Buttons_B, down);
-	else if (key == input::keys.Button_X) set_button(pad.HeldButtons, Buttons_X, down);
-	else if (key == input::keys.Button_Y) set_button(pad.HeldButtons, Buttons_Y, down);
-	else if (key == input::keys.Button_RightShoulder) set_button(pad.HeldButtons, Buttons_Z, down);
-	else if (key == input::keys.Button_LeftShoulder) set_button(pad.HeldButtons, Buttons_C, down);
-	else if (key == input::keys.Button_Back) set_button(pad.HeldButtons, Buttons_D, down);
-	else if (key == input::keys.Button_Start) set_button(pad.HeldButtons, Buttons_Start, down);
-	// Triggers
-	else if (key == input::keys.LT) set_button(pad.HeldButtons, Buttons_L, down);
-	else if (key == input::keys.RT) set_button(pad.HeldButtons, Buttons_R, down);
-	// D-Pad
-	else if (key == input::keys.DPad_Up) set_button(pad.HeldButtons, Buttons_Up, down);
-	else if (key == input::keys.DPad_Down) set_button(pad.HeldButtons, Buttons_Down, down);
-	else if (key == input::keys.DPad_Left) set_button(pad.HeldButtons, Buttons_Left, down);
-	else if (key == input::keys.DPad_Right) set_button(pad.HeldButtons, Buttons_Right, down);
-	// Left stick
-	else if (key == input::keys.Analog1_Up) set_button(sticks[0].directions, Buttons_Up, down);
-	else if (key == input::keys.Analog1_Down) set_button(sticks[0].directions, Buttons_Down, down);
-	else if (key == input::keys.Analog1_Left) set_button(sticks[0].directions, Buttons_Left, down);
-	else if (key == input::keys.Analog1_Right) set_button(sticks[0].directions, Buttons_Right, down);
-	// Right stick
-	else if (key == input::keys.Analog2_Up) set_button(sticks[1].directions, Buttons_Up, down);
-	else if (key == input::keys.Analog2_Down) set_button(sticks[1].directions, Buttons_Down, down);
-	else if (key == input::keys.Analog2_Left) set_button(sticks[1].directions, Buttons_Left, down);
-	else if (key == input::keys.Analog2_Right) set_button(sticks[1].directions, Buttons_Right, down);
+	for (int n = 0; n < 3; n++)
+	{
+		// Half press
+		if (key == input::keys.Button_RightStick[n]) { half_press = down; break; }
+		// Center camera
+		else if (key == input::keys.Button_LeftStick[n]) { e_held = down; break; }
+		// Buttons
+		else if (key == input::keys.Button_A[n]) { set_button(pad.HeldButtons, Buttons_A, down); break; }
+		else if (key == input::keys.Button_B[n]) { set_button(pad.HeldButtons, Buttons_B, down); break; }
+		else if (key == input::keys.Button_X[n]) { set_button(pad.HeldButtons, Buttons_X, down); break; }
+		else if (key == input::keys.Button_Y[n]) { set_button(pad.HeldButtons, Buttons_Y, down); break;	}
+		else if (key == input::keys.Button_RightShoulder[n]) { set_button(pad.HeldButtons, Buttons_Z, down); break; }
+		else if (key == input::keys.Button_LeftShoulder[n]) { set_button(pad.HeldButtons, Buttons_C, down); break; }
+		else if (key == input::keys.Button_Back[n]) { set_button(pad.HeldButtons, Buttons_D, down); break; }
+		else if (key == input::keys.Button_Start[n]) { set_button(pad.HeldButtons, Buttons_Start, down); break; }
+		// Triggers
+		else if (key == input::keys.LT[n]) { set_button(pad.HeldButtons, Buttons_L, down); break; }
+		else if (key == input::keys.RT[n]) { set_button(pad.HeldButtons, Buttons_R, down); break; }
+		// D-Pad
+		else if (key == input::keys.DPad_Up[n]) { set_button(pad.HeldButtons, Buttons_Up, down); break;	}
+		else if (key == input::keys.DPad_Down[n]) {	set_button(pad.HeldButtons, Buttons_Down, down); break;	}
+		else if (key == input::keys.DPad_Left[n]) { set_button(pad.HeldButtons, Buttons_Left, down); break; }
+		else if (key == input::keys.DPad_Right[n]) { set_button(pad.HeldButtons, Buttons_Right, down); break; }
+		// Left stick
+		else if (key == input::keys.Analog1_Up[n]) { set_button(sticks[0].directions, Buttons_Up, down); break; }
+		else if (key == input::keys.Analog1_Down[n]) { set_button(sticks[0].directions, Buttons_Down, down); break; }
+		else if (key == input::keys.Analog1_Left[n]) { set_button(sticks[0].directions, Buttons_Left, down); break; }
+		else if (key == input::keys.Analog1_Right[n]) { set_button(sticks[0].directions, Buttons_Right, down); break; }
+		// Right stick
+		else if (key == input::keys.Analog2_Up[n]) { set_button(sticks[1].directions, Buttons_Up, down); break; }
+		else if (key == input::keys.Analog2_Down[n]) { set_button(sticks[1].directions, Buttons_Down, down); break; }
+		else if (key == input::keys.Analog2_Left[n]) { set_button(sticks[1].directions, Buttons_Left, down); break; }
+		else if (key == input::keys.Analog2_Right[n]) { set_button(sticks[1].directions, Buttons_Right, down); break; }
+	}
 }
 
 void KeyboardMouse::update_cursor(Sint32 xrel, Sint32 yrel)
