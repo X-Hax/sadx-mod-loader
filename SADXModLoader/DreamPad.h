@@ -88,15 +88,16 @@ public:
 	{
 		Settings();
 
-		bool   allow_keyboard;
-		short  deadzone_l;        // Left stick deadzone
-		bool   radial_l;          // Indicates if the stick is fully radial or semi-radial
-		short  deadzone_r;        // Right stick deadzone
-		bool   radial_r;          // Indicates if the stick is fully radial or semi-radial
-		uint8  trigger_threshold; // Trigger threshold
-		float  rumble_factor;     // Rumble intensity multiplier (1.0 by default)
-		bool   mega_rumble;       // Always fire both motors
-		ushort rumble_min_time;   // Minimum rumble time for controllers that have issues
+		bool     allow_keyboard;
+		short    deadzone_l;        // Left stick deadzone
+		bool     radial_l;          // Indicates if the stick is fully radial or semi-radial
+		short    deadzone_r;        // Right stick deadzone
+		bool     radial_r;          // Indicates if the stick is fully radial or semi-radial
+		uint8    trigger_threshold; // Trigger threshold
+		float    rumble_factor;     // Rumble intensity multiplier (1.0 by default)
+		bool     mega_rumble;       // Always fire both motors
+		ushort   rumble_min_time;   // Minimum rumble time for controllers that have issues
+		SDL_GUID guid;              // GUID that should be prioritized for this player ID
 
 		void set_deadzone_l(short deadzone);
 		void set_deadzone_r(short deadzone);

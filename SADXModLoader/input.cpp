@@ -15,6 +15,28 @@ struct AnalogThing
 	float magnitude;
 };
 
+// This function compares two SDL GUIDs and returns true if they match or if the first GUID is full of 00s.
+bool CompareGUID(SDL_GUID guid_stored, SDL_GUID guid_new)
+{
+	for (int d = 0; d < 16; d++)
+	{
+		if (guid_stored.data[d] != 0)
+		{
+			goto check;
+			break;
+		}
+	}
+	return true;
+
+	check:
+	for (int d = 0; d < 16; d++)
+	{
+		if (guid_stored.data[d] != guid_new.data[d])
+			return false;
+	}
+	return true;
+}
+
 namespace input
 {
 	ControllerData raw_input[GAMEPAD_COUNT];
@@ -38,15 +60,21 @@ namespace input
 			case SDL_JOYDEVICEADDED:
 			{
 				const int which = event.cdevice.which;
-
 				for (auto& controller : DreamPad::controllers)
 				{
-					// Checking for both in cases like the DualShock 4 and (e.g.) DS4Windows where the controller might be
-					// "connected" twice with the same ID. DreamPad::open automatically closes if already open.
-					if (!controller.connected() || controller.controller_id() == which)
+					// The condition is used to prioritize controller GUIDs for specific player IDs.
+					// E.g. if Player 1 has a valid stored GUID, a newly connected device with the same GUID will be assigned to Player 1.
+					// At the same time, if Player 1 doesn't have a valid stored GUID, any newly added device will be assigned to Player 1.
+					// Both of the above will only happen if Player 1 doesn't already have a device assigned to it.
+					if (CompareGUID(controller.settings.guid, SDL_JoystickGetDeviceGUID(event.cdevice.which)))
 					{
-						controller.open(which);
-						break;
+						// Checking for both in cases like the DualShock 4 and (e.g.) DS4Windows where the controller might be
+						// "connected" twice with the same ID. DreamPad::open automatically closes if already open.
+						if (!controller.connected() || controller.controller_id() == which)
+						{
+							controller.open(which);
+							break;
+						}
 					}
 				}
 				break;

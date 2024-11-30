@@ -286,6 +286,8 @@ void SDL2_Init()
 
 		settings.allow_keyboard = (i == KeyboardPlayer);
 
+		settings.guid = SDL_GUIDFromString(config.getString(section, "GUID", "00000000000000000000000000000000").c_str());
+
 		if (input::debug)
 		{
 			PrintDebug("[Input] Deadzones for P%d (L/R/T): %05d / %05d / %05d\n", (i + 1),
