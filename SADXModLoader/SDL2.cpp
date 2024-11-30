@@ -130,6 +130,10 @@ void SDL2_Init()
 	if (GetModuleHandle(L"sadx-input-mod") != nullptr)
 	{
 		isInputMod = true;
+		MessageBox(nullptr, L"The Input Mod should be disabled when Better Input (SDL2) is enabled in the Mod Manager. "
+			"Disable the Input Mod and try again.\n\n"
+			"If you would like to continue using the old Input Mod, disable Better Input in the Mod Manager (not recommended).",
+			L"SDL Load Error", MB_OK | MB_ICONERROR);
 		return;
 	}
 
