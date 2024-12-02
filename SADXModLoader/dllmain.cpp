@@ -253,7 +253,7 @@ static void __cdecl ProcessCodes()
 	}
 }
 
-//used to get external lib location and extra config
+// Used to get external lib location and extra config
 std::wstring appPath; // "AppData\SAManager\" with trailing slash
 std::wstring extLibPath; // "AppData\SAManager\extlib\" with trailing slash
 
@@ -261,14 +261,21 @@ void SetAppPathConfig(std::wstring gamepath)
 {
 	appPath = gamepath + L"\\SAManager\\"; // Account for portable
 	extLibPath = appPath + L"extlib\\";
+	std::wstring profilesPath = appPath + L"SADX\\Profiles.json";
 	WCHAR appDataLocalPath[MAX_PATH];
-	if (!Exists(appPath))
+	if (!Exists(appPath) || !Exists(profilesPath))
 	{
 		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalPath)))
 		{
 			appPath = appDataLocalPath;
 			appPath += L"\\SAManager\\";
 			extLibPath = appPath + L"extlib\\";
+		}
+		else
+		{
+			MessageBox(nullptr, L"Unable to retrieve local AppData path.", L"SADX Mod Loader", MB_ICONERROR);
+			OnExit(0, 0, 0);
+			ExitProcess(0);
 		}
 	}
 }

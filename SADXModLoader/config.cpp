@@ -36,204 +36,137 @@ std::string LegacyGamePatchList[] =
 };
 
 void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath)
-{	
-	std::wstring profilesPath = appPath + L"\\SADX\\Profiles.json";
-	// If the profiles path exists, assume SA Mod Manager
-	if (Exists(profilesPath))
+{
+	std::wstring profilesPath = appPath + L"SADX\\Profiles.json";
+	
+	// Warn the player if the profiles file doesn't exist
+	if (!Exists(profilesPath))
 	{
-		// Load profiles JSON file
-		std::ifstream ifs(profilesPath);
-		json json_profiles = json::parse(ifs);
-		ifs.close();
+		MessageBox(nullptr, L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again.", L"SADX Mod Loader", MB_ICONWARNING);
+		OnExit(0, 0, 0);
+		ExitProcess(0);
+	}
 
-		// Get current profile index
-		int ind_profile = json_profiles.value("ProfileIndex", 0);
+	// Load profiles JSON file
+	std::ifstream ifs(profilesPath);
+	json json_profiles = json::parse(ifs);
+	ifs.close();
 
-		// Get current profile filename
-		json proflist = json_profiles["ProfilesList"];
-		std::string profname = proflist.at(ind_profile)["Filename"];
+	// Get current profile index
+	int ind_profile = json_profiles.value("ProfileIndex", 0);
 
-		// Convert profile name from UTF8 stored in JSON to wide string
-		int count = MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), NULL, 0);
-		std::wstring profname_w(count, 0);
-		MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), &profname_w[0], count);
+	// Get current profile filename
+	json proflist = json_profiles["ProfilesList"];
+	std::string profname = proflist.at(ind_profile)["Filename"];
 
-		// Load the current profile
-		currentProfilePath = appPath + L"\\SADX\\" + profname_w;
-		std::ifstream ifs_p(appPath + L"\\SADX\\" + profname_w);
-		json json_config = json::parse(ifs_p);
-		int settingsVersion = json_config.value("SettingsVersion", 0);
+	// Convert profile name from UTF8 stored in JSON to wide string
+	int count = MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), NULL, 0);
+	std::wstring profname_w(count, 0);
+	MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), &profname_w[0], count);
 
-		// Graphics settings
-		json json_graphics = json_config["Graphics"];
-		loaderSettings->ScreenNum = json_graphics.value("SelectedScreen", 0);
-		loaderSettings->HorizontalResolution = json_graphics.value("HorizontalResolution", 640);
-		loaderSettings->VerticalResolution = json_graphics.value("VerticalResolution", 480);
-		loaderSettings->ForceAspectRatio = json_graphics.value("Enable43ResolutionRatio", false);
-		loaderSettings->EnableVsync = json_graphics.value("EnableVsync", true);
-		loaderSettings->Antialiasing = json_graphics.value("Antialiasing", 0);
-		loaderSettings->Anisotropic = json_graphics.value("Anisotropic", 0);
-		loaderSettings->PauseWhenInactive = json_graphics.value("EnablePauseOnInactive", true);
-		//loaderSettings->WindowedFullscreen = json_graphics.value("EnableBorderless", true);
-		//loaderSettings->CustomWindowSize = json_graphics.value("EnableCustomWindow", false);
-		//loaderSettings->StretchFullscreen = json_graphics.value("EnableScreenScaling", true);
-		loaderSettings->WindowWidth = json_graphics.value("CustomWindowWidth", 640);
-		loaderSettings->WindowHeight = json_graphics.value("CustomWindowHeight", 480);
-		loaderSettings->MaintainWindowAspectRatio = json_graphics.value("EnableKeepResolutionRatio", false);
-		loaderSettings->ResizableWindow = json_graphics.value("EnableResizableWindow", true);
-		loaderSettings->BackgroundFillMode = json_graphics.value("FillModeBackground", 2);
-		loaderSettings->FmvFillMode = json_graphics.value("FillModeFMV", 1);
-		loaderSettings->RenderBackend = json_graphics.value("RenderBackend", 0);
-		// ModeTextureFiltering ?
-		// ModeUIFiltering ?
-		loaderSettings->ScaleHud = json_graphics.value("EnableUIScaling", true);
-		loaderSettings->AutoMipmap = json_graphics.value("EnableForcedMipmapping", true);
-		loaderSettings->TextureFilter = json_graphics.value("EnableForcedTextureFilter", true);
-		loaderSettings->ScreenMode = json_graphics.value("ScreenMode", 0);
-		loaderSettings->ShowMouseInFullscreen = json_graphics.value("ShowMouseInFullscreen", false);
-		loaderSettings->DisableBorderImage = json_graphics.value("DisableBorderImage", false);
+	// Load the current profile
+	currentProfilePath = appPath + L"SADX\\" + profname_w;
+	std::ifstream ifs_p(appPath + L"SADX\\" + profname_w);
+	json json_config = json::parse(ifs_p);
+	int settingsVersion = json_config.value("SettingsVersion", 0);
 
-		// Controller settings
-		json json_controller = json_config["Controller"];
-		loaderSettings->InputMod = json_controller.value("EnabledInputMod", true);
+	// Graphics settings
+	json json_graphics = json_config["Graphics"];
+	loaderSettings->ScreenNum = json_graphics.value("SelectedScreen", 0);
+	loaderSettings->HorizontalResolution = json_graphics.value("HorizontalResolution", 640);
+	loaderSettings->VerticalResolution = json_graphics.value("VerticalResolution", 480);
+	loaderSettings->ForceAspectRatio = json_graphics.value("Enable43ResolutionRatio", false);
+	loaderSettings->EnableVsync = json_graphics.value("EnableVsync", true);
+	loaderSettings->Antialiasing = json_graphics.value("Antialiasing", 0);
+	loaderSettings->Anisotropic = json_graphics.value("Anisotropic", 0);
+	loaderSettings->PauseWhenInactive = json_graphics.value("EnablePauseOnInactive", true);
+	//loaderSettings->WindowedFullscreen = json_graphics.value("EnableBorderless", true);
+	//loaderSettings->CustomWindowSize = json_graphics.value("EnableCustomWindow", false);
+	//loaderSettings->StretchFullscreen = json_graphics.value("EnableScreenScaling", true);
+	loaderSettings->WindowWidth = json_graphics.value("CustomWindowWidth", 640);
+	loaderSettings->WindowHeight = json_graphics.value("CustomWindowHeight", 480);
+	loaderSettings->MaintainWindowAspectRatio = json_graphics.value("EnableKeepResolutionRatio", false);
+	loaderSettings->ResizableWindow = json_graphics.value("EnableResizableWindow", true);
+	loaderSettings->BackgroundFillMode = json_graphics.value("FillModeBackground", 2);
+	loaderSettings->FmvFillMode = json_graphics.value("FillModeFMV", 1);
+	loaderSettings->RenderBackend = json_graphics.value("RenderBackend", 0);
+	// ModeTextureFiltering ?
+	// ModeUIFiltering ?
+	loaderSettings->ScaleHud = json_graphics.value("EnableUIScaling", true);
+	loaderSettings->AutoMipmap = json_graphics.value("EnableForcedMipmapping", true);
+	loaderSettings->TextureFilter = json_graphics.value("EnableForcedTextureFilter", true);
+	loaderSettings->ScreenMode = json_graphics.value("ScreenMode", 0);
+	loaderSettings->ShowMouseInFullscreen = json_graphics.value("ShowMouseInFullscreen", false);
+	loaderSettings->DisableBorderImage = json_graphics.value("DisableBorderImage", false);
 
-		// Sound settings
-		json json_sound = json_config["Sound"];
-		loaderSettings->EnableBassMusic = json_sound.value("EnableBassMusic", true);
-		loaderSettings->EnableBassSFX = json_sound.value("EnableBassSFX", true);
-		loaderSettings->SEVolume = json_sound.value("SEVolume", 100);
+	// Controller settings
+	json json_controller = json_config["Controller"];
+	loaderSettings->InputMod = json_controller.value("EnabledInputMod", true);
 
-		// Game Patches settings (for compatibility)
-		if (json_config.contains("Patches"))
+	// Sound settings
+	json json_sound = json_config["Sound"];
+	loaderSettings->EnableBassMusic = json_sound.value("EnableBassMusic", true);
+	loaderSettings->EnableBassSFX = json_sound.value("EnableBassSFX", true);
+	loaderSettings->SEVolume = json_sound.value("SEVolume", 100);
+
+	// Game Patches settings (for compatibility)
+	if (json_config.contains("Patches"))
+	{
+		json json_oldpatches = json_config["Patches"];
+		loaderSettings->HRTFSound = json_oldpatches.value("HRTFSound", false);
+		loaderSettings->CCEF = json_oldpatches.value("KeepCamSettings", true);
+		loaderSettings->PolyBuff = json_oldpatches.value("FixVertexColorRendering", true);
+		loaderSettings->MaterialColorFix = json_oldpatches.value("MaterialColorFix", true);
+		loaderSettings->NodeLimit = json_oldpatches.value("NodeLimit", true);
+		loaderSettings->FovFix = json_oldpatches.value("FOVFix", true);
+		loaderSettings->SCFix = json_oldpatches.value("SkyChaseResolutionFix", true);
+		loaderSettings->Chaos2CrashFix = json_oldpatches.value("Chaos2CrashFix", true);
+		loaderSettings->ChunkSpecFix = json_oldpatches.value("ChunkSpecularFix", true);
+		loaderSettings->E102PolyFix = json_oldpatches.value("E102NGonFix", true);
+		loaderSettings->ChaoPanelFix = json_oldpatches.value("ChaoPanelFix", true);
+		loaderSettings->PixelOffsetFix = json_oldpatches.value("PixelOffSetFix", true);
+		loaderSettings->LightFix = json_oldpatches.value("LightFix", true);
+		loaderSettings->KillGbix = json_oldpatches.value("KillGBIX", false);
+		loaderSettings->DisableCDCheck = json_oldpatches.value("DisableCDCheck", true);
+		loaderSettings->ExtendedSaveSupport = json_oldpatches.value("ExtendedSaveSupport", true);
+		loaderSettings->CrashGuard = json_oldpatches.value("CrashGuard", true);
+		loaderSettings->XInputFix = json_oldpatches.value("XInputFix", false);
+		// Add old game patches to the new system
+		for (int p = 0; p < LengthOfArray(LegacyGamePatchList); p++)
 		{
-			json json_oldpatches = json_config["Patches"];
-			loaderSettings->HRTFSound = json_oldpatches.value("HRTFSound", false);
-			loaderSettings->CCEF = json_oldpatches.value("KeepCamSettings", true);
-			loaderSettings->PolyBuff = json_oldpatches.value("FixVertexColorRendering", true);
-			loaderSettings->MaterialColorFix = json_oldpatches.value("MaterialColorFix", true);
-			loaderSettings->NodeLimit = json_oldpatches.value("NodeLimit", true);
-			loaderSettings->FovFix = json_oldpatches.value("FOVFix", true);
-			loaderSettings->SCFix = json_oldpatches.value("SkyChaseResolutionFix", true);
-			loaderSettings->Chaos2CrashFix = json_oldpatches.value("Chaos2CrashFix", true);
-			loaderSettings->ChunkSpecFix = json_oldpatches.value("ChunkSpecularFix", true);
-			loaderSettings->E102PolyFix = json_oldpatches.value("E102NGonFix", true);
-			loaderSettings->ChaoPanelFix = json_oldpatches.value("ChaoPanelFix", true);
-			loaderSettings->PixelOffsetFix = json_oldpatches.value("PixelOffSetFix", true);
-			loaderSettings->LightFix = json_oldpatches.value("LightFix", true);
-			loaderSettings->KillGbix = json_oldpatches.value("KillGBIX", false);
-			loaderSettings->DisableCDCheck = json_oldpatches.value("DisableCDCheck", true);
-			loaderSettings->ExtendedSaveSupport = json_oldpatches.value("ExtendedSaveSupport", true);
-			loaderSettings->CrashGuard = json_oldpatches.value("CrashGuard", true);
-			loaderSettings->XInputFix = json_oldpatches.value("XInputFix", false);
-			// Add old game patches to the new system
-			for (int p = 0; p < LengthOfArray(LegacyGamePatchList); p++)
+			if (json_oldpatches.value(LegacyGamePatchList[p], false)) // Old game patches are stored in the json regardless of whether they are enabled or not
 			{
-				if (json_oldpatches.value(LegacyGamePatchList[p], false)) // Old game patches are stored in the json regardless of whether they are enabled or not
-				{
-					GamePatchList.push_back(LegacyGamePatchList[p]);
-				}
+				GamePatchList.push_back(LegacyGamePatchList[p]);
 			}
 		}
-		// Debug settings
-		json json_debug = json_config["DebugSettings"];
-		loaderSettings->DebugConsole = json_debug.value("EnableDebugConsole", false);
-		loaderSettings->DebugScreen = json_debug.value("EnableDebugScreen", false);
-		loaderSettings->DebugFile = json_debug.value("EnableDebugFile", false);
-		loaderSettings->DebugCrashLog = json_debug.value("EnableDebugCrashLog", true);
-
-		// Testspawn settings (These don't really belong in testspawn imo - PkR)
-		json json_testspawn = json_config["TestSpawn"];
-		loaderSettings->TextLanguage = json_testspawn.value("GameTextLanguage", 1);
-		loaderSettings->VoiceLanguage = json_testspawn.value("GameVoiceLanguage", 1);
-		// EnableShowConsole ?
-		// Mods
-		json json_mods = json_config["EnabledMods"];
-		for (unsigned int i = 1; i <= json_mods.size(); i++)
-		{
-			std::string mod_fname = json_mods.at(i - 1);
-			ModList.push_back(mod_fname);
-		}
-		// Game Patches (current system)
-		json json_patches = json_config["EnabledGamePatches"];
-		for (unsigned int i = 1; i <= json_patches.size(); i++)
-		{
-			std::string patch_name = json_patches.at(i - 1);
-			// Check if it isn't on the list already (legacy patches can be there)
-			if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
-				GamePatchList.push_back(patch_name);
-		}
 	}
-	// If the profiles path doesn't exist, assume old SADX Mod Manager (to be removed soon)
-	else
+	// Debug settings
+	json json_debug = json_config["DebugSettings"];
+	loaderSettings->DebugConsole = json_debug.value("EnableDebugConsole", false);
+	loaderSettings->DebugScreen = json_debug.value("EnableDebugScreen", false);
+	loaderSettings->DebugFile = json_debug.value("EnableDebugFile", false);
+	loaderSettings->DebugCrashLog = json_debug.value("EnableDebugCrashLog", true);
+
+	// Testspawn settings (These don't really belong in testspawn imo - PkR)
+	json json_testspawn = json_config["TestSpawn"];
+	loaderSettings->TextLanguage = json_testspawn.value("GameTextLanguage", 1);
+	loaderSettings->VoiceLanguage = json_testspawn.value("GameVoiceLanguage", 1);
+	// EnableShowConsole ?
+	// Mods
+	json json_mods = json_config["EnabledMods"];
+	for (unsigned int i = 1; i <= json_mods.size(); i++)
 	{
-		FILE* f_ini = _wfopen(L"mods\\SADXModLoader.ini", L"r");
-		if (!f_ini)
-		{
-			MessageBox(nullptr, L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again.", L"SADX Mod Loader", MB_ICONWARNING);
-			return;
-		}
-		unique_ptr<IniFile> ini(new IniFile(f_ini));
-		fclose(f_ini);
-
-		// Process the main Mod Loader settings.
-		const IniGroup* setgrp = ini->getGroup("");
-
-		loaderSettings->DebugConsole = setgrp->getBool("DebugConsole");
-		loaderSettings->DebugScreen = setgrp->getBool("DebugScreen");
-		loaderSettings->DebugFile = setgrp->getBool("DebugFile");
-		loaderSettings->DebugCrashLog = setgrp->getBool("DebugCrashLog", true);
-		loaderSettings->HorizontalResolution = setgrp->getInt("HorizontalResolution", 640);
-		loaderSettings->VerticalResolution = setgrp->getInt("VerticalResolution", 480);
-		loaderSettings->ForceAspectRatio = setgrp->getBool("ForceAspectRatio");
-		//loaderSettings->WindowedFullscreen = (setgrp->getBool("Borderless") || setgrp->getBool("WindowedFullscreen"));
-		loaderSettings->EnableVsync = setgrp->getBool("EnableVsync", true);
-		loaderSettings->AutoMipmap = setgrp->getBool("AutoMipmap", true);
-		loaderSettings->TextureFilter = setgrp->getBool("TextureFilter", true);
-		loaderSettings->PauseWhenInactive = setgrp->getBool("PauseWhenInactive", true);
-		//loaderSettings->StretchFullscreen = setgrp->getBool("StretchFullscreen", true);
-		loaderSettings->ScreenNum = setgrp->getInt("ScreenNum", 1);
-		loaderSettings->VoiceLanguage = setgrp->getInt("VoiceLanguage", 1);
-		loaderSettings->TextLanguage = setgrp->getInt("TextLanguage", 1);
-		//loaderSettings->CustomWindowSize = setgrp->getBool("CustomWindowSize");
-		loaderSettings->WindowWidth = setgrp->getInt("WindowWidth", 640);
-		loaderSettings->WindowHeight = setgrp->getInt("WindowHeight", 480);
-		loaderSettings->MaintainWindowAspectRatio = setgrp->getBool("MaintainWindowAspectRatio");
-		loaderSettings->ResizableWindow = setgrp->getBool("ResizableWindow");
-		loaderSettings->ScaleHud = setgrp->getBool("ScaleHud", true);
-		loaderSettings->BackgroundFillMode = setgrp->getInt("BackgroundFillMode", uiscale::FillMode_Fill);
-		loaderSettings->FmvFillMode = setgrp->getInt("FmvFillMode", uiscale::FillMode_Fit);
-		loaderSettings->EnableBassMusic = setgrp->getBool("EnableBassMusic", true);
-		loaderSettings->EnableBassSFX = setgrp->getBool("EnableBassSFX", false);
-		loaderSettings->SEVolume = setgrp->getInt("SEVolume", 100);
-
-		// Game Patches (this broke with the new system but it's on the way out anyway)
-		loaderSettings->HRTFSound = setgrp->getBool("HRTFSound", true);
-		loaderSettings->CCEF = setgrp->getBool("CCEF", true);
-		loaderSettings->PolyBuff = setgrp->getBool("PolyBuff", true);
-		loaderSettings->MaterialColorFix = setgrp->getBool("MaterialColorFix", true);
-		loaderSettings->NodeLimit = setgrp->getBool("NodeLimit", true);
-		loaderSettings->FovFix = setgrp->getBool("FovFix", true);
-		loaderSettings->SCFix = setgrp->getBool("SCFix", true);
-		loaderSettings->Chaos2CrashFix = setgrp->getBool("Chaos2CrashFix", true);
-		loaderSettings->ChunkSpecFix = setgrp->getBool("ChunkSpecFix", true);
-		loaderSettings->E102PolyFix = setgrp->getBool("E102PolyFix", true);
-		loaderSettings->ChaoPanelFix = setgrp->getBool("ChaoPanelFix ", true);
-		loaderSettings->PixelOffsetFix = setgrp->getBool("PixelOffsetFix ", true);
-		loaderSettings->LightFix = setgrp->getBool("LightFix", true);
-		loaderSettings->KillGbix = setgrp->getBool("KillGbix", true);
-		loaderSettings->DisableCDCheck = setgrp->getBool("DisableCDCheck", false);
-		loaderSettings->ExtendedSaveSupport = setgrp->getBool("ExtendedSaveSupport", true);
-		loaderSettings->CrashGuard = setgrp->getBool("CrashGuard", true);
-		loaderSettings->XInputFix = setgrp->getBool("XInputFix", false);
-
-		for (unsigned int i = 1; i <= 999; i++)
-		{
-			char key[8];
-			snprintf(key, sizeof(key), "Mod%u", i);
-			if (!setgrp->hasKey(key))
-				break;
-			ModList.push_back(setgrp->getString(key));
-		}
+		std::string mod_fname = json_mods.at(i - 1);
+		ModList.push_back(mod_fname);
+	}
+	// Game Patches (current system)
+	json json_patches = json_config["EnabledGamePatches"];
+	for (unsigned int i = 1; i <= json_patches.size(); i++)
+	{
+		std::string patch_name = json_patches.at(i - 1);
+		// Check if it isn't on the list already (legacy patches can be there)
+		if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
+		GamePatchList.push_back(patch_name);
 	}
 }
 
