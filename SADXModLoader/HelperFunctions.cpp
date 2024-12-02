@@ -6,6 +6,7 @@
 #include "MediaFns.hpp"
 #include "BasicWeights.h"
 #include "InterpolationFixes.h"
+#include <TextConv.hpp>
 
 using std::vector;
 using std::unordered_map;
@@ -655,6 +656,31 @@ void UnreplaceFile(const char* file)
 	sadx_fileMap.unreplaceFile(file);
 }
 
+void PrintDebugUnicode(char* utf8)
+{
+	if (utf8)
+	{
+		fputs(utf8, stdout);
+		fflush(stdout);
+	}
+}
+
+void PrintDebugCodepage(char* buf, unsigned int source_cp)
+{
+	char* utf8 = CodepagetoUTF8(buf, source_cp);
+	if (utf8)
+	{
+		fputs(utf8, stdout);
+		fflush(stdout);
+		delete utf8;
+	}
+}
+
+void PrintDebugLocal(char* buf)
+{
+	PrintDebugCodepage(buf, CP_ACP);
+}
+
 extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
@@ -702,4 +728,7 @@ HelperFunctions helperFunctions =
 	&RegisterPermanentTexlist,
 	&ExpandPVMList,
 	&UnreplaceFile,
+	&PrintDebugUnicode,
+	&PrintDebugLocal,
+	&PrintDebugCodepage
 };
