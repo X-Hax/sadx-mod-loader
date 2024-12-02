@@ -304,24 +304,28 @@ static int __cdecl SADXDebugOutput(const char* Format, ...)
 	// Console output.
 	if (dbgConsole)
 	{
-		// TODO: Convert from Shift-JIS to CP_ACP?
-		fputs(buf, stdout);
-		fflush(stdout);
+		char* utf8 = SJIStoUTF8(buf);
+		if (utf8)
+		{
+			fputs(utf8, stdout);
+			fflush(stdout);
+			delete utf8;
+		}
 	}
 
 	// Screen output.
 	if (dbgScreen)
 	{
 		message msg = { { buf }, 0 };
-		// Remove trailing newlines if present.
-		while (!msg.text.empty() &&
-			(msg.text[msg.text.size() - 1] == '\n' ||
-				msg.text[msg.text.size() - 1] == '\r'))
-		{
-			msg.text.resize(msg.text.size() - 1);
+			// Remove trailing newlines if present.
+			while (!msg.text.empty() &&
+				(msg.text[msg.text.size() - 1] == '\n' ||
+					msg.text[msg.text.size() - 1] == '\r'))
+			{
+				msg.text.resize(msg.text.size() - 1);
+			}
+			msgqueue.push_back(msg);
 		}
-		msgqueue.push_back(msg);
-	}
 
 	// File output.
 	if (dbgFile)
@@ -911,6 +915,10 @@ static void __cdecl InitMods()
 	// Is any debug method enabled?
 	if (dbgConsole || dbgScreen || dbgFile)
 	{
+		// Set console output to UTF-8
+		if (dbgConsole)
+			SetConsoleOutputCP(CP_UTF8);
+
 		WriteJump((void*)PrintDebug, (void*)SADXDebugOutput);
 
 		PrintDebug("SADX Mod Loader v" VERSION_STRING " (API version %d), built " __TIMESTAMP__ "\n",
