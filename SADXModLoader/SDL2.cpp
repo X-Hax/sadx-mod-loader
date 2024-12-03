@@ -16,7 +16,6 @@
 #include "rumble.h"
 #include "minmax.h"
 
-bool isInputMod = false;
 bool enabledSDL = false;
 static void* RumbleA_ptr = reinterpret_cast<void*>(0x004BCBC0);
 static void* RumbleB_ptr = reinterpret_cast<void*>(0x004BCC10);
@@ -65,7 +64,7 @@ void CreateSADXKeyboard(KeyboardInput* ptr, int length)
 
 void SDL2_OnInput()
 {
-	if (isInputMod || !enabledSDL)
+	if (!enabledSDL)
 		return;
 
 	input::poll_controllers();
@@ -124,12 +123,12 @@ void SDL2_OnInput()
 	}
 }
 
-void SDL2_Init()
+void SDL2_Init(std::wstring extLibPath)
 {
 	enabledSDL = true;
 	if (GetModuleHandle(L"sadx-input-mod") != nullptr)
 	{
-		isInputMod = true;
+		enabledSDL = false;
 		MessageBox(nullptr, L"The Input Mod should be disabled when Better Input (SDL2) is enabled in the Mod Manager. "
 			"Disable the Input Mod and try again.\n\n"
 			"If you would like to continue using the old Input Mod, disable Better Input in the Mod Manager (not recommended).",
@@ -137,7 +136,7 @@ void SDL2_Init()
 		return;
 	}
 
-	std::wstring sdlFolderPath = appPath + L"extlib\\SDL2\\";
+	std::wstring sdlFolderPath = extLibPath + L"SDL2\\";
 
 	//if path doesn't exist, assume the dll is in the game folder directly
 	if (!FileExists(sdlFolderPath + L"SDL2.dll"))
@@ -300,7 +299,7 @@ void SDL2_Init()
 
 void SDL2_OnExit()
 {
-	if (isInputMod || !enabledSDL)
+	if (!enabledSDL)
 		return;
 
 	for (auto& i : DreamPad::controllers)

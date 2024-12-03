@@ -253,33 +253,6 @@ static void __cdecl ProcessCodes()
 	}
 }
 
-// Used to get external lib location and extra config
-std::wstring appPath; // "AppData\SAManager\" with trailing slash
-std::wstring extLibPath; // "AppData\SAManager\extlib\" with trailing slash
-
-void SetAppPathConfig(std::wstring gamepath)
-{
-	appPath = gamepath + L"\\SAManager\\"; // Account for portable
-	extLibPath = appPath + L"extlib\\";
-	std::wstring profilesPath = appPath + L"SADX\\Profiles.json";
-	WCHAR appDataLocalPath[MAX_PATH];
-	if (!Exists(appPath) || !Exists(profilesPath))
-	{
-		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalPath)))
-		{
-			appPath = appDataLocalPath;
-			appPath += L"\\SAManager\\";
-			extLibPath = appPath + L"extlib\\";
-		}
-		else
-		{
-			MessageBox(nullptr, L"Unable to retrieve local AppData path.", L"SADX Mod Loader", MB_ICONERROR);
-			OnExit(0, 0, 0);
-			ExitProcess(0);
-		}
-	}
-}
-
 static bool dbgConsole, dbgScreen;
 // File for logging debugging output.
 static FILE* dbgFile = nullptr;
@@ -464,7 +437,7 @@ void ProcessVoiceDurationRegisters()
 	_JPVoiceDurationList.clear();
 }
 
-static void __cdecl InitAudio()
+static void __cdecl InitAudio(wstring extLibPath)
 {
 	// BASS stuff
 	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
@@ -867,12 +840,18 @@ static void __cdecl InitMods()
 
 	// Hook present function to handle device lost/reset states
 	direct3d::init();
-
-	// Get sonic.exe's path and filename.
+	
+	// Get full path for sonic.exe
 	wchar_t pathbuf[MAX_PATH];
 	GetModuleFileName(nullptr, pathbuf, MAX_PATH);
+
+	// Paths used to get external lib location and extra config
 	wstring exepath(pathbuf); // "C:\SADX" etc. without trailing slash
-	wstring exefilename;
+	wstring appPath; // "AppData\SAManager\" with trailing slash
+	wstring extLibPath; // "AppData\SAManager\extlib\" with trailing slash
+	wstring exefilename; // Name of the EXE file such as sonic.exe or other exe name for mods	
+
+	// Get slash position and retrieve the EXE filename
 	string::size_type slash_pos = exepath.find_last_of(L"/\\");
 	if (slash_pos != string::npos)
 	{
@@ -885,7 +864,30 @@ static void __cdecl InitMods()
 	transform(exefilename.begin(), exefilename.end(), exefilename.begin(), ::towlower);
 
 	// Get path for Mod Manager settings and libraries
-	SetAppPathConfig(exepath);
+	appPath = exepath + L"\\SAManager\\"; // Account for portable
+	extLibPath = appPath + L"extlib\\";
+	wstring profilesPath = appPath + L"SADX\\Profiles.json";
+	// If the above file doesn't exist, assume non-portable mode
+	if (!Exists(profilesPath))
+	{
+		WCHAR appDataLocalBuf[MAX_PATH];
+		// Get the LocalAppData folder and check if it has the profiles json
+		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalBuf)))
+		{
+			wstring appDataLocalPath(appDataLocalBuf);
+			appPath = appDataLocalPath + L"\\SAManager\\";
+			extLibPath = appPath + L"extlib\\";
+			profilesPath = appPath + L"SADX\\Profiles.json";
+			if (!Exists(profilesPath))
+				DisplaySettingsLoadError(exepath, appPath, profilesPath);
+		}
+		else
+		{
+			MessageBox(nullptr, L"Unable to retrieve local AppData path.", L"SADX Mod Loader", MB_ICONERROR);
+			OnExit(0, 0, 0);
+			ExitProcess(0);
+		}
+	}
 
 	// Load Mod Loader settings
 	LoadModLoaderSettings(&loaderSettings, appPath, exepath);
@@ -953,7 +955,7 @@ static void __cdecl InitMods()
 	WriteCall((void*)0x402614, SetLanguage);
 	WriteCall((void*)0x437547, FixEKey);
 
-	InitAudio();
+	InitAudio(extLibPath);
 	WriteJump(LoadSoundList, LoadSoundList_r);
 	InitGamePatches();
 
@@ -1312,7 +1314,7 @@ static void __cdecl InitMods()
 	Video_Init(loaderSettings, borderimage);
 
 	if (loaderSettings.InputMod)
-		SDL2_Init();
+		SDL2_Init(extLibPath);
 
 	else if (IsGamePatchEnabled("XInputFix"))
 		XInputFix_Init();

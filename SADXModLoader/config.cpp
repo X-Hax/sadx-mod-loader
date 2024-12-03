@@ -35,21 +35,24 @@ std::string LegacyGamePatchList[] =
 	"XInputFix",
 };
 
+void DisplaySettingsLoadError(wstring gamePath, wstring appPath, wstring errorFile)
+{
+	wstring gamepatherror = L"\n\nGame path: " + gamePath;
+	wstring appdataerror = L"\n\nManager data path: " + appPath;
+	wstring missingerror = L"\n\nThe following file was missing: " + errorFile;
+	wstring error = L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again." + gamepatherror + appdataerror + missingerror;
+	MessageBox(nullptr, error.c_str(), L"SADX Mod Loader", MB_ICONERROR);
+	OnExit(0, 0, 0);
+	ExitProcess(0);
+}
+
 void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath, std::wstring gamePath)
 {
 	std::wstring profilesPath = appPath + L"SADX\\Profiles.json";
 	
 	// Warn the player if the profiles file doesn't exist
 	if (!Exists(profilesPath))
-	{
-		std::wstring gamepatherror = L"\nGame path: " + gamePath;
-		std::wstring appdataerror = L"\nManager data path: " + appPath;
-		std::wstring profileerror = L"\nThe following file was missing: " + profilesPath;
-		std::wstring error = L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again.\n" + gamepatherror + appdataerror + profileerror;
-		MessageBox(nullptr, error.c_str(), L"SADX Mod Loader", MB_ICONWARNING);
-		OnExit(0, 0, 0);
-		ExitProcess(0);
-	}
+		DisplaySettingsLoadError(gamePath, appPath, profilesPath);
 
 	// Load profiles JSON file
 	std::ifstream ifs(profilesPath);
@@ -71,15 +74,8 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath,
 	// Load the current profile
 	currentProfilePath = appPath + L"SADX\\" + profname_w;
 	if (!Exists(currentProfilePath))
-	{
-		std::wstring gamepatherror = L"\nGame path: " + gamePath;
-		std::wstring appdataerror = L"\nManager data path: " + appPath;
-		std::wstring profileerror = L"\nThe following file was missing: " + currentProfilePath;
-		std::wstring error = L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again.\n" + gamepatherror + appdataerror + profileerror;
-		MessageBox(nullptr, error.c_str(), L"SADX Mod Loader", MB_ICONWARNING);
-		OnExit(0, 0, 0);
-		ExitProcess(0);
-	}
+		DisplaySettingsLoadError(gamePath, appPath, currentProfilePath);
+
 	std::ifstream ifs_p(appPath + L"SADX\\" + profname_w);
 	json json_config = json::parse(ifs_p);
 	int settingsVersion = json_config.value("SettingsVersion", 0);
