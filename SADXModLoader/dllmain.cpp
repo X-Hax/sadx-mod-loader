@@ -888,7 +888,7 @@ static void __cdecl InitMods()
 	SetAppPathConfig(exepath);
 
 	// Load Mod Loader settings
-	LoadModLoaderSettings(&loaderSettings, appPath);
+	LoadModLoaderSettings(&loaderSettings, appPath, exepath);
 	// Process the main Mod Loader settings.
 	if (loaderSettings.DebugConsole)
 	{
