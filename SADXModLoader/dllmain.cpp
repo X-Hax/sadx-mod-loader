@@ -439,8 +439,8 @@ void ProcessVoiceDurationRegisters()
 
 static void __cdecl InitAudio(wstring extLibPath)
 {
-	// BASS stuff
-	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm"))
+	// Load BASS if any BASS options are enabled, or if BGM/SE in the system folder are missing (i.e. this is a converted Steam install)
+	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm") || !Exists("system\\sounddata\\se"))
 	{
 		wstring bassFolder = extLibPath + L"BASS\\";
 
@@ -466,8 +466,12 @@ static void __cdecl InitAudio(wstring extLibPath)
 			return;
 		}
 
+		// Functions that should be hooked regardless of options because they load or unload the BASS library
+		WriteJump((void*)0x40D1EA, WMPInit_r);
+		WriteJump((void*)0x40D28A, WMPRelease_r);
+
 		// Music
-		if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\se"))
+		if (loaderSettings.EnableBassMusic || !Exists("system\\sounddata\\bgm\\wma"))
 		{
 			WriteCall((void*)0x42544C, PlayMusicFile_r);
 			WriteCall((void*)0x4254F4, PlayVoiceFile_r);
@@ -476,12 +480,10 @@ static void __cdecl InitAudio(wstring extLibPath)
 			WriteCall((void*)0x425488, PlayMusicFile_CD_r);
 			WriteCall((void*)0x425591, PlayVoiceFile_CD_r);
 			WriteCall((void*)0x42551D, PlayVoiceFile_CD_r);
-			WriteJump((void*)0x40D1EA, WMPInit_r);
 			WriteJump((void*)0x40CF50, WMPRestartMusic_r);
 			WriteJump((void*)0x40D060, PauseMusic_r);
 			WriteJump((void*)0x40D0A0, ResumeMusic_r);
 			WriteJump((void*)0x40CFF0, WMPClose_r);
-			WriteJump((void*)0x40D28A, WMPRelease_r);
 			WriteJump((void*)0x40CF20, sub_40CF20_r);
 		}
 
