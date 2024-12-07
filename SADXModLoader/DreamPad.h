@@ -33,7 +33,9 @@ class DreamPad
 	SDL_GameController* gamepad = nullptr;
 
 	int controller_id_ = -1;
-
+	char name_[128];
+	int open_id_ = -1;
+	
 	bool  connected_ = false;
 	bool  e_held = false;
 	bool  half_press = false;
@@ -73,11 +75,22 @@ public:
 	 */
 	void poll();
 
+	/**
+	 * \brief Retrieves the implementation-dependent name of the controller.
+	 */
+	const char* name();
+
+	/**
+	 * \brief Loads settings for the controller from config.ini.
+	 */
+	void DreamPad::load_config();
+
 	Motor active_motor() const;
 	void  set_active_motor(Motor motor, bool enable);
 	bool  connected() const;
 	bool  e_held_pad() const;
 	int   controller_id() const;
+	int   open_id() const;
 	float normalized_l() const;
 	float normalized_r() const;
 
@@ -97,7 +110,6 @@ public:
 		float    rumble_factor;     // Rumble intensity multiplier (1.0 by default)
 		bool     mega_rumble;       // Always fire both motors
 		ushort   rumble_min_time;   // Minimum rumble time for controllers that have issues
-		SDL_GUID guid;              // GUID that should be prioritized for this player ID
 
 		void set_deadzone_l(short deadzone);
 		void set_deadzone_r(short deadzone);
@@ -120,7 +132,7 @@ public:
 	 * \param buttons The buttons to add.
 	 */
 	static void update_buttons(ControllerData& pad, Uint32 buttons);
-
+	
 private:
 	void move_from(DreamPad&& other);
 };
