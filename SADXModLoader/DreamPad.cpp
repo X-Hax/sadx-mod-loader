@@ -104,6 +104,7 @@ void DreamPad::load_config()
 		return;
 	
 	char section[33];
+	char buf[1024];
 	
 	SDL_Joystick* joystick = SDL_GameControllerGetJoystick(gamepad);
 	if (joystick == nullptr)
@@ -129,6 +130,27 @@ void DreamPad::load_config()
 
 	settings.mega_rumble = config->getBool(section, "MegaRumble", false);
 	settings.rumble_min_time = static_cast<ushort>(config->getInt(section, "RumbleMinTime", 0));
+
+	std::string mapping = config->getString(section, "Mapping", "");
+	if (mapping != "")
+	{
+		sprintf(buf, "%s,%s,%s", section, name(), mapping);
+		//PrintDebug("%s\n", buf);
+		int result = SDL_GameControllerAddMapping(buf);
+		switch (result)
+		{
+		case 0:
+			PrintDebug("[Input] Mapping updated for %s\n", name());
+			break;
+		case 1:
+			PrintDebug("[Input] New mapping added for %s\n", name());
+			break;
+		case -1:
+		default:
+			PrintDebug("[Input] Error adding mapping for %s: %s\n", name(), SDL_GetError());
+			break;
+		}
+	}
 
 	if (input::debug)
 	{
