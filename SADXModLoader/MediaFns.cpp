@@ -31,6 +31,13 @@ void WMPInit_r()
 	bassinit = !!BASS_Init(-1, 44100, BASS_DEVICE_3D, nullptr, nullptr);
 	BASS_Set3DFactors(0.1f, 0.1f, 0.0f);
 	BASS_SetConfig(BASS_CONFIG_3DALGORITHM, BASS_3DALG_FULL);
+	// Load the WavPack plugin
+	std::wstring fullPath = bassFolder + L"basswv.dll";
+	HPLUGIN plugin = BASS_PluginLoad(fullPath.c_str(), BASS_UNICODE);
+	if (!plugin)
+		PrintDebug("Error loading BASS WavPack plugin: %d\n", BASS_ErrorGetCode());
+	else if (!BASS_PluginEnable(plugin, TRUE))
+		PrintDebug("Error initializing BASS WavPack plugin: %d\n", BASS_ErrorGetCode());
 }
 
 /**
