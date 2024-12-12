@@ -36,14 +36,13 @@ void __cdecl InitRenderBackend(int mode, std::wstring gamePath, std::wstring ext
 	default:
 		break;
 	case DirectX9:
-		wstring d3d8oldpath = gamePath + L"\\d3d8.dll";
-		if (FileExists(d3d8oldpath))
+		bool d3d8to9DLL = false; // Handle of the DLL
+		if (GetModuleHandle(L"d3d9.dll") != nullptr)
 		{
-			PrintDebug("D3D8to9: d3d8.dll found in game directory, aborting D3D8to9 hook\n");
+			PrintDebug("D3D8to9: Direct3D 9 is already loaded, skipping D3D8to9 hook\n");
 			return;
 		}
 
-		bool d3d8to9DLL = false; // Handle of the DLL
 		wstring fullPath = extLibPath + L"D3D8M\\d3d8m.dll"; // Path to the DLL
 
 		// Attempt to load the DLL
