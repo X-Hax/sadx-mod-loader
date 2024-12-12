@@ -163,10 +163,21 @@ static void StopBASS(int ch)
 
 static BOOL LoadBASS(int ch, void* wavememory, int wavesize, bool dolby)
 {
+	if (!wavememory || !sndname)
+		return FALSE;
 	if (ch >= 0 && ch < MAX_SOUND)
 	{
 		StopBASS(ch);
-		bass_channels[ch] = BASS_VGMSTREAM_StreamCreateFromMemory((unsigned char*)wavememory, wavesize, sndname, dolby ? BASS_SAMPLE_3D : NULL);
+		if (sndname[10] == 'w' && sndname[11] == 'v')
+		{
+			// WavPack .wv loaded directly with BASS
+			bass_channels[ch] = BASS_StreamCreateFile(true, (unsigned char*)wavememory, 0, wavesize, dolby ? BASS_SAMPLE_3D : NULL);
+		}
+		else
+		{
+			// Other files loaded with vgmstream
+			bass_channels[ch] = BASS_VGMSTREAM_StreamCreateFromMemory((unsigned char*)wavememory, wavesize, sndname, dolby ? BASS_SAMPLE_3D : NULL);
+		}
 		return bass_channels[ch] != NULL;
 	}
 	return FALSE;
