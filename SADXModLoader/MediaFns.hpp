@@ -155,6 +155,8 @@ signed int __cdecl sub_40CF20_r();
 extern SoundList* SoundLists_Cust;
 extern int SoundLists_Cust_Length;
 
+extern std::wstring bassFolder;
+
 void LoadSoundList_r(signed int soundlist);
 
 #ifdef __cplusplus

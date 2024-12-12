@@ -75,6 +75,7 @@ using json = nlohmann::json;
 wstring borderimage = L"mods\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
 wstring iconPathName;
+wstring bassFolder;
 
 /**
  * Show an error message indicating that this isn't the 2004 US version.
@@ -442,7 +443,7 @@ static void __cdecl InitAudio(wstring extLibPath)
 	// Load BASS if any BASS options are enabled, or if BGM/SE in the system folder are missing (i.e. this is a converted Steam install)
 	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm") || !Exists("system\\sounddata\\se"))
 	{
-		wstring bassFolder = extLibPath + L"BASS\\";
+		bassFolder = extLibPath + L"BASS\\";
 
 		// If the file doesn't exist, assume it's in the game folder like with the old Manager
 		if (!FileExists(bassFolder + L"bass_vgmstream.dll"))
