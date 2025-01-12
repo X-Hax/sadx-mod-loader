@@ -129,7 +129,7 @@ void SDL2_Init(std::wstring extLibPath)
 	if (GetModuleHandle(L"sadx-input-mod") != nullptr)
 	{
 		enabledSDL = false;
-		MessageBox(nullptr, L"The Input Mod should be disabled when Better Input (SDL2) is enabled in the Mod Manager's settings. "
+		MessageBox(nullptr, L"The Input Mod is outdated and no longer required. It should be disabled when Better Input (SDL2) is enabled in the Mod Manager's settings. "
 			"Disable the Input Mod and try again.\n\n"
 			"If you would like to continue using the old Input Mod, disable Better Input in the Mod Manager's Game Config/Input tab (not recommended).",
 			L"SDL Load Error", MB_OK | MB_ICONERROR);
