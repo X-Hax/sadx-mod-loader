@@ -5,6 +5,7 @@
 #include "rumble.h"
 
 static bool enabledSDL = false;
+SDL_version SdlVer;
 bool enabledSmoothCam = false;
 IniFile* config; 
 
@@ -164,6 +165,14 @@ void SDL2_Init(std::wstring extLibPath)
 			"SDL Init Error", MB_OK | MB_ICONERROR);
 		return;
 	}
+	SDL_GetVersion(&SdlVer);
+	if (SdlVer.major < 3 && SdlVer.minor < 30)
+	{
+		MessageBoxA(nullptr, "Your SDL2 library is out of date. Reinstall the Mod Loader and try again.",
+			"SDL Init Error", MB_OK | MB_ICONERROR);
+		OnExit(0, 0, 0);
+	}
+	PrintDebug("[Input] SDL version: %d.%d.%d\n", SdlVer.major, SdlVer.minor, SdlVer.patch);
 
 	// WriteJumps
 	InitSDL2_Hacks();
