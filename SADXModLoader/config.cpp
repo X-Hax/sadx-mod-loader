@@ -48,11 +48,21 @@ void DisplaySettingsLoadError(wstring gamePath, wstring appPath, wstring errorFi
 
 void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath, std::wstring gamePath)
 {
-	std::wstring profilesPath = appPath + L"SADX\\Profiles.json";
-	
-	// Warn the player if the profiles file doesn't exist
-	if (!Exists(profilesPath))
-		DisplaySettingsLoadError(gamePath, appPath, profilesPath);
+	std::wstring profileFolderName = L"SADX\\";
+	std::wstring profilesPath = appPath + profileFolderName + L"Profiles.json";
+
+	if (!Exists(profilesPath)) //if sadx folder doesn't exist, assume new path in mods folder directly
+	{
+		profilesPath = appPath + L"profiles\\Profiles.json";
+
+		if (!Exists(profilesPath)) 	// Warn the player if the profiles file doesn't exist
+		{
+			DisplaySettingsLoadError(gamePath, appPath, profilesPath);
+			return;
+		}
+
+		profileFolderName = L"profiles\\";
+	}
 
 	// Load profiles JSON file
 	std::ifstream ifs(profilesPath);
@@ -72,11 +82,14 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath,
 	MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), &profname_w[0], count);
 
 	// Load the current profile
-	currentProfilePath = appPath + L"SADX\\" + profname_w;
+	currentProfilePath = appPath + profileFolderName + profname_w;
 	if (!Exists(currentProfilePath))
+	{
 		DisplaySettingsLoadError(gamePath, appPath, currentProfilePath);
+	}
+	
 
-	std::ifstream ifs_p(appPath + L"SADX\\" + profname_w);
+	std::ifstream ifs_p(appPath + profileFolderName + profname_w);
 	json json_config = json::parse(ifs_p);
 	int settingsVersion = json_config.value("SettingsVersion", 0);
 

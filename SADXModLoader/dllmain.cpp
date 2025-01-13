@@ -835,6 +835,46 @@ static void HandleRedirectSave()
 
 std::vector<Mod> modlist;
 
+static void SetManagerConfigFolder(wstring &exepath, wstring &appPath, wstring &extLibPath)
+{
+	// Get path for Mod Manager settings and libraries
+	// start by checking portable mode, then new path in mods folder and finally appdata local.
+	// note we should remove the old path eventually once enough people updated.
+
+	appPath = exepath + L"\\SAManager\\"; // Account for portable
+	extLibPath = appPath + L"extlib\\";
+	wstring profilesPath = appPath + L"SADX\\Profiles.json";
+
+	// If the above file doesn't exist, assume non-portable mode
+	if (!Exists(profilesPath))
+	{
+		appPath = exepath + L"\\mods\\.modloader\\";
+		extLibPath = appPath + L"extlib\\";
+		profilesPath = appPath + L"profiles\\Profiles.json";
+
+		if (!Exists(profilesPath))
+		{
+			WCHAR appDataLocalBuf[MAX_PATH]; //to do delete when enough people will have updated
+			// Get the LocalAppData folder and check if it has the profiles json
+			if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalBuf)))
+			{
+				wstring appDataLocalPath(appDataLocalBuf);
+				appPath = appDataLocalPath + L"\\SAManager\\";
+				extLibPath = appPath + L"extlib\\";
+				profilesPath = appPath + L"SADX\\Profiles.json";
+				if (!Exists(profilesPath))
+					DisplaySettingsLoadError(exepath, appPath, profilesPath);
+			}
+			else
+			{
+				MessageBox(nullptr, L"Unable to retrieve local AppData path.", L"SADX Mod Loader", MB_ICONERROR);
+				OnExit(0, 0, 0);
+				ExitProcess(0);
+			}
+		}
+	}
+}
+
 
 static void __cdecl InitMods()
 {
@@ -866,31 +906,7 @@ static void __cdecl InitMods()
 	// Convert the EXE filename to lowercase.
 	transform(exefilename.begin(), exefilename.end(), exefilename.begin(), ::towlower);
 
-	// Get path for Mod Manager settings and libraries
-	appPath = exepath + L"\\SAManager\\"; // Account for portable
-	extLibPath = appPath + L"extlib\\";
-	wstring profilesPath = appPath + L"SADX\\Profiles.json";
-	// If the above file doesn't exist, assume non-portable mode
-	if (!Exists(profilesPath))
-	{
-		WCHAR appDataLocalBuf[MAX_PATH];
-		// Get the LocalAppData folder and check if it has the profiles json
-		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalBuf)))
-		{
-			wstring appDataLocalPath(appDataLocalBuf);
-			appPath = appDataLocalPath + L"\\SAManager\\";
-			extLibPath = appPath + L"extlib\\";
-			profilesPath = appPath + L"SADX\\Profiles.json";
-			if (!Exists(profilesPath))
-				DisplaySettingsLoadError(exepath, appPath, profilesPath);
-		}
-		else
-		{
-			MessageBox(nullptr, L"Unable to retrieve local AppData path.", L"SADX Mod Loader", MB_ICONERROR);
-			OnExit(0, 0, 0);
-			ExitProcess(0);
-		}
-	}
+	SetManagerConfigFolder(exepath, appPath, extLibPath);
 
 	// Load Mod Loader settings
 	LoadModLoaderSettings(&loaderSettings, appPath, exepath);
