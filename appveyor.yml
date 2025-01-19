@@ -34,6 +34,8 @@ after_build:
 
     mkdir C:\sadxmm\extlib\D3D8M
 
+    mkdir C:\sadxmm\extlib\d3d8to11
+
     mkdir C:\sadxmm\extlib\SDL2
 
     copy C:\projects\sadx-mod-loader\bin\SADXModLoader.dll C:\sadxmm\SADXModLoader.dll
@@ -43,6 +45,8 @@ after_build:
     copy C:\projects\sadx-mod-loader\extlib\bass\*.dll C:\sadxmm\extlib\BASS\
 
     copy C:\projects\sadx-mod-loader\extlib\d3d8to9\d3d8.dll C:\sadxmm\extlib\D3D8M\d3d8m.dll
+
+    copy C:\projects\sadx-mod-loader\extlib\d3d8to11\*.* C:\sadxmm\extlib\d3d8to11\*.*
 
     copy C:\projects\sadx-mod-loader\extlib\SDL2\lib\x86\*.dll C:\sadxmm\extlib\SDL2\
 
