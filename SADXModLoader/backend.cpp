@@ -66,7 +66,7 @@ void __cdecl InitRenderBackend(int mode, std::wstring gamePath, std::wstring ext
 	{
 		if (GetModuleHandle(WrapperCheckFilename.c_str()) != nullptr)
 		{
-			PrintDebug("%s: Direct3D 9 is already loaded, skipping D3D8to9 hook\n", BackendName.c_str());
+			PrintDebug("%s: Skipping initialization because the DLL is already loaded\n", BackendName.c_str());
 			return;
 		}
 		// Attempt to load the DLL
