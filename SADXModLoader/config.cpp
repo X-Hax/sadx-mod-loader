@@ -87,8 +87,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath,
 		DisplaySettingsLoadError(gamePath, appPath, currentProfilePath);
 	}
 	
-
-	std::ifstream ifs_p(appPath + profileFolderName + profname_w);
+	std::ifstream ifs_p(currentProfilePath);
 	json json_config = json::parse(ifs_p);
 	int settingsVersion = json_config.value("SettingsVersion", 0);
 

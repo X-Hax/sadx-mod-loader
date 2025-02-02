@@ -841,7 +841,7 @@ static void SetManagerConfigFolder(wstring& exepath, wstring& appPath, wstring& 
 
 	appPath = exepath + L"\\mods\\.modloader\\";
 	extLibPath = appPath + L"extlib\\";
-	wstring profilesPath = appPath + L"profiles\\Profiles.json";
+	wstring profilesPath = appPath + L"profiles\\Profiles.json"; // Only used in the first check and the error message
 
 	// Success
 	if (Exists(profilesPath))
@@ -856,7 +856,6 @@ static void SetManagerConfigFolder(wstring& exepath, wstring& appPath, wstring& 
 		{
 			appPath = exepath + L"\\SAManager\\";
 			extLibPath = appPath + L"extlib\\";
-			profilesPath = appPath + L"SADX\\Profiles.json";
 			return;
 		}
 		// If 'checkProfilesPath' doesn't exist either, assume the settings are in 'AppData\Local\SAManager'
@@ -872,7 +871,6 @@ static void SetManagerConfigFolder(wstring& exepath, wstring& appPath, wstring& 
 				{
 					appPath = appDataLocalPath + L"\\SAManager\\";
 					extLibPath = appPath + L"extlib\\";
-					profilesPath = appPath + L"SADX\\Profiles.json";
 					return;
 				}
 				// If it still can't be found, display an error message
