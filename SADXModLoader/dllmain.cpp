@@ -835,34 +835,48 @@ static void HandleRedirectSave()
 
 std::vector<Mod> modlist;
 
-static void SetManagerConfigFolder(wstring &exepath, wstring &appPath, wstring &extLibPath)
+static void SetManagerConfigFolder(wstring& exepath, wstring& appPath, wstring& extLibPath)
 {
-	// Get path for Mod Manager settings and libraries
-	// start by checking portable mode, then new path in mods folder and finally appdata local.
-	// note we should remove the old path eventually once enough people updated.
+	// Get path for Mod Loader settings and libraries, normally located in 'Sonic Adventure DX\mods\.modloader'
 
-	appPath = exepath + L"\\SAManager\\"; // Account for portable
+	appPath = exepath + L"\\mods\\.modloader\\";
 	extLibPath = appPath + L"extlib\\";
-	wstring profilesPath = appPath + L"SADX\\Profiles.json";
+	wstring profilesPath = appPath + L"profiles\\Profiles.json";
 
-	// If the above file doesn't exist, assume non-portable mode
-	if (!Exists(profilesPath))
+	// Success
+	if (Exists(profilesPath))
+		return;
+
+	// If Profiles.json isn't found, assume the old paths system
+	else
 	{
-		appPath = exepath + L"\\mods\\.modloader\\";
-		extLibPath = appPath + L"extlib\\";
-		profilesPath = appPath + L"profiles\\Profiles.json";
-
-		if (!Exists(profilesPath))
+		// Check 'Sonic Adventure DX\SAManager' (portable mode) first
+		wstring checkProfilesPath = exepath + L"\\SAManager\\SADX\\Profiles.json";
+		if (Exists(checkProfilesPath))
 		{
-			WCHAR appDataLocalBuf[MAX_PATH]; //to do delete when enough people will have updated
+			appPath = exepath + L"\\SAManager\\";
+			extLibPath = appPath + L"extlib\\";
+			profilesPath = appPath + L"SADX\\Profiles.json";
+			return;
+		}
+		// If 'checkProfilesPath' doesn't exist either, assume the settings are in 'AppData\Local\SAManager'
+		else
+		{
+			WCHAR appDataLocalBuf[MAX_PATH];
 			// Get the LocalAppData folder and check if it has the profiles json
 			if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalBuf)))
 			{
 				wstring appDataLocalPath(appDataLocalBuf);
-				appPath = appDataLocalPath + L"\\SAManager\\";
-				extLibPath = appPath + L"extlib\\";
-				profilesPath = appPath + L"SADX\\Profiles.json";
-				if (!Exists(profilesPath))
+				checkProfilesPath = appDataLocalPath + L"\\SAManager\\SADX\\Profiles.json";
+				if (Exists(checkProfilesPath))
+				{
+					appPath = appDataLocalPath + L"\\SAManager\\";
+					extLibPath = appPath + L"extlib\\";
+					profilesPath = appPath + L"SADX\\Profiles.json";
+					return;
+				}
+				// If it still can't be found, display an error message
+				else
 					DisplaySettingsLoadError(exepath, appPath, profilesPath);
 			}
 			else
