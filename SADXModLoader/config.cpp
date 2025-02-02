@@ -48,20 +48,19 @@ void DisplaySettingsLoadError(wstring gamePath, wstring appPath, wstring errorFi
 
 void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath, std::wstring gamePath)
 {
-	std::wstring profileFolderName = L"SADX\\";
+	std::wstring profileFolderName = L"profiles\\";
 	std::wstring profilesPath = appPath + profileFolderName + L"Profiles.json";
 
-	if (!Exists(profilesPath)) //if sadx folder doesn't exist, assume new path in mods folder directly
+	if (!Exists(profilesPath)) // If Profiles.json doesn't exist, assume the old paths system that adds "SADX" instead of "profiles"
 	{
-		profilesPath = appPath + L"profiles\\Profiles.json";
+		profileFolderName = L"SADX\\";
+		profilesPath = appPath + profileFolderName + L"Profiles.json";
 
-		if (!Exists(profilesPath)) 	// Warn the player if the profiles file doesn't exist
+		// If that doesn't exist either, display an error and quit
+		if (!Exists(profilesPath))
 		{
 			DisplaySettingsLoadError(gamePath, appPath, profilesPath);
-			return;
 		}
-
-		profileFolderName = L"profiles\\";
 	}
 
 	// Load profiles JSON file
