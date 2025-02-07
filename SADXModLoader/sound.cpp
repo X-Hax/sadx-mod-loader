@@ -226,7 +226,20 @@ static void __cdecl IsndVolume_r(int vol, int handleno)
 	auto channel = bass_channels[handleno];
 	if (channel)
 	{
-		BASS_ChannelSetAttribute(channel, BASS_ATTRIB_VOL, SEVolume / 100.0f * ((float)(min(127, vol) + 127) / 254.0f));
+		// Old volume formula
+		//BASS_ChannelSetAttribute(channel, BASS_ATTRIB_VOL, SEVolume / 100.0f * ((float)(min(127, vol) + 127) / 254.0f));
+		
+		// This is what the Dreamcast version does according to decompiled code.
+		// It also resolves the problem with -100 still being audible, which wasn't the case on DC.
+		if (vol > 0)
+			vol = vol / 6;
+		vol += 106; // To make it add up to 127 when the original non-divided value is 127? Lol
+		if (vol < 0)
+			vol = 0;
+		else if (vol > 127)
+			vol = 127;
+		// SEVolume divided by 166 here instead of 100 to adjust for the overall volume increase with the new formula, otherwise it's really loud.
+		BASS_ChannelSetAttribute(channel, BASS_ATTRIB_VOL, ((SEVolume / 166.0f) * (float)vol)/127.0f);		
 	}
 }
 
