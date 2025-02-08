@@ -27,9 +27,6 @@ using json = nlohmann::json;
 
 // Win32 headers.
 #include <DbgHelp.h>
-#include <Shlwapi.h>
-#include <GdiPlus.h>
-#include "resource.h"
 
 #include "git.h"
 #include "version.h"
@@ -62,7 +59,6 @@ using json = nlohmann::json;
 #include "Gbix.h"
 #include "input.h"
 #include "video.h"
-#include <ShlObj.h>
 #include "gvm.h"
 #include "ExtendedSaveSupport.h"
 #include "NodeLimit.h"
@@ -438,12 +434,12 @@ void ProcessVoiceDurationRegisters()
 	_JPVoiceDurationList.clear();
 }
 
-static void __cdecl InitAudio(wstring extLibPath)
+static void __cdecl InitAudio()
 {
 	// Load BASS if any BASS options are enabled, or if BGM/SE in the system folder are missing (i.e. this is a converted Steam install)
 	if (loaderSettings.EnableBassMusic || loaderSettings.EnableBassSFX || !Exists("system\\sounddata\\bgm") || !Exists("system\\sounddata\\se"))
 	{
-		bassFolder = extLibPath + L"BASS\\";
+		bassFolder = loaderSettings.ExtLibPath + L"BASS\\";
 
 		// If the file doesn't exist, assume it's in the game folder like with the old Manager
 		if (!FileExists(bassFolder + L"bass_vgmstream.dll"))
@@ -835,59 +831,6 @@ static void HandleRedirectSave()
 
 std::vector<Mod> modlist;
 
-static void SetManagerConfigFolder(wstring& exepath, wstring& appPath, wstring& extLibPath)
-{
-	// Get path for Mod Loader settings and libraries, normally located in 'Sonic Adventure DX\mods\.modloader'
-
-	appPath = exepath + L"\\mods\\.modloader\\";
-	extLibPath = appPath + L"extlib\\";
-	wstring profilesPath = appPath + L"profiles\\Profiles.json"; // Only used in the first check and the error message
-
-	// Success
-	if (Exists(profilesPath))
-		return;
-
-	// If Profiles.json isn't found, assume the old paths system
-	else
-	{
-		// Check 'Sonic Adventure DX\SAManager' (portable mode) first
-		wstring checkProfilesPath = exepath + L"\\SAManager\\SADX\\Profiles.json";
-		if (Exists(checkProfilesPath))
-		{
-			appPath = exepath + L"\\SAManager\\";
-			extLibPath = appPath + L"extlib\\";
-			return;
-		}
-		// If 'checkProfilesPath' doesn't exist either, assume the settings are in 'AppData\Local\SAManager'
-		else
-		{
-			WCHAR appDataLocalBuf[MAX_PATH];
-			// Get the LocalAppData folder and check if it has the profiles json
-			if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalBuf)))
-			{
-				wstring appDataLocalPath(appDataLocalBuf);
-				checkProfilesPath = appDataLocalPath + L"\\SAManager\\SADX\\Profiles.json";
-				if (Exists(checkProfilesPath))
-				{
-					appPath = appDataLocalPath + L"\\SAManager\\";
-					extLibPath = appPath + L"extlib\\";
-					return;
-				}
-				// If it still can't be found, display an error message
-				else
-					DisplaySettingsLoadError(exepath, appPath, profilesPath);
-			}
-			else
-			{
-				MessageBox(nullptr, L"Unable to retrieve local AppData path.", L"SADX Mod Loader", MB_ICONERROR);
-				OnExit(0, 0, 0);
-				ExitProcess(0);
-			}
-		}
-	}
-}
-
-
 static void __cdecl InitMods()
 {
 	// Set process DPI awareness (silent crash fix on High DPI)
@@ -902,8 +845,6 @@ static void __cdecl InitMods()
 
 	// Paths used to get external lib location and extra config
 	wstring exepath(pathbuf); // "C:\SADX" etc. without trailing slash
-	wstring appPath; // "AppData\SAManager\" with trailing slash
-	wstring extLibPath; // "AppData\SAManager\extlib\" with trailing slash
 	wstring exefilename; // Name of the EXE file such as sonic.exe or other exe name for mods	
 
 	// Get slash position and retrieve the EXE filename
@@ -918,10 +859,8 @@ static void __cdecl InitMods()
 	// Convert the EXE filename to lowercase.
 	transform(exefilename.begin(), exefilename.end(), exefilename.begin(), ::towlower);
 
-	SetManagerConfigFolder(exepath, appPath, extLibPath);
-
 	// Load Mod Loader settings
-	LoadModLoaderSettings(&loaderSettings, appPath, exepath);
+	LoadModLoaderSettings(&loaderSettings, exepath);
 	// Process the main Mod Loader settings.
 	if (loaderSettings.DebugConsole)
 	{
@@ -963,7 +902,7 @@ static void __cdecl InitMods()
 	}
 
 	PatchWindow(loaderSettings); // override window creation function
-	InitRenderBackend(loaderSettings.RenderBackend, exepath, extLibPath);
+	InitRenderBackend(loaderSettings.RenderBackend);
 
 	// Other various settings
 	if (IsGamePatchEnabled("DisableCDCheck"))
@@ -986,7 +925,7 @@ static void __cdecl InitMods()
 	WriteCall((void*)0x402614, SetLanguage);
 	WriteCall((void*)0x437547, FixEKey);
 
-	InitAudio(extLibPath);
+	InitAudio();
 	WriteJump(LoadSoundList, LoadSoundList_r);
 	InitGamePatches();
 
@@ -1345,7 +1284,7 @@ static void __cdecl InitMods()
 	Video_Init(loaderSettings, borderimage);
 
 	if (loaderSettings.InputMod)
-		SDL2_Init(extLibPath);
+		SDL2_Init();
 
 	else if (IsGamePatchEnabled("XInputFix"))
 		XInputFix_Init();

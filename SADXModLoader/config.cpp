@@ -2,6 +2,8 @@
 #include "json.hpp"
 #include "IniFile.hpp"
 
+#include <ShlObj.h>
+
 using json = nlohmann::json;
 using std::string;
 using std::wstring;
@@ -35,36 +37,63 @@ std::string LegacyGamePatchList[] =
 	"XInputFix",
 };
 
-void DisplaySettingsLoadError(wstring gamePath, wstring appPath, wstring errorFile)
+void DisplaySettingsLoadError(wstring file)
 {
-	wstring gamepatherror = L"\n\nGame path: " + gamePath;
-	wstring appdataerror = L"\n\nManager data path: " + appPath;
-	wstring missingerror = L"\n\nThe following file was missing: " + errorFile;
-	wstring error = L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again." + gamepatherror + appdataerror + missingerror;
+	wstring error = L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again.\n\nThe following file was missing: " + file;
 	MessageBox(nullptr, error.c_str(), L"SADX Mod Loader", MB_ICONERROR);
 	OnExit(0, 0, 0);
 	ExitProcess(0);
 }
 
-void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath, std::wstring gamePath)
+void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 {
-	std::wstring profileFolderName = L"profiles\\";
-	std::wstring profilesPath = appPath + profileFolderName + L"Profiles.json";
+	// Get paths for Mod Loader settings and libraries, normally located in 'Sonic Adventure DX\mods\.modloader'
 
-	if (!Exists(profilesPath)) // If Profiles.json doesn't exist, assume the old paths system that adds "SADX" instead of "profiles"
+	wstring loaderDataPath = gamePath + L"\\mods\\.modloader\\";
+	loaderSettings->ExtLibPath = loaderDataPath + L"extlib\\";
+	wstring profilesFolderPath = loaderDataPath + L"profiles\\";
+	wstring profilesJsonPath = profilesFolderPath + L"Profiles.json";
+
+	// If Profiles.json isn't found, assume the old paths system
+	if (!Exists(profilesJsonPath))
 	{
-		profileFolderName = L"SADX\\";
-		profilesPath = appPath + profileFolderName + L"Profiles.json";
-
-		// If that doesn't exist either, display an error and quit
-		if (!Exists(profilesPath))
+		// Check 'Sonic Adventure DX\SAManager\SADX' (portable mode) first
+		profilesJsonPath = gamePath + L"\\SAManager\\SADX\\Profiles.json";
+		if (Exists(profilesJsonPath))
 		{
-			DisplaySettingsLoadError(gamePath, appPath, profilesPath);
+			loaderDataPath = gamePath + L"\\SAManager\\";
 		}
+		// If that doesn't exist either, assume the settings are in 'AppData\Local\SAManager'
+		else
+		{
+			WCHAR appDataLocalBuf[MAX_PATH];
+			// Get the LocalAppData folder and check if it has the profiles json
+			if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataLocalBuf)))
+			{
+				wstring appDataLocalPath(appDataLocalBuf);
+				profilesJsonPath = appDataLocalPath + L"\\SAManager\\SADX\\Profiles.json";
+				if (Exists(profilesJsonPath))
+				{
+					loaderDataPath = appDataLocalPath + L"\\SAManager\\";
+				}
+				// If it still can't be found, display an error message
+				else
+					DisplaySettingsLoadError(gamePath + L"\\mods\\.modloader\\Profiles.json");
+			}
+			else
+			{
+				MessageBox(nullptr, L"Unable to retrieve local AppData path.", L"SADX Mod Loader", MB_ICONERROR);
+				OnExit(0, 0, 0);
+				ExitProcess(0);
+			}
+		}
+		// If Profiles.json was found, set old paths
+		loaderSettings->ExtLibPath = loaderDataPath + L"extlib\\";
+		profilesFolderPath = loaderDataPath + L"SADX\\";
 	}
 
 	// Load profiles JSON file
-	std::ifstream ifs(profilesPath);
+	std::ifstream ifs(profilesJsonPath);
 	json json_profiles = json::parse(ifs);
 	ifs.close();
 
@@ -81,10 +110,10 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, std::wstring appPath,
 	MultiByteToWideChar(CP_UTF8, 0, profname.c_str(), profname.length(), &profname_w[0], count);
 
 	// Load the current profile
-	currentProfilePath = appPath + profileFolderName + profname_w;
+	currentProfilePath = profilesFolderPath + profname_w;
 	if (!Exists(currentProfilePath))
 	{
-		DisplaySettingsLoadError(gamePath, appPath, currentProfilePath);
+		DisplaySettingsLoadError(currentProfilePath);
 	}
 	
 	std::ifstream ifs_p(currentProfilePath);

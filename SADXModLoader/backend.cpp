@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "d3d8types.h"
+#include "util.h"
 
 enum RenderBackend: int
 {
@@ -34,7 +35,7 @@ IDirect3D8* __stdcall CreateDirect3D8Hook(UINT SDKVersion)
 	return result;
 }
 
-void __cdecl InitRenderBackend(int mode, std::wstring gamePath, std::wstring extLibPath)
+void __cdecl InitRenderBackend(int mode)
 {
 	bool loadWrapper = false;
 	switch ((RenderBackend)mode)
@@ -47,16 +48,16 @@ void __cdecl InitRenderBackend(int mode, std::wstring gamePath, std::wstring ext
 		BackendName = "D3D8to9";
 		WrapperDllFilename = L"d3d8m.dll";
 		WrapperCheckFilename = L"d3d9.dll";
-		WrapperDllFolderLocation = extLibPath + L"D3D8M";
-		WrapperDllFullPath = extLibPath + L"D3D8M\\d3d8m.dll";
+		WrapperDllFolderLocation = loaderSettings.ExtLibPath + L"D3D8M";
+		WrapperDllFullPath = loaderSettings.ExtLibPath + L"D3D8M\\d3d8m.dll";
 		break;
 	case DirectX11:
 		loadWrapper = true;
 		BackendName = "D3D8to11";
 		WrapperDllFilename = L"d3d8to11.dll";
 		WrapperCheckFilename = L"d3d11.dll";
-		WrapperDllFolderLocation = extLibPath + L"D3D8to11";
-		WrapperDllFullPath = extLibPath + L"D3D8to11\\d3d8to11.dll";
+		WrapperDllFolderLocation = loaderSettings.ExtLibPath + L"D3D8to11";
+		WrapperDllFullPath = loaderSettings.ExtLibPath + L"D3D8to11\\d3d8to11.dll";
 		// Set environment variables
 		SetEnvironmentVariable(L"D3D8TO11_CONFIG_DIR", WrapperDllFolderLocation.c_str());
 		SetEnvironmentVariable(L"D3D8TO11_SHADER_SOURCE_DIR", WrapperDllFolderLocation.c_str());

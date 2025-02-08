@@ -18,7 +18,7 @@ namespace input
 	extern KeyboardMapping keys;
 }
 
-void SDL2_Init(std::wstring extLibPath);
+void SDL2_Init();
 void SDL2_OnExit();
 void SDL2_OnInput();
 

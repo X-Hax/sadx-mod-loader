@@ -129,6 +129,7 @@
     <ClInclude Include="include\UsercallFunctionHandler.h" />
     <ClInclude Include="typedefs.h" />
     <ClInclude Include="uiscale.h" />
+    <ClInclude Include="util.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="video.h" />
     <ClInclude Include="VoiceDuration.h" />

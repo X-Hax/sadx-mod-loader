@@ -124,7 +124,7 @@ void SDL2_OnInput()
 	}
 }
 
-void SDL2_Init(std::wstring extLibPath)
+void SDL2_Init()
 {
 	enabledSDL = true;
 	if (GetModuleHandle(L"sadx-input-mod") != nullptr)
@@ -137,7 +137,7 @@ void SDL2_Init(std::wstring extLibPath)
 		return;
 	}
 
-	std::wstring sdlFolderPath = extLibPath + L"SDL2\\";
+	std::wstring sdlFolderPath = loaderSettings.ExtLibPath + L"SDL2\\";
 
 	//if path doesn't exist, assume the dll is in the game folder directly
 	if (!FileExists(sdlFolderPath + L"SDL2.dll"))
