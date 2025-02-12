@@ -1260,7 +1260,7 @@ void hudscale::initialize()
 	late_exec_t = new Trampoline(0x004086F0, 0x004086F6, late_exec_r); // Sometimes used in a display function so we have to disable scaling temporarily
 
 	// Sky Chase reticle and score calculation
-	if (loaderSettings.SCFix)
+	if (IsGamePatchEnabled("SkyChaseResolutionFix"))
 		SkyChaseFix_Init();
 
 	// Big UI

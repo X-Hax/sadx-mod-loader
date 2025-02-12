@@ -845,7 +845,7 @@ void PatchWindow(const LoaderSettings& settings)
 		VerticalStretch = static_cast<float>(VerticalResolution) / 480.0f;
 	}
 
-	if (settings.FovFix)
+	if (IsGamePatchEnabled("FOVFix"))
 		fov::initialize();
 
 	if (!borderlessWindow)
