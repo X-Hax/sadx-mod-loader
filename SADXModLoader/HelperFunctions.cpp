@@ -7,6 +7,7 @@
 #include "BasicWeights.h"
 #include "InterpolationFixes.h"
 #include <TextConv.hpp>
+#include "util.h"
 
 using std::vector;
 using std::unordered_map;
@@ -680,8 +681,6 @@ void PrintDebugLocal(char* buf)
 {
 	PrintDebugCodepage(buf, CP_ACP);
 }
-
-extern LoaderSettings loaderSettings;
 
 HelperFunctions helperFunctions =
 {
