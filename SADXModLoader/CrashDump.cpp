@@ -125,7 +125,8 @@ static const unordered_map<intptr_t, string> crashes_addresses_map =
 	{ 0x434614, "Camera error: the game failed to load a cam file for the stage."},
 	{ 0x787148, "Model error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."},
 	{ 0x644EB1, "Write file error: The game crashed trying to write a save file."},
-	{ 0x78CDC9, "stApplyPalette error: The game crashed trying to set a texture.\nThis can happen when there are multiple mods replacing the same character model, or when a mod doesn't load textures properly."}
+	{ 0x78CDC9, "stApplyPalette error: The game crashed trying to set a texture.\nThis can happen when there are multiple mods replacing the same character model, or when a mod doesn't load textures properly."},
+	{ 0x792A97, "PVM seek error: The game crashed trying to read a texture from an archive.\nThis can happen when mod or game files are corrupted, or when there are mod conflicts."}
 };
 
 struct addressRange
