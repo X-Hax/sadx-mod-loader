@@ -68,7 +68,7 @@ using json = nlohmann::json;
 #include "dpi.h"
 #include "backend.h"
 
-wstring borderimage = L"mods\\Border.png";
+wstring borderimage = L"mods\\.modloader\\Border.png";
 HINSTANCE g_hinstDll = nullptr;
 wstring iconPathName;
 wstring bassFolder;
@@ -881,7 +881,8 @@ static void __cdecl InitMods()
 	{
 		// Enable debug logging to a file.
 		// dbgFile will be nullptr if the file couldn't be opened.
-		dbgFile = _wfopen(L"mods\\SADXModLoader.log", L"a+");
+		bool dbgNew = DirectoryExists("mods\\.modloader");
+		dbgFile = _wfopen(dbgNew ? L"mods\\.modloader\\SADXModLoader.log" : L"mods\\SADXModLoader.log", L"a+");
 	}
 
 	// Is any debug method enabled?
@@ -1276,6 +1277,13 @@ static void __cdecl InitMods()
 
 	if (!loaderSettings.DisableBorderImage)
 	{
+		// Failsafe for the old path: Custom border
+		if (!FileExists(borderimage))
+			borderimage = L"mods\\Border.png";
+		// Default border
+		if (!FileExists(borderimage))
+			borderimage = L"mods\\.modloader\\Border_Default.png";
+		// Failsafe for the old path: Default border
 		if (!FileExists(borderimage))
 			borderimage = L"mods\\Border_Default.png";
 		SetBorderImage(borderimage);
@@ -1465,7 +1473,8 @@ static void __cdecl InitMods()
 #endif
 
 	// Check for patch-type codes.
-	ifstream patches_str("mods\\Patches.dat", ifstream::binary);
+	bool patches_new = Exists("mods\\.modloader\\Patches.dat");
+	ifstream patches_str(patches_new ? "mods\\.modloader\\Patches.dat" : "mods\\Patches.dat", ifstream::binary);
 	if (patches_str.is_open())
 	{
 		CodeParser patchParser;
@@ -1506,7 +1515,8 @@ static void __cdecl InitMods()
 
 
 	// Check for codes.
-	ifstream codes_str("mods\\Codes.dat", ifstream::binary);
+	bool codes_new = Exists("mods\\.modloader\\Codes.dat");
+	ifstream codes_str(codes_new ? "mods\\.modloader\\Codes.dat" : "mods\\Codes.dat", ifstream::binary);
 
 	if (codes_str.is_open())
 	{
