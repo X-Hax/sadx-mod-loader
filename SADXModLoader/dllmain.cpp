@@ -1476,21 +1476,20 @@ static void __cdecl InitMods()
 		{
 			int codecount_header;
 			patches_str.read((char*)&codecount_header, sizeof(codecount_header));
-			PrintDebug("Loading %d patch-type codes...\n", codecount_header);
 			patches_str.seekg(0);
 			int codecount = patchParser.readCodes(patches_str);
 			if (codecount >= 0)
 			{
-				PrintDebug("Loaded %d patch-type codes.\n", codecount);
+				PrintDebug("[Codes] Loaded %d patch-type codes with %d instructions.\n", codecount_header, codecount);
 				patchParser.processCodeList();
 			}
 			else
 			{
-				PrintDebug("ERROR loading patch-type codes: ");
+				PrintDebug("[Codes] ERROR loading patch-type codes: ");
 				switch (codecount)
 				{
 				case -EINVAL:
-					PrintDebug("Patch-type code file is not in the correct format.\n");
+					PrintDebug("Patch-type code file (Patches.dat) is not in the correct format.\n");
 					break;
 				default:
 					PrintDebug("%s\n", strerror(-codecount));
@@ -1500,7 +1499,7 @@ static void __cdecl InitMods()
 		}
 		else
 		{
-			PrintDebug("Patch-type code file is not in the correct format.\n");
+			PrintDebug("[Codes] Patch-type code file (Patches.dat) is not in the correct format.\n");
 		}
 		patches_str.close();
 	}
@@ -1519,22 +1518,21 @@ static void __cdecl InitMods()
 		{
 			int codecount_header;
 			codes_str.read((char*)&codecount_header, sizeof(codecount_header));
-			PrintDebug("Loading %d codes...\n", codecount_header);
 			codes_str.seekg(0);
 			int codecount = codeParser.readCodes(codes_str);
 
 			if (codecount >= 0)
 			{
-				PrintDebug("Loaded %d codes.\n", codecount);
+				PrintDebug("[Codes] Loaded %d regular codes with %d instructions.\n", codecount_header, codecount);
 				codeParser.processCodeList();
 			}
 			else
 			{
-				PrintDebug("ERROR loading codes: ");
+				PrintDebug("[Codes] ERROR loading codes: ");
 				switch (codecount)
 				{
 				case -EINVAL:
-					PrintDebug("Code file is not in the correct format.\n");
+					PrintDebug("Code file (Codes.dat) is not in the correct format.\n");
 					break;
 				default:
 					PrintDebug("%s\n", strerror(-codecount));
@@ -1544,7 +1542,7 @@ static void __cdecl InitMods()
 		}
 		else
 		{
-			PrintDebug("Code file is not in the correct format.\n");
+			PrintDebug("[Codes] Code file (Codes.dat) is not in the correct format.\n");
 		}
 
 		codes_str.close();
