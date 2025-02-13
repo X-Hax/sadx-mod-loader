@@ -1,30 +1,21 @@
 #include "stdafx.h"
-#include <Windows.h>
-#include "util.h"
-#include <direct.h>	// for _getcwd
-
-#include <string>
-#include <sstream>	// because
-
-#include "SDL.h"
-
-#include <SADXModLoader.h>
 #include <IniFile.hpp>
-
-#include "typedefs.h"
+#include "SDL.h"
 #include "input.h"
 #include "rumble.h"
-#include "minmax.h"
+#include "util.h"
+#include "minmax.h" // To be deleted
 
-bool enabledSDL = false;
+static bool enabledSDL = false;
 SDL_version SdlVer;
+bool enabledSmoothCam = false;
+IniFile* config; 
+
 static void* RumbleA_ptr = reinterpret_cast<void*>(0x004BCBC0);
 static void* RumbleB_ptr = reinterpret_cast<void*>(0x004BCC10);
 static void* UpdateControllers_ptr = reinterpret_cast<void*>(0x0040F460);
 static void* AnalogHook_ptr = reinterpret_cast<void*>(0x0040F343);
 static void* InitRawControllers_ptr = reinterpret_cast<void*>(0x0040F451); // End of function (hook)
-
-KeyboardInput SADXKeyboard = { 0, 0, { 0, 0, 0, 0, 0, 0 }, nullptr };
 
 PointerInfo SDL2jumps[] = {
 	{ rumble::pdVibMxStop, rumble::pdVibMxStop_r },
@@ -48,7 +39,8 @@ void InitSDL2_Hacks()
 	}
 }
 
-int GetEKey(int index)
+// Hook to retrieve the E key state for camera centering
+static int GetEKey(int index)
 {
 	if (input::e_held && IsFreeCameraAllowed())
 	{
@@ -58,11 +50,13 @@ int GetEKey(int index)
 	return 0;
 }
 
-void CreateSADXKeyboard(KeyboardInput* ptr, int length)
+// Replaces SADX keyboard data pointer so that Better Input can write data to it
+static void CreateSADXKeyboard(KeyboardInput* ptr, int length)
 {
 	KeyboardInputPointer = &SADXKeyboard;
 }
 
+// Input routine
 void SDL2_OnInput()
 {
 	if (!enabledSDL)
@@ -84,7 +78,8 @@ void SDL2_OnInput()
 	if (input::demo)
 	{
 		DemoControllerData* demo_memory = (DemoControllerData*)HeapThing;
-		if (input::debug) PrintDebug("Demo frame:%d\n", Demo_Frame);
+		if (input::debug)
+			PrintDebug("Demo frame:%d\n", Demo_Frame);
 		if (GameState == 15)
 		{
 
@@ -124,12 +119,12 @@ void SDL2_OnInput()
 	}
 }
 
+// Main initialization
 void SDL2_Init()
 {
-	enabledSDL = true;
+	// Check for the old input mod
 	if (GetModuleHandle(L"sadx-input-mod") != nullptr)
 	{
-		enabledSDL = false;
 		MessageBox(nullptr, L"The Input Mod is outdated and no longer required. It should be disabled when Better Input (SDL2) is enabled in the Mod Manager's settings. "
 			"Disable the Input Mod and try again.\n\n"
 			"If you would like to continue using the old Input Mod, disable Better Input in the Mod Manager's Game Config/Input tab (not recommended).",
@@ -137,25 +132,33 @@ void SDL2_Init()
 		return;
 	}
 
+	// Debug mode
+	#ifdef _DEBUG
+		const bool debug_default = true;
+	#else
+		const bool debug_default = false;
+	#endif
+
+	// Locate the path to SDL2.DLL
 	std::wstring sdlFolderPath = loaderSettings.ExtLibPath + L"SDL2\\";
 
-	//if path doesn't exist, assume the dll is in the game folder directly
+	// If the path doesn't exist, assume the DLL is in the game folder
 	if (!FileExists(sdlFolderPath + L"SDL2.dll"))
 		sdlFolderPath = L"";
 
+	// Full path to the DLL
 	std::wstring dll = sdlFolderPath + L"SDL2.dll";
 
-	const auto handle = LoadLibrary(dll.c_str());
-
-	if (handle == nullptr)
+	// Load the DLL
+	if (LoadLibrary(dll.c_str()) == nullptr)
 	{
 		MessageBox(nullptr, L"Error loading SDL.\n\n"
 			L"Make sure the Mod Loader is installed properly.",
 			L"SDL Load Error", MB_OK | MB_ICONERROR);
-		enabledSDL = false;
 		return;
 	}
 
+	// Initialize SDL
 	int init;
 	if ((init = SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_EVENTS)) != 0)
 	{
@@ -164,7 +167,6 @@ void SDL2_Init()
 			"SDL Init Error", MB_OK | MB_ICONERROR);
 		return;
 	}
-
 	SDL_GetVersion(&SdlVer);
 	if (SdlVer.major < 3 && SdlVer.minor < 30)
 	{
@@ -174,6 +176,7 @@ void SDL2_Init()
 	}
 	PrintDebug("[Input] SDL version: %d.%d.%d\n", SdlVer.major, SdlVer.minor, SdlVer.patch);
 
+	// WriteJumps
 	InitSDL2_Hacks();
 
 	// Replace function to get the E key for centering camera on character
@@ -205,11 +208,12 @@ void SDL2_Init()
 	// WriteAnalogs
 	WriteData(reinterpret_cast<bool**>(0x40F30C), input::controller_enabled);
 
+	// Enable Players 1 and 2
 	input::controller_enabled[0] = true;
 	input::controller_enabled[1] = true;
 
+	// Load gamecontrollerdb.txt
 	std::wstring dbpath = sdlFolderPath + L"gamecontrollerdb.txt";
-
 	if (FileExists(dbpath))
 	{
 		char pathbuf[MAX_PATH];
@@ -227,86 +231,99 @@ void SDL2_Init()
 		}
 	}
 
+	// Load configuration file
 	const std::wstring config_path = sdlFolderPath + L"SDLconfig.ini";
-
-#ifdef _DEBUG
-	const bool debug_default = true;
-#else
-	const bool debug_default = false;
-#endif
-
-	IniFile config(config_path);
-	ushort KeyboardPlayer = max(0, min(7, config.getInt("Config", "KeyboardPlayer", 0)));
-	input::debug = config.getBool("Config", "Debug", debug_default);
-	input::disable_mouse = config.getBool("Config", "DisableMouse", true);
-	// Keyboard mappings
+	config = new IniFile(config_path);
+	
+	// Debug mode
+	input::debug = config->getBool("Config", "Debug", debug_default);
+	
+	// Keyboard layouts
 	const char* keyb[] = { "Keyboard", "Keyboard 2", "Keyboard 3" };
 	for (int n = 0; n < 3; n++)
 	{
-		input::keys.Analog1_Up[n] = config.getInt(keyb[n], "-lefty", 38);
-		input::keys.Analog1_Down[n] = config.getInt(keyb[n], "+lefty", 40);
-		input::keys.Analog1_Left[n] = config.getInt(keyb[n], "-leftx", 37);
-		input::keys.Analog1_Right[n] = config.getInt(keyb[n], "+leftx", 39);
-		input::keys.Analog2_Up[n] = config.getInt(keyb[n], "-righty", 73);
-		input::keys.Analog2_Down[n] = config.getInt(keyb[n], "+righty", 77);
-		input::keys.Analog2_Left[n] = config.getInt(keyb[n], "-rightx", 74);
-		input::keys.Analog2_Right[n] = config.getInt(keyb[n], "+rightx", 76);
-		input::keys.Button_A[n] = config.getInt(keyb[n], "a", 88);
-		input::keys.Button_B[n] = config.getInt(keyb[n], "b", 90);
-		input::keys.Button_X[n] = config.getInt(keyb[n], "x", 65);
-		input::keys.Button_Y[n] = config.getInt(keyb[n], "y", 83);
-		input::keys.Button_Start[n] = config.getInt(keyb[n], "start", 13);
-		input::keys.Button_Back[n] = config.getInt(keyb[n], "back", 86);
-		input::keys.LT[n] = config.getInt(keyb[n], "lefttrigger", 81);
-		input::keys.RT[n] = config.getInt(keyb[n], "righttrigger", 87);
-		input::keys.Button_LeftShoulder[n] = config.getInt(keyb[n], "leftshoulder", 67);
-		input::keys.Button_RightShoulder[n] = config.getInt(keyb[n], "rightshoulder", 66);
-		input::keys.Button_LeftStick[n] = config.getInt(keyb[n], "leftstick", 69);
-		input::keys.Button_RightStick[n] = config.getInt(keyb[n], "rightstick", 160);
-		input::keys.DPad_Up[n] = config.getInt(keyb[n], "dpup", 104);
-		input::keys.DPad_Down[n] = config.getInt(keyb[n], "dpdown", 98);
-		input::keys.DPad_Left[n] = config.getInt(keyb[n], "dpleft", 100);
-		input::keys.DPad_Right[n] = config.getInt(keyb[n], "dpright", 102);
+		input::keys.Analog1_Up[n] = config->getInt(keyb[n], "-lefty", 38);
+		input::keys.Analog1_Down[n] = config->getInt(keyb[n], "+lefty", 40);
+		input::keys.Analog1_Left[n] = config->getInt(keyb[n], "-leftx", 37);
+		input::keys.Analog1_Right[n] = config->getInt(keyb[n], "+leftx", 39);
+		input::keys.Analog2_Up[n] = config->getInt(keyb[n], "-righty", 73);
+		input::keys.Analog2_Down[n] = config->getInt(keyb[n], "+righty", 77);
+		input::keys.Analog2_Left[n] = config->getInt(keyb[n], "-rightx", 74);
+		input::keys.Analog2_Right[n] = config->getInt(keyb[n], "+rightx", 76);
+		input::keys.Button_A[n] = config->getInt(keyb[n], "a", 88);
+		input::keys.Button_B[n] = config->getInt(keyb[n], "b", 90);
+		input::keys.Button_X[n] = config->getInt(keyb[n], "x", 65);
+		input::keys.Button_Y[n] = config->getInt(keyb[n], "y", 83);
+		input::keys.Button_Start[n] = config->getInt(keyb[n], "start", 13);
+		input::keys.Button_Back[n] = config->getInt(keyb[n], "back", 86);
+		input::keys.LT[n] = config->getInt(keyb[n], "lefttrigger", 81);
+		input::keys.RT[n] = config->getInt(keyb[n], "righttrigger", 87);
+		input::keys.Button_LeftShoulder[n] = config->getInt(keyb[n], "leftshoulder", 67);
+		input::keys.Button_RightShoulder[n] = config->getInt(keyb[n], "rightshoulder", 66);
+		input::keys.Button_LeftStick[n] = config->getInt(keyb[n], "leftstick", 69);
+		input::keys.Button_RightStick[n] = config->getInt(keyb[n], "rightstick", 160);
+		input::keys.DPad_Up[n] = config->getInt(keyb[n], "dpup", 104);
+		input::keys.DPad_Down[n] = config->getInt(keyb[n], "dpdown", 98);
+		input::keys.DPad_Left[n] = config->getInt(keyb[n], "dpleft", 100);
+		input::keys.DPad_Right[n] = config->getInt(keyb[n], "dpright", 102);
 	}
-	// This defaults RadialR to enabled if smooth-cam is detected.
-	const bool smooth_cam = GetModuleHandle(L"smooth-cam.dll") != nullptr;
 
-	for (ushort i = 0; i < GAMEPAD_COUNT; i++)
+	// Set keyboard player
+	input::keyboard_player_current = max(0, min(7, config->getInt("Config", "KeyboardPlayer", 0)));
+
+	// Mouse
+	input::disable_mouse = config->getBool("Config", "DisableMouse", true);
+
+	// This defaults RadialR to enabled if smooth-cam is detected
+	enabledSmoothCam = GetModuleHandle(L"smooth-cam.dll") != nullptr;
+
+	if (!input::legacy_mode)
 	{
-		DreamPad::Settings& settings = DreamPad::controllers[i].settings;
-
-		const std::string section = "Controller " + std::to_string(i + 1);
-
-		const int deadzone_l = config.getInt(section, "DeadzoneL", GAMEPAD_LEFT_THUMB_DEADZONE);
-		const int deadzone_r = config.getInt(section, "DeadzoneR", GAMEPAD_RIGHT_THUMB_DEADZONE);
-
-		settings.set_deadzone_l(deadzone_l);
-		settings.set_deadzone_r(deadzone_r);
-
-		settings.radial_l = config.getBool(section, "RadialL", true);
-		settings.radial_r = config.getBool(section, "RadialR", smooth_cam);
-
-		settings.trigger_threshold = config.getInt(section, "TriggerThreshold", GAMEPAD_TRIGGER_THRESHOLD);
-
-		settings.rumble_factor = clamp(config.getFloat(section, "RumbleFactor", 1.0f), 0.0f, 1.0f);
-
-		settings.mega_rumble = config.getBool(section, "MegaRumble", false);
-		settings.rumble_min_time = static_cast<ushort>(config.getInt(section, "RumbleMinTime", 0));
-
-		settings.allow_keyboard = (i == KeyboardPlayer);
-
-		settings.guid = SDL_GUIDFromString(config.getString(section, "GUID", "00000000000000000000000000000000").c_str());
-
-		if (input::debug)
+		KeyboardMouse::set_player(input::keyboard_player_current);
+	}
+	// Controller settings (in non-legacy mode this is moved to DreamPad)
+	else
+	{
+		for (ushort i = 0; i < GAMEPAD_COUNT; i++)
 		{
-			PrintDebug("[Input] Deadzones for P%d (L/R/T): %05d / %05d / %05d\n", (i + 1),
-				settings.deadzone_l, settings.deadzone_r, settings.trigger_threshold);
+			DreamPad::Settings& settings = DreamPad::controllers[i].settings;
+
+			const std::string section = "Controller " + std::to_string(i + 1);
+
+			const int deadzone_l = config->getInt(section, "DeadzoneL", GAMEPAD_LEFT_THUMB_DEADZONE);
+			const int deadzone_r = config->getInt(section, "DeadzoneR", GAMEPAD_RIGHT_THUMB_DEADZONE);
+
+			settings.set_deadzone_l(deadzone_l);
+			settings.set_deadzone_r(deadzone_r);
+
+			settings.radial_l = config->getBool(section, "RadialL", true);
+			settings.radial_r = config->getBool(section, "RadialR", enabledSmoothCam);
+
+			settings.trigger_threshold = config->getInt(section, "TriggerThreshold", GAMEPAD_TRIGGER_THRESHOLD);
+
+			settings.rumble_factor = clamp(config->getFloat(section, "RumbleFactor", 1.0f), 0.0f, 1.0f);
+
+			settings.mega_rumble = config->getBool(section, "MegaRumble", false);
+			settings.rumble_min_time = static_cast<ushort>(config->getInt(section, "RumbleMinTime", 0));
+
+			settings.allow_keyboard = (i == input::keyboard_player_current);
+
+			settings.guid = SDL_GUIDFromString(config->getString(section, "GUID", "00000000000000000000000000000000").c_str());
+
+			if (input::debug)
+			{
+				PrintDebug("[Input] Deadzones for P%d (L/R/T): %05d / %05d / %05d\n", (i + 1),
+					settings.deadzone_l, settings.deadzone_r, settings.trigger_threshold);
+			}
 		}
 	}
 
+	// Finish initialization
+	enabledSDL = true;
 	PrintDebug("[Input] Initialization complete.\n");
 }
 
+// This function must run when the Mod Loader exits
 void SDL2_OnExit()
 {
 	if (!enabledSDL)

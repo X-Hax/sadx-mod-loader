@@ -8,6 +8,7 @@
 #include "rumble.h"
 #include "DreamPad.h"
 
+char guidstring[33]; // Temporary buffer for retrieving controller GUIDs
 
 struct AnalogThing
 {
@@ -15,6 +16,7 @@ struct AnalogThing
 	float magnitude;
 };
 
+// To be deleted
 // This function compares two SDL GUIDs and returns true if they match or if the first GUID is full of 00s.
 bool CompareGUID(SDL_GUID guid_stored, SDL_GUID guid_new)
 {
@@ -40,12 +42,93 @@ bool CompareGUID(SDL_GUID guid_stored, SDL_GUID guid_new)
 namespace input
 {
 	ControllerData raw_input[GAMEPAD_COUNT];
+	bool legacy_mode = true; // Will remove when the new AppLauncher is finished
 	bool controller_enabled[GAMEPAD_COUNT];
 	bool debug = false;
 	bool disable_mouse = true;
 	bool e_held = false;
 	bool demo = false;
 	KeyboardMapping keys;
+	ushort keyboard_player_current; // Only in non-legacy mode
+	ushort keyboard_player_last; // Only in non-legacy mode
+
+	inline short get_free_controller()
+	{
+		for (short i = 0; i < GAMEPAD_COUNT; i++)
+		{
+			DreamPad& controller = DreamPad::controllers[i];
+			if (!controller.connected())
+				return i;
+		}
+		return -1;
+	}
+
+	inline ushort get_duplicate_controller(ushort instance)
+	{
+		for (ushort i = 0; i < GAMEPAD_COUNT; i++)
+		{
+			DreamPad& controller = DreamPad::controllers[i];
+			if (controller.controller_id() == instance)
+				return i;
+		}
+		return -1;
+	}
+
+	inline void open_free(int which)
+	{
+		short free = get_free_controller();
+		{
+			if (free != -1)
+			{
+				DreamPad& controller = DreamPad::controllers[free];
+				if (input::debug)
+					PrintDebug("\tOpening controller slot: %d\n", free);
+				controller.open(which);
+			}
+			else
+				if (input::debug)
+					PrintDebug("\tOpening controller failed: no free slots\n");
+		}
+	}
+
+	inline void swap_player(ushort src, ushort dst, int which)
+	{
+		// Get controllers
+		DreamPad& controller_src = DreamPad::controllers[src];
+		DreamPad& controller_dst = DreamPad::controllers[dst];
+		// Get device index for the other controller
+		int id_open_src = controller_src.open_id();
+		// Close controllers
+		controller_src.close();
+		controller_dst.close();
+		// Reopen controllers with swapped indices
+		controller_src.open(which);
+		controller_dst.open(id_open_src);
+	}
+
+	inline void open_player(ushort player, int which)
+	{
+		DreamPad& controller = DreamPad::controllers[player];
+		// If it's not connected, just open the controller
+		if (!controller.connected())
+		{
+			if (input::debug)
+				PrintDebug("\tOpening controller slot %d\n", player);
+			controller.open(which);
+		}
+		// If not, find another one that isn't connected and swap with it
+		else
+		{
+			short unused = get_free_controller();
+			if (unused != -1)
+			{
+				if (input::debug)
+					PrintDebug("\tSwapping controller slots %d and %d: device index %d\n", player, unused, which);
+				swap_player(player, unused, which);
+			}
+		}
+	}
+
 	inline void poll_sdl()
 	{
 		SDL_Event event;
@@ -59,22 +142,82 @@ namespace input
 
 			case SDL_JOYDEVICEADDED:
 			{
-				const int which = event.cdevice.which;
-				for (auto& controller : DreamPad::controllers)
+				// To be removed
+				if (input::legacy_mode)
 				{
-					// The condition is used to prioritize controller GUIDs for specific player IDs.
-					// E.g. if Player 1 has a valid stored GUID, a newly connected device with the same GUID will be assigned to Player 1.
-					// At the same time, if Player 1 doesn't have a valid stored GUID, any newly added device will be assigned to Player 1.
-					// Both of the above will only happen if Player 1 doesn't already have a device assigned to it.
-					if (CompareGUID(controller.settings.guid, SDL_JoystickGetDeviceGUID(event.cdevice.which)))
+					const int which = event.cdevice.which;
+					for (auto& controller : DreamPad::controllers)
 					{
-						// Checking for both in cases like the DualShock 4 and (e.g.) DS4Windows where the controller might be
-						// "connected" twice with the same ID. DreamPad::open automatically closes if already open.
-						if (!controller.connected() || controller.controller_id() == which)
+						// The condition is used to prioritize controller GUIDs for specific player IDs.
+						// E.g. if Player 1 has a valid stored GUID, a newly connected device with the same GUID will be assigned to Player 1.
+						// At the same time, if Player 1 doesn't have a valid stored GUID, any newly added device will be assigned to Player 1.
+						// Both of the above will only happen if Player 1 doesn't already have a device assigned to it.
+						if (CompareGUID(controller.settings.guid, SDL_JoystickGetDeviceGUID(event.cdevice.which)))
 						{
-							controller.open(which);
-							break;
+							// Checking for both in cases like the DualShock 4 and (e.g.) DS4Windows where the controller might be
+							// "connected" twice with the same ID. DreamPad::open automatically closes if already open.
+							if (!controller.connected() || controller.controller_id() == which)
+							{
+								controller.open(which);
+								break;
+							}
 						}
+					}
+				}
+				else
+				{
+					// Get connected device info
+					const int dev_index = event.cdevice.which;
+					SDL_JoystickGUID guid = SDL_JoystickGetDeviceGUID(dev_index);
+					const char* devicename = SDL_JoystickNameForIndex(dev_index);
+					SDL_JoystickGetGUIDString(guid, guidstring, 33);
+					bool hasConfig = config->hasGroup(guidstring);
+					// The ID used in all events other than opening is different from the "which" in "device added" events
+					// See: https://wiki.libsdl.org/SDL2/SDL_GameControllerOpen#remarks
+					const int dev_instance = SDL_JoystickGetDeviceInstanceID(dev_index);
+					PrintDebug("[Input] Device: %s (index: %d, instance: %d)\n", devicename, dev_index, dev_instance);
+					if (input::debug)
+						PrintDebug("\tGUID: %s\n", guidstring);
+					// Check if a device is already connected
+					short duplicate = get_duplicate_controller(dev_instance);
+					if (duplicate != -1)
+					{
+						PrintDebug("\tDevice index %d is already connected as player %d (instance %d)\n", dev_index, duplicate, dev_instance);
+						// Checking for cases like the DualShock 4 and (e.g.) DS4Windows where the controller might be
+						// "connected" twice with the same ID. DreamPad::open automatically closes if already open.
+						DreamPad::controllers[duplicate].open(dev_index);
+						break;
+					}
+					// Check if a device has configuration
+					else if (hasConfig)
+					{
+						// Check if a device is not ignored
+						if (!config->getBool(guidstring, "Ignore", false))
+						{
+							// Check if a device is mapped to a specific player
+							int player = config->getInt(guidstring, "Player", -1);
+							if (player != -1)
+							{
+								PrintDebug("\tDevice assigned to slot %d (Player %d)\n", player, player + 1);
+								open_player(player, dev_index);
+							}
+							// If not, find a free slot and connect
+							else
+							{
+								open_free(dev_index);
+							}
+						}
+						else
+						{
+							PrintDebug("\tDevice is on the ignore list\n");
+						}
+					}
+					// If a device has no configuration, just find a free slot and connect
+					else
+					{
+						if (input::debug)
+							PrintDebug("\tDevice has no configuration\n", guidstring);
+						open_free(dev_index);
 					}
 				}
 				break;
@@ -82,6 +225,7 @@ namespace input
 
 			case SDL_JOYDEVICEREMOVED:
 			{
+				// The 'event.cdevice.which' here is joystick instance ID, different from the one in SDL_JOYDEVICEADDED
 				const int which = event.cdevice.which;
 
 				for (auto& controller : DreamPad::controllers)
@@ -104,7 +248,7 @@ namespace input
 	{
 		poll_sdl();
 		KeyboardMouse::poll();
-
+		
 		for (uint i = 0; i < GAMEPAD_COUNT; i++)
 		{
 			DreamPad& dreampad = DreamPad::controllers[i];
@@ -157,6 +301,27 @@ namespace input
 				}
 			}
 #endif
+		}
+		if (!input::legacy_mode)
+		{
+			bool fix_keyboard = false;
+			// Set keyboard to Player 1 if Player 1 is disconnected
+			if (!DreamPad::controllers[0].connected() && keyboard_player_current != 0)
+			{
+				keyboard_player_last = keyboard_player_current;
+				keyboard_player_current = 0;
+				fix_keyboard = true;
+			}
+			// Restore keyboard for the other player if Player 1 reconnects
+			else if (DreamPad::controllers[0].connected() && keyboard_player_last != 0 && keyboard_player_current == 0)
+			{
+				keyboard_player_current = keyboard_player_last;
+				fix_keyboard = true;
+			}
+			if (fix_keyboard)
+			{
+				KeyboardMouse::set_player(keyboard_player_current);
+			}
 		}
 	}
 

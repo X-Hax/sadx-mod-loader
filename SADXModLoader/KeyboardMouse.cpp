@@ -11,6 +11,7 @@
 #define NOMINMAX
 #endif
 
+KeyboardInput SADXKeyboard = { 0, 0, { 0, 0, 0, 0, 0, 0 }, nullptr };
 
 ControllerData KeyboardMouse::pad = {};
 float          KeyboardMouse::normalized_l_ = 0.0f;
@@ -465,6 +466,15 @@ void KeyboardMouse::reset_cursor()
 	mouse_active = false;
 }
 
+void KeyboardMouse::set_player(ushort keyboard_player_current)
+{
+	PrintDebug("[Input] Keyboard player set to Player %d\n", keyboard_player_current + 1);
+	for (int i = 0; i < GAMEPAD_COUNT; i++)
+	{
+		DreamPad::controllers[i].settings.allow_keyboard = i == keyboard_player_current;
+	}
+}
+
 void KeyboardMouse::update_mouse_buttons(Uint32 button, bool down)
 {
 	if (input::disable_mouse) return;
@@ -590,7 +600,8 @@ LRESULT KeyboardMouse::read_window_message(HWND handle, UINT Msg, WPARAM wParam,
 	case WM_SYSKEYDOWN:
 		if (wParam == VK_F2 && !(lParam & 0x40000000) && GameMode != 1 && GameMode != 8)
 		{
-			if (input::debug) PrintDebug("Soft reset\n");
+			if (input::debug)
+				PrintDebug("Soft reset\n");
 			SoftResetByte = 1;
 		}
 		update_keyboard_buttons(MapLeftRightKeys(wParam, lParam), Msg == WM_KEYDOWN || Msg == WM_SYSKEYDOWN);

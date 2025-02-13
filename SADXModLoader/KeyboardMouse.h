@@ -67,6 +67,7 @@ public:
 	static void update_cursor(Sint32 xrel, Sint32 yrel);
 	static void update_wheel(WPARAM wParam);
 	static void reset_cursor();
+	static void set_player(ushort keyboard_player_current);
 	static void update_mouse_buttons(Uint32 button, bool down);
 	static LRESULT read_window_message(HWND handle, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void hook_wnd_proc();
@@ -89,3 +90,5 @@ private:
 	static Sint16 wheel_delta;
 	static WNDPROC lpPrevWndFunc;
 };
+
+extern KeyboardInput SADXKeyboard;

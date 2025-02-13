@@ -62,9 +62,17 @@ bool DreamPad::open(int id)
 
 	dc_pad.Support = PAD_SUPPORT;
 
-	controller_id_ = id;
+	controller_id_ = SDL_JoystickGetDeviceInstanceID(id);
+	open_id_ = id;
+	snprintf(name_, 128, SDL_GameControllerName(gamepad));
 
 	connected_ = true;
+
+	if (!input::legacy_mode)
+	{
+		load_config();
+	}
+
 	return true;
 }
 
@@ -77,12 +85,81 @@ void DreamPad::close()
 
 	if (gamepad != nullptr)
 	{
+		if (input::debug)
+			PrintDebug("[Input] %s disconnected\n", name());
 		SDL_GameControllerClose(gamepad);
 		gamepad = nullptr;
 	}
 
-	controller_id_ = -1;
+	snprintf(name_, 128, "");
+	controller_id_ = open_id_ = -1;
 	connected_ = false;
+}
+
+const char* DreamPad::name()
+{
+	return name_;
+}
+
+void DreamPad::load_config()
+{
+	if (!connected())
+		return;
+	
+	char section[33];
+	char buf[1024];
+	
+	SDL_Joystick* joystick = SDL_GameControllerGetJoystick(gamepad);
+	if (joystick == nullptr)
+		return;
+	SDL_JoystickGUID guid = SDL_JoystickGetGUID(joystick);
+	SDL_JoystickGetGUIDString(guid, section, 33);
+
+	if (!config->hasGroup(section))
+		return;
+
+	const int deadzone_l = config->getInt(section, "DeadzoneL", GAMEPAD_LEFT_THUMB_DEADZONE);
+	const int deadzone_r = config->getInt(section, "DeadzoneR", GAMEPAD_RIGHT_THUMB_DEADZONE);
+
+	settings.set_deadzone_l(deadzone_l);
+	settings.set_deadzone_r(deadzone_r);
+
+	settings.radial_l = config->getBool(section, "RadialL", true);
+	settings.radial_r = config->getBool(section, "RadialR", enabledSmoothCam);
+
+	settings.trigger_threshold = config->getInt(section, "TriggerThreshold", GAMEPAD_TRIGGER_THRESHOLD);
+
+	settings.rumble_factor = clamp<float>(config->getFloat(section, "RumbleFactor", 1.0f), 0.0f, 1.0f);
+
+	settings.mega_rumble = config->getBool(section, "MegaRumble", false);
+	settings.rumble_min_time = static_cast<ushort>(config->getInt(section, "RumbleMinTime", 0));
+
+	std::string mapping = config->getString(section, "Mapping", "");
+	if (mapping != "")
+	{
+		sprintf(buf, "%s,%s,%s", section, name(), mapping);
+		//PrintDebug("%s\n", buf);
+		int result = SDL_GameControllerAddMapping(buf);
+		switch (result)
+		{
+		case 0:
+			PrintDebug("[Input] Mapping updated for %s\n", name());
+			break;
+		case 1:
+			PrintDebug("[Input] New mapping added for %s\n", name());
+			break;
+		case -1:
+		default:
+			PrintDebug("[Input] Error adding mapping for %s: %s\n", name(), SDL_GetError());
+			break;
+		}
+	}
+
+	if (input::debug)
+	{
+		PrintDebug("[Input] Settings loaded for %s. Deadzones (L/R/T): %05d / %05d / %05d\n",
+			name(), settings.deadzone_l, settings.deadzone_r, settings.trigger_threshold);
+	}
 }
 
 void DreamPad::poll()
@@ -267,6 +344,11 @@ int DreamPad::controller_id() const
 	return controller_id_;
 }
 
+int DreamPad::open_id() const
+{
+	return open_id_;
+}
+
 float DreamPad::normalized_l() const
 {
 	return normalized_l_;
@@ -359,6 +441,7 @@ void DreamPad::move_from(DreamPad&& other)
 {
 	gamepad = std::exchange(other.gamepad, nullptr);
 	controller_id_ = std::exchange(other.controller_id_, -1);
+	open_id_ = std::exchange(other.open_id_, -1);
 	connected_ = std::exchange(other.connected_, false);
 	rumble_state = other.rumble_state;
 	normalized_l_ = other.normalized_l_;
