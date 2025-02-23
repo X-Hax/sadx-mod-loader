@@ -238,6 +238,9 @@ void SDL2_Init()
 	// Debug mode
 	input::debug = config->getBool("Config", "Debug", debug_default);
 	
+	// Legacy config mode
+	input::legacy_mode = !config->getBool("Config", "NewConfig", false);
+	
 	// Keyboard layouts
 	const char* keyb[] = { "Keyboard", "Keyboard 2", "Keyboard 3" };
 	for (int n = 0; n < 3; n++)
