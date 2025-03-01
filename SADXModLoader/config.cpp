@@ -14,29 +14,6 @@ wstring currentProfilePath; // Used for crash dumps
 vector<std::string> ModList;
 vector<std::string> GamePatchList;
 
-// List of game patches that may be using the old system
-std::string LegacyGamePatchList[] =
-{
-	"HRTFSound",
-	"KeepCamSettings",
-	"FixVertexColorRendering",
-	"MaterialColorFix",
-	"NodeLimit",
-	"FOVFix",
-	"SkyChaseResolutionFix",
-	"Chaos2CrashFix",
-	"ChunkSpecularFix",
-	"E102NGonFix",
-	"ChaoPanelFix",
-	"PixelOffSetFix",
-	"LightFix",
-	"KillGBIX",
-	"DisableCDCheck",
-	"ExtendedSaveSupport",
-	"CrashGuard",
-	"XInputFix",
-};
-
 void DisplaySettingsLoadError(wstring file)
 {
 	wstring error = L"Mod Loader settings could not be read. Please run the Mod Manager, save settings and try again.\n\nThe following file was missing: " + file;
@@ -115,7 +92,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 	{
 		DisplaySettingsLoadError(currentProfilePath);
 	}
-	
+
 	std::ifstream ifs_p(currentProfilePath);
 	json json_config = json::parse(ifs_p);
 	int settingsVersion = json_config.value("SettingsVersion", 0);
@@ -159,37 +136,57 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 	loaderSettings->EnableBassSFX = json_sound.value("EnableBassSFX", true);
 	loaderSettings->SEVolume = json_sound.value("SEVolume", 100);
 
-	// Old Game Patches settings (for compatibility)
-	if (json_config.contains("Patches"))
+	// Game Patches:
+	// V1: `Patches` as a struct with bools that have hardcoded names (converted to bool values in LoaderSettings)
+	// V2: `EnabledGamePatches` as a list of enabled patch names as strings
+	// V3: `Patches` as a dictionary of strings and bools
+	// V1 is compatible with V3 because it's stored with the same formatting in the JSON file
+	
+	// Process V2 first
+	if (json_config.contains("EnabledGamePatches"))
 	{
-		json json_oldpatches = json_config["Patches"];
-		loaderSettings->HRTFSound = json_oldpatches.value("HRTFSound", false);
-		loaderSettings->CCEF = json_oldpatches.value("KeepCamSettings", true);
-		loaderSettings->PolyBuff = json_oldpatches.value("FixVertexColorRendering", true);
-		loaderSettings->MaterialColorFix = json_oldpatches.value("MaterialColorFix", true);
-		loaderSettings->NodeLimit = json_oldpatches.value("NodeLimit", true);
-		loaderSettings->FovFix = json_oldpatches.value("FOVFix", true);
-		loaderSettings->SCFix = json_oldpatches.value("SkyChaseResolutionFix", true);
-		loaderSettings->Chaos2CrashFix = json_oldpatches.value("Chaos2CrashFix", true);
-		loaderSettings->ChunkSpecFix = json_oldpatches.value("ChunkSpecularFix", true);
-		loaderSettings->E102PolyFix = json_oldpatches.value("E102NGonFix", true);
-		loaderSettings->ChaoPanelFix = json_oldpatches.value("ChaoPanelFix", true);
-		loaderSettings->PixelOffsetFix = json_oldpatches.value("PixelOffSetFix", true);
-		loaderSettings->LightFix = json_oldpatches.value("LightFix", true);
-		loaderSettings->KillGbix = json_oldpatches.value("KillGBIX", false);
-		loaderSettings->DisableCDCheck = json_oldpatches.value("DisableCDCheck", true);
-		loaderSettings->ExtendedSaveSupport = json_oldpatches.value("ExtendedSaveSupport", true);
-		loaderSettings->CrashGuard = json_oldpatches.value("CrashGuard", true);
-		loaderSettings->XInputFix = json_oldpatches.value("XInputFix", false);
-		// Add old game patches to the new system
-		for (int p = 0; p < LengthOfArray(LegacyGamePatchList); p++)
+		json json_patches_list = json_config["EnabledGamePatches"];
+		for (unsigned int i = 1; i <= json_patches_list.size(); i++)
 		{
-			if (json_oldpatches.value(LegacyGamePatchList[p], false)) // Old game patches are stored in the json regardless of whether they are enabled or not
-			{
-				GamePatchList.push_back(LegacyGamePatchList[p]);
-			}
+			std::string patch_name = json_patches_list.at(i - 1);
+			GamePatchList.push_back(patch_name);
 		}
 	}
+	// Process V1/V3
+	if (json_config.contains("Patches")) 
+	{
+		json json_patches = json_config["Patches"];
+		for (json::iterator it = json_patches.begin(); it != json_patches.end(); ++it)
+		{
+			std::string patch_name = it.key();
+			if (it.value() == true)
+			{
+				// Check if it isn't on the list already (legacy patches can be there)
+				if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
+				GamePatchList.push_back(patch_name);
+			}
+		}
+		// Update the old LoaderSettings values for compatibility
+		loaderSettings->HRTFSound = json_patches.value("HRTFSound", false);
+		loaderSettings->CCEF = json_patches.value("KeepCamSettings", true);
+		loaderSettings->PolyBuff = json_patches.value("FixVertexColorRendering", true);
+		loaderSettings->MaterialColorFix = json_patches.value("MaterialColorFix", true);
+		loaderSettings->NodeLimit = json_patches.value("NodeLimit", true);
+		loaderSettings->FovFix = json_patches.value("FOVFix", true);
+		loaderSettings->SCFix = json_patches.value("SkyChaseResolutionFix", true);
+		loaderSettings->Chaos2CrashFix = json_patches.value("Chaos2CrashFix", true);
+		loaderSettings->ChunkSpecFix = json_patches.value("ChunkSpecularFix", true);
+		loaderSettings->E102PolyFix = json_patches.value("E102NGonFix", true);
+		loaderSettings->ChaoPanelFix = json_patches.value("ChaoPanelFix", true);
+		loaderSettings->PixelOffsetFix = json_patches.value("PixelOffSetFix", true);
+		loaderSettings->LightFix = json_patches.value("LightFix", true);
+		loaderSettings->KillGbix = json_patches.value("KillGBIX", false);
+		loaderSettings->DisableCDCheck = json_patches.value("DisableCDCheck", true);
+		loaderSettings->ExtendedSaveSupport = json_patches.value("ExtendedSaveSupport", true);
+		loaderSettings->CrashGuard = json_patches.value("CrashGuard", true);
+		loaderSettings->XInputFix = json_patches.value("XInputFix", false);
+	}
+
 	// Debug settings
 	json json_debug = json_config["DebugSettings"];
 	loaderSettings->DebugConsole = json_debug.value("EnableDebugConsole", false);
@@ -208,37 +205,6 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 	{
 		std::string mod_fname = json_mods.at(i - 1);
 		ModList.push_back(mod_fname);
-	}
-
-	// Game Patches
-	if (json_config.contains("EnabledGamePatches"))
-	{
-		json json_patches = json_config["EnabledGamePatches"];
-		// If the patches list is in the '"Patch": true' format, use an object
-		if (json_patches.is_object())
-		{
-			for (json::iterator it = json_patches.begin(); it != json_patches.end(); ++it)
-			{
-				std::string patch_name = it.key();
-				if (it.value() == true)
-				{
-					// Check if it isn't on the list already (legacy patches can be there)
-					if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
-					GamePatchList.push_back(patch_name);
-				}
-			}
-		}
-		// If the patches list is in the '"Patch"' format, use an array
-		else
-		{
-			for (unsigned int i = 1; i <= json_patches.size(); i++)
-			{
-				std::string patch_name = json_patches.at(i - 1);
-				// Check if it isn't on the list already (legacy patches can be there)
-				if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
-				GamePatchList.push_back(patch_name);
-			}
-		}
 	}
 }
 
