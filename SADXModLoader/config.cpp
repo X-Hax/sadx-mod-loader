@@ -211,30 +211,33 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 	}
 
 	// Game Patches
-	json json_patches = json_config["EnabledGamePatches"];
-	// If the patches list is in the '"Patch": true' format, use an object
-	if (json_patches.is_object())
+	if (json_config.contains("EnabledGamePatches"))
 	{
-		for (json::iterator it = json_patches.begin(); it != json_patches.end(); ++it)
+		json json_patches = json_config["EnabledGamePatches"];
+		// If the patches list is in the '"Patch": true' format, use an object
+		if (json_patches.is_object())
 		{
-			std::string patch_name = it.key();
-			if (it.value() == true)
+			for (json::iterator it = json_patches.begin(); it != json_patches.end(); ++it)
 			{
-				// Check if it isn't on the list already (legacy patches can be there)
-				if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
+				std::string patch_name = it.key();
+				if (it.value() == true)
+				{
+					// Check if it isn't on the list already (legacy patches can be there)
+					if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
 					GamePatchList.push_back(patch_name);
+				}
 			}
 		}
-	}
-	// If the patches list is in the '"Patch"' format, use an array
-	else
-	{
-		for (unsigned int i = 1; i <= json_patches.size(); i++)
+		// If the patches list is in the '"Patch"' format, use an array
+		else
 		{
-			std::string patch_name = json_patches.at(i - 1);
-			// Check if it isn't on the list already (legacy patches can be there)
-			if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
+			for (unsigned int i = 1; i <= json_patches.size(); i++)
+			{
+				std::string patch_name = json_patches.at(i - 1);
+				// Check if it isn't on the list already (legacy patches can be there)
+				if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
 				GamePatchList.push_back(patch_name);
+			}
 		}
 	}
 }
