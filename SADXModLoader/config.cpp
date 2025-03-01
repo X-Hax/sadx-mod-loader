@@ -159,7 +159,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 	loaderSettings->EnableBassSFX = json_sound.value("EnableBassSFX", true);
 	loaderSettings->SEVolume = json_sound.value("SEVolume", 100);
 
-	// Game Patches settings (for compatibility)
+	// Old Game Patches settings (for compatibility)
 	if (json_config.contains("Patches"))
 	{
 		json json_oldpatches = json_config["Patches"];
@@ -209,14 +209,33 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 		std::string mod_fname = json_mods.at(i - 1);
 		ModList.push_back(mod_fname);
 	}
-	// Game Patches (current system)
+
+	// Game Patches
 	json json_patches = json_config["EnabledGamePatches"];
-	for (unsigned int i = 1; i <= json_patches.size(); i++)
+	// If the patches list is in the '"Patch": true' format, use an object
+	if (json_patches.is_object())
 	{
-		std::string patch_name = json_patches.at(i - 1);
-		// Check if it isn't on the list already (legacy patches can be there)
-		if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
-		GamePatchList.push_back(patch_name);
+		for (json::iterator it = json_patches.begin(); it != json_patches.end(); ++it)
+		{
+			std::string patch_name = it.key();
+			if (it.value() == true)
+			{
+				// Check if it isn't on the list already (legacy patches can be there)
+				if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
+					GamePatchList.push_back(patch_name);
+			}
+		}
+	}
+	// If the patches list is in the '"Patch"' format, use an array
+	else
+	{
+		for (unsigned int i = 1; i <= json_patches.size(); i++)
+		{
+			std::string patch_name = json_patches.at(i - 1);
+			// Check if it isn't on the list already (legacy patches can be there)
+			if (std::find(std::begin(GamePatchList), std::end(GamePatchList), patch_name) == std::end(GamePatchList));
+				GamePatchList.push_back(patch_name);
+		}
 	}
 }
 
