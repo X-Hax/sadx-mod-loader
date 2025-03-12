@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: SA Mod Manager
+    url: https://github.com/X-Hax/SA-Mod-Manager
+    about: Issues with the Mod Manager for SADX and SA2 should be reported here.
+  - name: SA2 Mod Loader
+    url: https://github.com/X-Hax/sa2-mod-loader
+    about: Issues with the SA2 Mod Loader should be reported here.

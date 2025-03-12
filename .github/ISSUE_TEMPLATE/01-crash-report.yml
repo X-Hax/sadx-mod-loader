@@ -1,0 +1,46 @@
+name: Crash Report
+description: Report crashes with the SADX Mod Loader.
+title: "[Crash Report]: "
+labels: ["bug", "game crash"]
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Required Checks
+      options:
+        - label: I have ensured my Mod Loader is updated to the latest version before reporting this crash.
+          required: true
+        - label: I have ensured that I meet the [system requirements](https://github.com/X-Hax/sadx-mod-loader?tab=readme-ov-file#system-requirements) before submitting a report.
+          required: true
+        - label: I have followed the troubleshooting guides [from the SADX Modding Wiki](https://github.com/X-Hax/SADXModdingGuide/wiki/SADX-Troubleshooting-Guide) and the [SA Mod Manager wiki](https://github.com/X-Hax/SA-Mod-Manager/wiki/Troubleshooting-Guide) and they did not resolve my issue.
+          required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Please provide information on the crash you have experienced below.
+      description: Please include any and all steps taken before and during gameplay regarding the crash.
+    validations:
+      required: true
+  - type: textarea
+    id: info
+    attributes:
+      label: Crash Info
+      description: Please provide your crash dump information below. You can drag and drop files to the text box to be uploaded. If you do not have crash dump information, please enable the feature in the SA Mod Manager and reproduce the crash. If no crash dump is created with them enabled, please include a list of mods and codes you have active in the texbox instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Please select your operating system
+      options:
+        - Windows
+        - Linux
+        - MacOS
+    validations:
+      required: true
+  - type: input
+    id: osinfo
+    attributes:
+      label: OS Information
+      description: Please provide the version of your OS. If you're using Linux or MacOS, please provide what Windows emulation layer it is that you're using.
+      placeholder: e.g. Ubuntu 24.04.2, Wine 10.0

@@ -1,0 +1,41 @@
+name: Bug Report
+description: Report a bug with the SADX Mod Loader.
+title: "[Bug Report]: "
+labels: ["bug"]
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Required Checks
+      options:
+        - label: I have checked through existing issues and my bug has not been reported.
+          required: true
+        - label: I have ensured my Mod Loader is updated to the latest version before reporting this bug.
+          required: true
+        - label: I have ensured that I meet the [system requirements](https://github.com/X-Hax/sadx-mod-loader?tab=readme-ov-file#system-requirements) before reporting a bug.
+          required: true
+        - label: I have followed the troubleshooting guides [from the SADX Modding Wiki](https://github.com/X-Hax/SADXModdingGuide/wiki/SADX-Troubleshooting-Guide) and the [SA Mod Manager wiki](https://github.com/X-Hax/SA-Mod-Manager/wiki/Troubleshooting-Guide) and they did not resolve my issue.
+          required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Please provide information on the bug you're experiencing below.
+      description: Please include any and all steps taken to reach the bug you are experiencing. For mod developers, if confirmed to be an issue with the mod loader, please include the steps you used for creating your mod.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Please select your operating system
+      options:
+        - Windows
+        - Linux
+        - MacOS
+    validations:
+      required: true
+  - type: input
+    id: osinfo
+    attributes:
+      label: OS Information
+      description: Please provide the version of your OS. If you're using Linux or MacOS, please provide what translation layer you're using.
+      placeholder: e.g. Ubuntu 24.04.2, Wine 10.0

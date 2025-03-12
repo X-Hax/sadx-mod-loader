@@ -1,0 +1,23 @@
+name: Feature Request
+description: Request a feature for the SADX Mod Loader
+title: "[Feature Request]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature Requests include new API capabilities, new codes, or new patches.
+  - type: textarea
+    id: request
+    attributes:
+      label: Please provide information regarding your request
+      description: Please include what the purpose is of this request and why you believe it should be part of the Mod Loader. If this is a new API feature, please include how you believe it should function as well.
+    validations:
+      required: true
+  - type: textarea
+    id: info
+    attributes:
+      label: Additional Information
+      description: If there is anything additional would you like to provide, such as additional screenshots or files, please include them here.
+    validations:
+      required: false
