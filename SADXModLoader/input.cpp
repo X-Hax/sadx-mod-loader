@@ -8,8 +8,6 @@
 #include "rumble.h"
 #include "DreamPad.h"
 
-char guidstring[33]; // Temporary buffer for retrieving controller GUIDs
-
 struct AnalogThing
 {
 	Angle angle;
@@ -168,16 +166,18 @@ namespace input
 				{
 					// Get connected device info
 					const int dev_index = event.cdevice.which;
-					SDL_JoystickGUID guid = SDL_JoystickGetDeviceGUID(dev_index);
 					const char* devicename = SDL_JoystickNameForIndex(dev_index);
-					SDL_JoystickGetGUIDString(guid, guidstring, 33);
-					bool hasConfig = config->hasGroup(guidstring);
+					std::string devicepath = SDL_JoystickPathForIndex(dev_index);
+					if (devicepath.empty() || strlen(devicepath.c_str()) < 9)
+						break;
+					devicepath = devicepath.substr(8); // Remove '\\?\HID#' to avoid having to deal with slashes
+					bool hasConfig = config->hasGroup(devicepath);
 					// The ID used in all events other than opening is different from the "which" in "device added" events
 					// See: https://wiki.libsdl.org/SDL2/SDL_GameControllerOpen#remarks
 					const int dev_instance = SDL_JoystickGetDeviceInstanceID(dev_index);
 					PrintDebug("[Input] Device: %s (index: %d, instance: %d)\n", devicename, dev_index, dev_instance);
 					if (input::debug)
-						PrintDebug("\tGUID: %s\n", guidstring);
+						PrintDebug("\tPath: %s\n", devicepath);
 					// Check if a device is already connected
 					short duplicate = get_duplicate_controller(dev_instance);
 					if (duplicate != -1)
@@ -192,10 +192,10 @@ namespace input
 					else if (hasConfig)
 					{
 						// Check if a device is not ignored
-						if (!config->getBool(guidstring, "Ignore", false))
+						if (!config->getBool(devicepath, "Ignore", false))
 						{
 							// Check if a device is mapped to a specific player
-							int player = config->getInt(guidstring, "Player", -1);
+							int player = config->getInt(devicepath, "Player", -1);
 							if (player != -1)
 							{
 								PrintDebug("\tDevice assigned to slot %d (Player %d)\n", player, player + 1);
@@ -216,7 +216,7 @@ namespace input
 					else
 					{
 						if (input::debug)
-							PrintDebug("\tDevice has no configuration\n", guidstring);
+							PrintDebug("\tDevice has no configuration\n", devicepath);
 						open_free(dev_index);
 					}
 				}

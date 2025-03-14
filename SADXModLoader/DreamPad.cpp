@@ -106,15 +106,17 @@ void DreamPad::load_config()
 	if (!connected())
 		return;
 	
-	char section[33];
 	char buf[1024];
 	
 	SDL_Joystick* joystick = SDL_GameControllerGetJoystick(gamepad);
 	if (joystick == nullptr)
 		return;
-	SDL_JoystickGUID guid = SDL_JoystickGetGUID(joystick);
-	SDL_JoystickGetGUIDString(guid, section, 33);
 
+	std::string devicepath = SDL_JoystickPath(joystick);
+	if (devicepath.empty() || strlen(devicepath.c_str()) < 9)
+		return;
+
+	std::string section = devicepath.substr(8); // Remove '\\?\HID#' to avoid having to deal with slashes
 	if (!config->hasGroup(section))
 		return;
 
