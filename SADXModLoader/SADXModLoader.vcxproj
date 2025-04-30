@@ -151,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\appveyor.yml" />
+    <None Include="..\README.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B537B54A-67A7-4CD8-9679-457E498E592F}</ProjectGuid>
