@@ -229,6 +229,7 @@ static void CreateExtraInfoFile(wstring curCrashFolder, wstring timeStr, string 
 		return;
 
 	outfile << "Mod Loader Git Version: " << MODLOADER_GIT_TMP_SHAID  << std::endl;
+	outfile << "Mod Loader Build Timestamp: " << __TIMESTAMP__ << std::endl;
 	outfile << "Mod Loader API Version: " << ModLoaderVer << std::endl;
 	outfile << "Use TestSpawn: " << (useTestSpawn ? "Yes" : "No") << std::endl;
 	outfile << "\n" << std::endl;
