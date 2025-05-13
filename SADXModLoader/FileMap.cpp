@@ -116,7 +116,7 @@ void FileMap::addReplaceFile(const std::string& origFile, const std::string& mod
 	else
 	{
 		// Destination file is not already in the map.
-		setReplaceFile(origFile_norm, modFile_norm, 0);
+		setReplaceFile(origFile_norm, modFile_norm, INT_MAX);
 	}
 }
 
