@@ -107,10 +107,12 @@ DataPointer(Uint16, arl_num1, 0x3B27C7C);
 DataPointer(Uint16, ael_num1, 0x3B240A8);
 
 // Sonic
+
 DataPointer(sParabola, SonicPaboBuff, 0x3C53A68);
 DataArray(PL_ACTION, sonic_action, 0x03C56210, 146);
 
 // Tails
+
 DataPointer(sSonicCtrl, SonicCtrlBuff, 0x3C539F8);
 DataPointer(sMRacePath*, PathTbl_Sonic, 0x3C539F4); // Current race path for Sonic
 DataPointer(sMRacePath*, PathTbl_Miles, 0x3C53A64); // Current race path for Tails
@@ -118,6 +120,7 @@ DataArray(sMRacePath*, PPT_MRaceEachStage, 0x91C0B8, 10); // Race path list (son
 DataArray(PL_ACTION, miles_action, 0x03C49D90, 136);
 
 // Knuckles
+
 DataPointer(Bool, ke_ongame_flg, 0x3C52AD8);
 DataArray(KnFragmSetStr, fragmset_tbl, 0x3C52B20, 3); // current emerald set information
 DataPointer(Sint32, found_feme_nmb, 0x3C52C04);
@@ -135,6 +138,7 @@ DataPointer(char, e102_hover_flag, 0x3C53C40);   // Is hover active
 DataPointer(char, e102_hover_flag_p, 0x3C53C41); // Hover sound toggle
 
 // Big
+
 DataPointer(int, Sakana_Num, 0x3C524E8);
 DataPointer(__int16, Big_Fish_Flag, 0x3C524EC);
 DataPointer(int, Big_Sakana_Weight_Limit, 0x3C524F0);
@@ -221,6 +225,7 @@ DataArray(pathtag*, pathdata_1300, 0x21422140, 4); // Perfect Chaos paths
 DataArray(PATHCAMERA1WORK*, pathcamera1works, 0x97EC40, 11);
 
 // Enemy
+
 DataPointer(int, ComboTimer, 0x3B29D48);
 DataPointer(int, ComboScore, 0x3B29D28);
 DataPointer(int, EnemyScore, 0x3B0F104);
@@ -240,6 +245,7 @@ DataArray(CUSTOM_OBJ, panel_model, 0x00981A78, 2);                  // Item box 
 DataPointer(int, item_kind, 0x03C5C888);                            // Current item box item
 
 // Object lists
+
 DataPointer(_OBJ_ITEMTABLE, objItemTable00, 0x27C71C4);
 DataPointer(_OBJ_ITEMTABLE, objItemTable01, 0x1036AB0);
 DataPointer(_OBJ_ITEMTABLE, objItemTable02, 0xC02BB8);
@@ -292,6 +298,7 @@ DataPointer(ENEMY_CART_DATA*, cart_data, 0x3D08E0C); // Pointer to player's cart
 DataArray(strCamCartData, camCartData, 0x91B670, 3); // Camera path for Twinkle Circuit intro camera
 
 // Boss
+
 DataPointer(char, bossmtn_flag, 0x3C5A7EF);
 DataPointer(taskwk*, chaostwp, 0x3C5A7D8); // Pointer to current Chaos boss taskwk
 DataPointer(float, boss_life_f, 0x03C58158); // Boss hit count
@@ -342,6 +349,7 @@ DataArray(freeboxdat, fbd0257, 0x915410, 1);
 DataArray(freeboxdat, fbd0514, 0x915428, 1);
 
 // Sound
+
 DataPointer(Bool, s_3DFlag, 0x3B0EF28);
 DataArray(_SEcallbuf, sebuf, 0x3B292F8, 36); // SoundQueue (length 20 in xbox version)
 DataArray(taskwk*, gpDolbyTask, 0x3B29B90, 36); // SoundQueueOriginEntities (length 20 in xbox version)
@@ -405,6 +413,7 @@ DataArray(SeqDataType, BackToChSelSeqFlowData, 0x7EEB58, 14);
 DataArray(SeqDataType*, AllSeqDataPtr, 0x10D7B40, 3);
 
 // TGS menus
+
 DataPointer(char, scSelectedStage, 0x3B2C424);
 DataArray(unsigned __int8[2], stageact_tbl, 0x914488, 76);
 DataPointer(NJS_TEXLIST, texlist_loading, 0x0094A2B8); // Texlist for "Now Loading"
@@ -461,6 +470,7 @@ DataArray(___stcFog*, pFogTable_Sand, 0x173BBB0, 1);
 
 // Level draw distance
 //pClipMap_Stg00
+
 DataArray(___stcClip*, pClipMap_Stg01, 0xE99E84, 3);
 DataArray(___stcClip*, pClipMap_Stg02, 0xAFEAC8, 3);
 DataArray(___stcClip*, pClipMap_Stg03, 0x26B3474, 3);
@@ -473,15 +483,19 @@ DataArray(___stcClip*, pClipMap_Stg09, 0x1C46A70, 4);
 DataArray(___stcClip*, pClipMap_Stg10, 0x19C9098, 3);
 DataArray(___stcClip*, pClipMap_Stg12, 0x17C34F8, 3);
 //pClipMap_Chaos00
+
 DataArray(___stcClip*, pClipMap_Chaos02, 0x1120670, 1);
 //pClipMap_Chaos04
+
 DataArray(___stcClip*, pClipMap_Chaos06, 0x11EF158, 2);
 DataArray(___stcClip*, pClipMap_Chaos07, 0x1420EA0, 2);
 DataArray(___stcClip*, pClipMap_Egm01, 0x1556B6C, 1);
 DataArray(___stcClip*, pClipMap_Egm02, 0x15E882C, 1);
 //pClipMap_Egm03
+
 DataArray(___stcClip*, pClipMap_Robo, 0x16B4DE8, 1);
 //pClipMap_E101
+
 DataArray(___stcClip*, pClipMap_E101r, 0x1522628, 1);
 DataArray(___stcClip*, pClipMap_Adv00, 0x2AA3E60, 6);
 DataArray(___stcClip*, pClipMap_Adv01AB, 0x10F2494, 7);
@@ -494,6 +508,7 @@ DataArray(___stcClip*, pClipMap_Sand, 0x173BBAC, 1);
 
 // Sky draw distance
 //pClipSky_Stg00
+
 DataArray(___stcClip*, pClipSky_Stg01, 0xE99E78, 3);
 DataArray(___stcClip*, pClipSky_Stg02, 0xAFEABC, 3);
 DataArray(___stcClip*, pClipSky_Stg03, 0x26B3468, 3);
@@ -503,30 +518,37 @@ DataArray(___stcClip*, pClipSky_Stg06, 0x203A130, 3);
 DataArray(___stcClip*, pClipSky_Stg07, 0x1E79B48, 3);
 DataArray(___stcClip*, pClipSky_Stg08, 0xC67F70, 4);
 //pClipSky_Stg09
+
 DataArray(___stcClip*, pClipSky_Stg10, 0x19C908C, 3);
 DataArray(___stcClip*, pClipSky_Stg12, 0x17C34EC, 3);
 //pClipSky_Chaos00
+
 DataArray(___stcClip*, pClipSky_Chaos02, 0x112066C, 1);
 //pClipSky_Chaos04
 //pClipSky_Chaos06
 //pClipSky_Chaos07
 //pClipSky_Egm01
+
 DataArray(___stcClip*, pClipSky_Egm02, 0x15E8828, 1);
 //pClipSky_Egm03
 //pClipSky_Robo
 //pClipSky_E101
 //pClipSky_E101r
+
 DataArray(___stcClip*, pClipSky_Adv00, 0x2AA3E48, 6);
 DataArray(___stcClip*, pClipSky_Adv01AB, 0x10F2478, 7);
 DataArray(___stcClip*, pClipSky_Adv01C, 0x1100D50, 6);
 //pClipSky_Adv02
 //pClipSky_Adv03
+
 DataArray(___stcClip*, pClipSky_MiniCart, 0x9BF574, 3);
 //pClipSky_Sht
+
 DataArray(___stcClip*, pClipSky_Sand, 0x173BB44, 1);
 
 // Skybox scale
 //pScale_Stg00
+
 DataArray(NJS_POINT3*, pScale_Stg01, 0xE99E6C, 3);
 DataArray(NJS_POINT3*, pScale_Stg02, 0xAFEAB0, 3);
 DataArray(NJS_POINT3*, pScale_Stg03, 0x26B345C, 3);
@@ -536,23 +558,28 @@ DataArray(NJS_POINT3*, pScale_Stg06, 0x203A124, 3);
 DataArray(NJS_POINT3*, pScale_Stg07, 0x1E79B3C, 3);
 DataArray(NJS_POINT3*, pScale_Stg08, 0xC67F60, 4);
 //pScale_Stg09
+
 DataArray(NJS_POINT3*, pScale_Stg10, 0x19C9080, 3);
 DataArray(NJS_POINT3*, pScale_Stg12, 0x17C34E0, 3);
 //pScale_Chaos00
+
 DataArray(NJS_POINT3*, pScale_Chaos02, 0x1120668, 1);
 DataArray(NJS_POINT3*, pScale_Chaos06, 0x11EF148, 2);
 //pScale_Chaos07
 //pScale_Egm01
+
 DataArray(NJS_POINT3*, pScale_Egm02, 0x15E8824, 1);
 //pScale_Egm03
 //pScale_Robo
 //pScale_E101
 //pScale_E101r
+
 DataArray(NJS_POINT3*, pScale_Adv00, 0x2AA3E30, 6);
 DataArray(NJS_POINT3*, pScale_Adv01AB, 0x10F245C, 7);
 DataArray(NJS_POINT3*, pScale_Adv01C, 0x1100D38, 6);
 //pScale_Adv02
 //pScale_Adv03
+
 DataArray(NJS_POINT3*, pScale_MiniCart, 0x9BF55C, 3);
 DataArray(NJS_POINT3*, pScale_Sht, 0x27D6DE8, 2);
 //pScale_Sand
@@ -727,6 +754,7 @@ DataArray(TEX_PVMTABLE, PvmListFinalEgg, 0x0090E810, 11); // Final Egg PVM list
 DataArray(TEX_PVMTABLE, PvmListAL_Race, 0x0339F938, 8); // Chao Race PVM list
 
 // LandTables
+
 DataPointer(_OBJ_LANDTABLE, objLandTableegm1, 0x1570B1C);
 DataPointer(_OBJ_LANDTABLE, objLandTableegm2, 0x15EC454);
 DataPointer(_OBJ_LANDTABLE, objLandTableegm3, 0x165E990);
@@ -788,6 +816,7 @@ DataPointer(_OBJ_LANDTABLE, objLandTable1202, 0x17CF288);
 DataPointer(_OBJ_LANDTABLE, objLandTable1203, 0x17C9B48);
 
 // LandTable pointer arrays in the DLLs
+
 DataPointer(_OBJ_LANDTABLE**, ___LANDTABLEBOSSCHAOS0, 0x3AB9168);
 DataPointer(_OBJ_LANDTABLE**, ___LANDTABLESS, 0x3AAD0FC);
 DataPointer(_OBJ_LANDTABLE**, ___LANDTABLEEC0, 0x38F6E78);
@@ -799,9 +828,11 @@ DataPointer(_OBJ_LANDTABLE*, objLandTableGarden02_Evening, 0x03CA6E88);
 DataPointer(_OBJ_LANDTABLE*, objLandTableGarden02_Night, 0x03CA6E88);
 
 // Motion
+
 DataPointer(MOTIONDATA_INFO, nj_motion_data_info_, 0x3AB9910);
 
 // Chaos
+
 DataArray(PL_JOIN_VERTEX, chaos0_jv_list, 0x3C63930, 18);
 DataArray(PL_ACTION, chaos0_action, 0x3C63AE0, 18);
 DataArray(PL_JOIN_VERTEX, chaos2_jv_list, 0x1120830, 22);
@@ -891,6 +922,7 @@ DataPointer(int, pLevel, 0x3CD7710); // Amount of confetti for Chao Race cracker
 DataPointer(NJS_VECTOR, ZeroVector, 0x08894FC); // Null vector used for calculating SA1 Chao node positions (broken in DX)
 
 // Texlists
+
 DataPointer(NJS_TEXLIST*, texlist_garden02mr_daytime, 0x03CA6E84);
 DataPointer(NJS_TEXLIST*, texlist_garden02mr_evening, 0x03CA6E84);
 DataPointer(NJS_TEXLIST*, texlist_garden02mr_night, 0x03CA6E84);
@@ -937,5 +969,50 @@ DataArray(TUTO_BOOK, TutorialBookTblE, 0x2BC5438, 6);
 DataArray(TUTO_BOOK, TutorialBookTblF, 0x2BC5558, 6);
 DataArray(TUTO_BOOK, TutorialBookTblG, 0x2BC55E8, 6);
 DataArray(TUTO_BOOK, TutorialBookTblS, 0x2BC5678, 6);
+
+// Level texture animations: Emerald Coast
+
+DataArray(Tex_anim_work, land_anim_acg1_sand, 0x01039EC0, 13);
+DataArray(Tex_anim_work, land_anim_act1_wave, 0x01039F90, 17);
+DataArray(Tex_anim_work, land_anim_act2_sand, 0x0103A0A0, 12);
+DataArray(Tex_anim_work, land_anim_act2_wave, 0x0103A160, 14);
+DataArray(Tex_anim_work, land_anim_act2_wt_0, 0x0103A240, 1);
+DataArray(Tex_anim_work, land_anim_act3_sand, 0x0103A250, 28);
+DataArray(Tex_anim_work, land_anim_act3_wave, 0x0103A410, 9);
+DataArray(Tex_anim_work, land_anim_act3_wt, 0x0103A4A0, 1);
+
+// Level texture animations: Twinkle Park
+DataArray(Tex_anim_work, pool_tex_anim, 0x026B9780, 3); // Twinkle Park pool texture animation
+
+// Level texture animations: Lost World
+DataArray(Tex_anim_work, land_anim_act1_wt, 0x02038B88, 3);
+DataArray(Tex_anim_work, land_anim_act2_wt, 0x02038BB8, 6);
+DataArray(Tex_anim_work, land_anim_act3, 0x02038C18, 1);
+
+// Level texture animations: Ice Cap
+DataArray(Sint32, TexTable, 0xE948A4, 15); // Ice Cap underwater animation texture IDs used by O YURAYURA
+
+// Level texture animations: Station Square (dynamic initializer)
+
+DataArray(Tex_anim_obj_work, obj_works_place03sea, 0x03C827D4, 2);
+DataArray(Tex_anim_obj_work, obj_works_place04sea, 0x03C827E4, 4);
+DataArray(Tex_anim_obj_work, obj_works_place02gesui, 0x03C82804, 2);
+DataArray(Tex_anim_obj_work, obj_works_place03sand, 0x03C82814, 2);
+DataArray(Tex_anim_obj_work, obj_works_place04wave, 0x03C82824, 3);
+DataArray(Tex_anim_obj_work, obj_works_place04sand, 0x03C8283C, 2);
+DataArray(Tex_anim_obj_work, obj_works_place03wave, 0x03C8284C, 2);
+DataPointer(Tex_anim_land_work, land_work_place02gesui, 0x02BBE8F0);
+DataPointer(Tex_anim_land_work, land_work_place03sea, 0x02BBE8FC);
+DataPointer(Tex_anim_land_work, land_work_place03sand, 0x02BBE908);
+DataPointer(Tex_anim_land_work, land_work_place03wave, 0x02BBE914);
+DataPointer(Tex_anim_land_work, land_work_place04sea, 0x02BBE920);
+DataPointer(Tex_anim_land_work, land_work_place04sand, 0x02BBE92C);
+DataPointer(Tex_anim_land_work, land_work_place04wave, 0x02BBE938);
+DataArray(Tex_anim_land_work*, land_works, 0x02BBE944, 7);
+
+// Level texture animations: Past (dynamic initializer)
+
+DataArray(Tex_anim_work, obj_works_act02, 0x03C6374C, 3);
+DataArray(Tex_anim_work, obj_works_act03, 0x03C637A0, 3);
 
 #endif /* SADXMODLOADER_SADXVARSNEW_H */

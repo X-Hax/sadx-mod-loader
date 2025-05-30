@@ -4339,4 +4339,32 @@ struct sStChunkPVMH {
 	Uint16 nbTexture;
 };
 
+// Land texture animations
+
+struct Tex_anim_obj_work
+{
+	obj* obj;
+	unsigned __int8 num;
+	unsigned __int8 mat_no[3];
+};
+
+struct Tex_anim_land_work
+{
+	Tex_anim_obj_work* obj_works;
+	unsigned __int8 obj_max;
+	unsigned __int8 tex_max;
+	unsigned __int16 first;
+	unsigned __int16 second;
+	unsigned __int16 frame_spd;
+};
+
+struct Tex_anim_work
+{
+	obj* obj;
+	unsigned __int8 num;
+	unsigned __int8 flag[8];
+	unsigned __int8 work;
+	unsigned __int16 frame;
+};
+
 #endif /* SADXMODLOADER_SADXSTRUCTSNEW_H */
