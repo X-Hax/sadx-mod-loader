@@ -831,6 +831,13 @@ static void HandleRedirectSave()
 
 std::vector<Mod> modlist;
 
+struct ModInitData
+{
+	const std::string path;
+	const ModInitFunc func;
+	const unsigned int index;
+};
+
 static void __cdecl InitMods()
 {
 	// Set process DPI awareness (silent crash fix on High DPI)
@@ -1004,14 +1011,14 @@ static void __cdecl InitMods()
 	unordered_map<string, string> filereplaces;
 	vector<std::pair<string, string>> fileswaps;
 
-	vector<std::pair<ModInitFunc, string>> initfuncs;
+	vector<ModInitData> initfuncs;
 	vector<std::pair<wstring, wstring>> errors;
 
 
 	// It's mod loading time!
 	PrintDebug("Loading mods...\n");
 	// Mod list
-	for (unsigned int i = 1; i <= GetModCount(); i++)
+	for (unsigned int i = 0; i < GetModCount(); i++)
 	{
 		std::string mod_fname = GetModName(i);
 
@@ -1041,7 +1048,7 @@ static void __cdecl InitMods()
 		const string mod_nameA = modinfo->getString("Name");
 		const wstring mod_name = modinfo->getWString("Name");
 
-		PrintDebug("%u. %s\n", i, mod_nameA.c_str());
+		PrintDebug("%u. %s\n", i + 1, mod_nameA.c_str());
 
 
 
@@ -1165,14 +1172,14 @@ static void __cdecl InitMods()
 					if (info->Init)
 					{
 						// TODO: Convert to Unicode later. (Will require an API bump.)
-						initfuncs.emplace_back(info->Init, mod_dirA);
+						initfuncs.push_back({ mod_dirA, info->Init, i });
 					}
 
 					const auto init = (const ModInitFunc)GetProcAddress(module, "Init");
 
 					if (init)
 					{
-						initfuncs.emplace_back(init, mod_dirA);
+						initfuncs.push_back({ mod_dirA, init, i });
 					}
 
 					const auto* const patches = (const PatchList*)GetProcAddress(module, "Patches");
@@ -1325,7 +1332,7 @@ static void __cdecl InitMods()
 	}
 
 	for (auto& initfunc : initfuncs)
-		initfunc.first(initfunc.second.c_str(), helperFunctions);
+		initfunc.func(initfunc.path.c_str(), helperFunctions, initfunc.index);
 
 	ProcessTestSpawn(helperFunctions);
 

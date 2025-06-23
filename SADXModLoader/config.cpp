@@ -210,7 +210,7 @@ void LoadModLoaderSettings(LoaderSettings* loaderSettings, wstring gamePath)
 
 std::string GetModName(int index)
 {
-	return ModList.at(index - 1);
+	return ModList.at(index);
 }
 
 unsigned int GetModCount()

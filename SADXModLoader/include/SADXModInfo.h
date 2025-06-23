@@ -12,7 +12,7 @@
 #include "WeightInfo.h"
 
  // SADX Mod Loader API version.
-static const int ModLoaderVer = 29;
+static const int ModLoaderVer = 30;
 
 // Patch-type codes
 struct PatchInfo
@@ -479,11 +479,20 @@ struct HelperFunctions
 	// Converts a string in a specific codepage to UTF-8 and prints it to debug console.
 	// Requires version >= 28.
 	void(__cdecl* PrintDebugCodepage)(char* buf, unsigned int source_cp);
+
+	// Retrieves the index of the mod that replaced the file specified in the path.
+	// Returns -1 if the file wasn't replaced by a mod.
+	// Requires version >= 30.
+	int(__cdecl* GetFileModIndex)(const char* path);
+
+	// Replaces the source file with the destination file, with the specified mod index being used to determine the order of replacement.
+	// Requires version >= 30.
+	void(__cdecl* ReplaceFileAtIndex)(const char* src, const char* dst, int modIndex);
 };
 
 //static_assert(std::is_standard_layout<HelperFunctions>::value);
 
-typedef void(__cdecl* ModInitFunc)(const char* path, const HelperFunctions& helperFunctions);
+typedef void(__cdecl* ModInitFunc)(const char* path, const HelperFunctions& helperFunctions, unsigned int modIndex);
 
 typedef void(__cdecl* ModEvent)();
 

@@ -329,14 +329,29 @@ const char* __cdecl GetReplaceablePath(const char* path)
 	return sadx_fileMap.replaceFile(path);
 }
 
+void ReplaceFileAtIndex(const char* src, const char* dst, int modIndex)
+{
+	string orig = sadx_fileMap.normalizePath(src);
+	string mod = sadx_fileMap.normalizePath(dst);
+
+	if (sadx_fileMap.getModIndex(orig.c_str()) <= modIndex) {
+		sadx_fileMap.addReplaceFile(orig, mod, modIndex);
+	}
+}
+
 void _ReplaceFile(const char* src, const char* dst)
 {
-	sadx_fileMap.addReplaceFile(src, dst);
+	ReplaceFileAtIndex(src, dst, INT_MAX);
 }
 
 void _ReplaceFileForce(const char* src, const char* dst)
 {
-	sadx_fileMap.addReplaceFile(src, dst, true);
+	sadx_fileMap.addReplaceFile(src, dst, INT_MAX, true);
+}
+
+int GetFileModIndex(const char* path) {
+	string normalizedPath = sadx_fileMap.normalizePath(path);
+	return sadx_fileMap.getModIndex(normalizedPath.c_str());
 }
 
 extern string windowtitle;
@@ -729,5 +744,7 @@ HelperFunctions helperFunctions =
 	&UnreplaceFile,
 	&PrintDebugUnicode,
 	&PrintDebugLocal,
-	&PrintDebugCodepage
+	&PrintDebugCodepage,
+	&GetFileModIndex,
+	&ReplaceFileAtIndex
 };
