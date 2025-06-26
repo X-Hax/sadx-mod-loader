@@ -98,22 +98,15 @@ void FileMap::addIgnoreFile(const string& ignoreFile, int modIdx)
  * Add a file replacement.
  * @param origFile Original filename.
  * @param modFile Mod filename.
- * @param modIndex Optional mod index.
  * @param force Do not check if the destination file is being replaced.
  */
-void FileMap::addReplaceFile(const std::string& origFile, const std::string& modFile, const int modIndex, bool force)
+void FileMap::addReplaceFile(const std::string& origFile, const std::string& modFile, bool force)
 {
 	string origFile_norm = normalizePath(origFile);
-
-	// Check if the source file is already being replaced, and reject the new replacement if the current index is higher.
-	auto iter = m_fileMap.find(origFile_norm);
-	if (iter != m_fileMap.end() && modIndex < iter->second.modIndex)
-		return;
-
 	string modFile_norm = normalizePath(modFile);
 
 	// Check if the destination file is being replaced.
-	iter = m_fileMap.find(modFile_norm);
+	auto iter = m_fileMap.find(modFile_norm);
 	if (!force && iter != m_fileMap.end())
 	{
 		// Destination file is being replaced.
@@ -123,7 +116,7 @@ void FileMap::addReplaceFile(const std::string& origFile, const std::string& mod
 	else
 	{
 		// Destination file is not already in the map.
-		setReplaceFile(origFile_norm, modFile_norm, modIndex);
+		setReplaceFile(origFile_norm, modFile_norm, INT_MAX);
 	}
 }
 
@@ -148,9 +141,9 @@ void FileMap::swapFiles(const std::string& fileA, const std::string& fileB)
 	string fileB_norm = normalizePath(fileB);
 
 	string fileA_repl = fileB_norm;
-	int fileA_ind = -1;
+	int fileA_ind = 0;
 	string fileB_repl = fileA_norm;
-	int fileB_ind = -1;
+	int fileB_ind = 0;
 
 	// Check if the destination file is being replaced.
 	auto iter = m_fileMap.find(fileA_repl);
@@ -304,7 +297,7 @@ void FileMap::scanSoundFolder(const std::string& srcPath)
 			// Original filename should have a ".wma" extension.
 			string origFile = modFile;
 			ReplaceFileExtension(origFile, ".wma");
-			m_fileMap[origFile] = { modFile, -1 };
+			m_fileMap[origFile] = { modFile, 0 };
 		}
 	} while (FindNextFileA(hFind, &data) != 0);
 
@@ -442,33 +435,9 @@ const char* FileMap::replaceFile(const char* lpFileName) const
 }
 
 /**
- * Get a filename from the file replacement map.
- * @param[in] lpFileName Filename.
- * @param[out] modIndex Index of the mod that replaced a file, or -1 if no mod replaced it.
- * @return Replaced filename, or original filename if not replaced by a mod.
- */
-const char* FileMap::replaceFile(const char* lpFileName, int& modIndex) const
-{
-	// Check if the normalized filename is in the file replacement map.
-	string path = normalizePath(lpFileName);
-	auto iter = m_fileMap.find(path);
-	if (iter != m_fileMap.cend())
-	{
-		modIndex = iter->second.modIndex;
-		const string& newFileName = iter->second.fileName;
-		return newFileName.c_str();
-	}
-
-	// File was not replaced by a mod.
-	// Return the filename as-is.
-	modIndex = -1;
-	return lpFileName;
-}
-
-/**
  * Get the index of the mod that replaced a given file.
  * @param lpFileName Filename.
- * @return Index of the mod that replaced a file, or -1 if no mod replaced it.
+ * @return Index of the mod that replaced a file, or 0 if no mod replaced it.
  */
 int FileMap::getModIndex(const char* lpFileName) const
 {
@@ -481,7 +450,7 @@ int FileMap::getModIndex(const char* lpFileName) const
 	}
 
 	// File was not replaced by a mod.
-	return -1;
+	return 0;
 }
 
 /**
