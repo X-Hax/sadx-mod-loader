@@ -24,6 +24,8 @@ static Trampoline* HudDisplayRingTimeLife_Check_t;
 static Trampoline* HudDisplayScoreOrTimer_t;
 static Trampoline* DrawStageMissionImage_t;
 static Trampoline* DisplayPauseMenu_t;
+static Trampoline* padconfig_t;
+static Trampoline* cameramodechange_t;
 static Trampoline* LifeGauge_Main_t;
 static Trampoline* scaleScoreA;
 static Trampoline* scaleTornadoHP;
@@ -176,9 +178,38 @@ static void __cdecl DrawStageMissionImage_r(ObjectMaster* _this)
 	scale_trampoline(Align::Align_Center, false, DrawStageMissionImage_r, DrawStageMissionImage_t, _this);
 }
 
-static short __cdecl DisplayPauseMenu_r()
+static int __cdecl DisplayPauseMenu_r(Uint16 sel)
 {
-	return scale_trampoline(Align::Align_Center, false, DisplayPauseMenu_r, DisplayPauseMenu_t);
+	return scale_trampoline(Align::Align_Center, false, DisplayPauseMenu_r, DisplayPauseMenu_t, sel);
+}
+
+static int __cdecl padconfig_r(int sw)
+{
+	if (SetControls_DoTheOtherThing != 0) // Rendering is only done in submode 0
+	{
+		return TARGET_DYNAMIC(padconfig)(sw);
+	}
+	else
+	{
+		auto value = scale_trampoline(Align::Align_Center, false, padconfig_r, padconfig_t, sw);
+		if (value == 1) // run task displayers outside of the menu scaling context
+		{
+			DisplayTask();
+			SpLoopOnlyDisplay();
+		}
+		return value;
+	}
+}
+
+static int __cdecl cameramodechange_r(int sw)
+{
+	auto value = scale_trampoline(Align::Align_Center, false, cameramodechange_r, cameramodechange_t, sw);
+	if (value == 1) // run task displayers outside of the menu scaling context
+	{
+		DisplayTask();
+		SpLoopOnlyDisplay();
+	}
+	return value;
 }
 
 static void __cdecl LifeGauge_Main_r(ObjectMaster* a1)
@@ -1238,7 +1269,13 @@ void hudscale::initialize()
 	HudDisplayRingTimeLife_Check_t = new Trampoline(0x00425F90, 0x00425F95, HudDisplayRingTimeLife_Check_r);
 	HudDisplayScoreOrTimer_t = new Trampoline(0x00427F50, 0x00427F55, HudDisplayScoreOrTimer_r);
 	DrawStageMissionImage_t = new Trampoline(0x00457120, 0x00457126, DrawStageMissionImage_r);
-	DisplayPauseMenu_t = new Trampoline(0x00415420, 0x00415425, DisplayPauseMenu_r);
+	DisplayPauseMenu_t = new Trampoline(0x00458470, 0x00458476, DisplayPauseMenu_r);
+	padconfig_t = new Trampoline(0x00458F90, 0x00458F99, padconfig_r);
+	WriteData<10>((void*)0x4591EF, 0x90); // Don't run task displayers in padconfig scaling context
+	WriteData<10>((void*)0x45923A, 0x90);
+	WriteData<10>((void*)0x4592DC, 0x90);
+	cameramodechange_t = new Trampoline(0x00458D00, 0x00458D06, cameramodechange_r);
+	WriteData<10>((void*)0x458F4B, 0x90); // Don't run task displayers in cameramodechange scaling context
 	LifeGauge_Main_t = new Trampoline(0x004B3830, 0x004B3837, LifeGauge_Main_r);
 	scaleScoreA = new Trampoline(0x00628330, 0x00628335, ScaleScoreA);
 	scaleAnimalPickup = new Trampoline(0x0046B330, 0x0046B335, ScaleAnimalPickup);
