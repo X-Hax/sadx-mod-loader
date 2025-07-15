@@ -113,7 +113,7 @@ static wstring GetCharName()
 
 const string texCrashMsg = "Texture error: the game failed to apply one or more textures. This could be a mod conflict.\nIf you are making a mod, make sure all your textures are loaded.";
 const string charCrashMsg = "Character Crash: The game crashed in one of the character's main function.\nYou most likely have a mod order conflict.\nMods that edit gameplay should be loaded last.";
-const string weldCrashMsg = "Welds Crash: The game crashed in the function that processes vertex welding.\nMake sure your character welds are correct and try again.";
+const string weldCrashMsg = "Welds Crash: The game crashed in the function that processes vertex welding. It could be caused by a character mod conflict or incorrect weld data.\nMake sure your character welds are correct and try again.";
 
 static const unordered_map<intptr_t, string> crashes_addresses_map = 
 {
@@ -126,7 +126,8 @@ static const unordered_map<intptr_t, string> crashes_addresses_map =
 	{ 0x787148, "Model error: The game crashed on the eval flag check.\nIf you are making a level mod, make sure all your meshes have the flag \"Skip Children\" checked."},
 	{ 0x644EB1, "Write file error: The game crashed trying to write a save file."},
 	{ 0x78CDC9, "stApplyPalette error: The game crashed trying to set a texture.\nThis can happen when there are multiple mods replacing the same character model, or when a mod doesn't load textures properly."},
-	{ 0x792A97, "PVM seek error: The game crashed trying to read a texture from an archive.\nThis can happen when mod or game files are corrupted, or when there are mod conflicts."}
+	{ 0x792A97, "PVM seek error: The game crashed trying to read a texture from an archive.\nThis can happen when mod or game files are corrupted, or when there are mod conflicts."},
+	{ 0x43937A, weldCrashMsg}
 };
 
 struct addressRange

@@ -11,7 +11,7 @@ To use SADX Mod Loader, you must have:
 
 To manage mods and edit settings, you also need the following:
 * [SA Mod Manager](https://github.com/X-Hax/SA-Mod-Manager)
-* .NET 8.0 Desktop runtime
+* [.NET 8.0 Desktop runtime](https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe) (for SA Mod Manager)
 
 ## License
 

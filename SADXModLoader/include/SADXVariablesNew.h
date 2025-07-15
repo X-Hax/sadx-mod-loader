@@ -609,6 +609,7 @@ DataPointer(NJS_TEXLIST, texlist_chao_object, 0x033A0788);
 DataPointer(NJS_TEXLIST, texlist_al_object, 0x033A11F0);
 DataPointer(NJS_TEXLIST, texlist_obj_al_race, 0x33A6404);
 DataPointer(NJS_TEXLIST, texlist_garden00_object, 0x38F6E5C);
+DataPointer(NJS_TEXLIST, texlist_garden02_object, 0x38F6E38);
 DataPointer(NJS_TEXLIST, texlist_garden00ss, 0x0363687C);
 DataPointer(NJS_TEXLIST, texlist_garden01ec, 0x033D0F5C);
 DataPointer(NJS_TEXLIST, texlist_chao_race, 0x03425018);
