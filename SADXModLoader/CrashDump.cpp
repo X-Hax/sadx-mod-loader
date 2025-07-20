@@ -293,13 +293,13 @@ static void CreateExtraInfoFile(wstring curCrashFolder, wstring timeStr, string 
 			else
 			{
 				if (i == 0)
-					outfile << "playerpwp pointer was null.";
+					outfile << "playerpwp pointer was null. (This doesn't mean this is the cause of the crash, just an information for debugging purpose.)";
 			}
 		}
 	}
 	else
 	{
-		outfile << "playertwp pointer was null.";
+		outfile << "playertwp pointer was null. (This doesn't mean this is the cause of the crash, just an information for debugging purpose.)";
 	}
 
 
