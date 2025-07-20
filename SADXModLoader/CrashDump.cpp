@@ -207,6 +207,7 @@ static void SetErrorMessage(string& fullMsg, const string address, const string 
 		}
 	}
 
+
 	if (dllName.find("chrmodels") != std::string::npos)
 		fullMsg += "\nThis crash is in the Mod Loader. It can happen if a mod causes a critical error or if the game isn't installed correctly.";
 
