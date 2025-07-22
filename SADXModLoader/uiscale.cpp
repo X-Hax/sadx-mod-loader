@@ -126,24 +126,6 @@ void uiscale::scale_pop()
 	do_scale = !scale_stack.empty();
 }
 
-static Trampoline* DisplayAllObjects_t = nullptr;
-
-static void __cdecl DisplayAllObjects_r()
-{
-	if (do_scale)
-	{
-		uiscale::scale_push(uiscale::Align_Automatic, false, uiscale::scale_h, uiscale::scale_v);
-	}
-
-	auto original = static_cast<decltype(DisplayAllObjects_r)*>(DisplayAllObjects_t->Target());
-	original();
-
-	if (do_scale)
-	{
-		uiscale::scale_pop();
-	}
-}
-
 static NJS_POINT2 auto_align(uiscale::Align align, const NJS_POINT2& center)
 {
 	using namespace uiscale;
@@ -716,9 +698,6 @@ void uiscale::initialize_common()
 void uiscale::initialize()
 {
 	initialize_common();
-
-	DisplayAllObjects_t = new Trampoline(0x0040B540, 0x0040B546, DisplayAllObjects_r);
-	WriteCall(reinterpret_cast<void*>(reinterpret_cast<size_t>(DisplayAllObjects_t->Target()) + 1), reinterpret_cast<void*>(0x004128F0));
 }
 
 void uiscale::setup_background_scale()

@@ -125,6 +125,7 @@ FunctionPointer(OCMDATA*, OCMRegister, (taskwk* otwp), 0x5FE2F0);
 FunctionPointer(Bool, OCMunregister, (OCMDATA* ocmdata), 0x5FE360);
 FunctionPointer(OCMDATA*, OCMsearchRideobj, (taskwk* otwp), 0x5FE380);
 VoidFunc(calcvsyncsyoriochi, 0x413920);
+VoidFunc(SpLoopOnlyDisplay, 0x456CD0); // Display sprite queue
 
 // Filesystem
 FunctionPointer(Sint8*, njOpenBinary, (const char* fname), 0x7929D0);
