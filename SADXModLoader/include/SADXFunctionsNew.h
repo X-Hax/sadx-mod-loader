@@ -123,7 +123,7 @@ FunctionPointer(void, String_Dsp, (String* ___this), 0x4BFD40);
 FunctionPointer(void, ERobStart, (erctrlstr* cmd), 0x4B3EB0);
 FunctionPointer(OCMDATA*, OCMRegister, (taskwk* otwp), 0x5FE2F0);
 FunctionPointer(Bool, OCMunregister, (OCMDATA* ocmdata), 0x5FE360);
-FunctionPointer(OCMDATA*, OCMsearchRideobj, (taskwk* otwp), 0x5FE380);
+FunctionPointer(OCMDATA*, OCMsearchRideobj, (), 0x5FE380);
 VoidFunc(calcvsyncsyoriochi, 0x413920);
 VoidFunc(SpLoopOnlyDisplay, 0x456CD0); // Display sprite queue
 
@@ -469,6 +469,8 @@ FunctionPointer(void, setObjFlags, (NJS_OBJECT** obj, unsigned int flag), 0x4399
 FunctionPointer(void, CreateFire, (NJS_VECTOR* pos, NJS_VECTOR* velo, float scl), 0x004CB060); // Creates Unidus fire particles
 FunctionPointer(NJS_OBJECT*, ScanMotionModel, (NJS_OBJECT* a1, SMMparams* a2), 0x4B7D00);
 FunctionPointer(void, ListTheObjectTreeByTheEnd, (NJS_OBJECT* a1, NJS_OBJECT** a2), 0x439FC0);
+FunctionPointer(int, RegisterAnimCallbackFunc, (int(__cdecl* pfunc)(void*, int, int*), void* phint), 0x5FE400);
+FunctionPointer(int, AnimCallbackFunc, (void* phint, int itimer, int* bResume), 0x5FD2E0);
 
 static const void* const calcAimPosPtr = (void*)0x7B1720;
 static inline void calcAimPos(taskwk* twp, enemywk* ewp)
