@@ -79,6 +79,16 @@ DataPointer(Uint8, SaveExecFlag, 0x03ABDF76);
 DataPointer(Uint8, FileDeleteFlag, 0x03B291B0);
 DataPointer(Uint8, FirstCreateFlag, 0x03B291B3);
 DataArray(Uint32, MIPMAP_LEVEL_TBL, 0x389D4F8, 22);
+DataPointer(Bool, boolStageAdvanced, 0x3C52460);
+DataPointer(Bool, boolOneShot_0, 0x3C52464);
+
+// Debug
+DataPointer(Bool, ssEditorStatus, 0x3B29D08); // Flag for debug editor being active. Never set in this version but still functions.
+DataPointer(Bool, ssMiEditorStatus, 0x3B29D0C); // Flag for mission mode editor being active. Leftover: All it can do in this version is make CheckEditMode return true.
+DataPointer(Bool, boolCheckRangeIn_0, 0x912DE0); // Leftover, does nothing.
+DataPointer(Bool, boolDebugDisplay, 0x912DE4); // Leftover, does nothing.
+DataPointer(Bool, boolCommonSet, 0x912DE8); // Leftover, does nothing.
+DataPointer(taskwk*, pTaskWorkEditor, 0x3B2CAA0); // Taskwk targeted by CameraModeEditor. Never set in this version.
 
 // Event
 DataPointer(EVINFO2, evInfo, 0x03B2C568); // Current cutscene struct
@@ -167,6 +177,7 @@ DataArray(SONIC_INPUT, input_data, 0x3B0E368, 8);
 DataArray(PDS_PERIPHERAL*, per, 0x3B0E77C, 8); // ControllerPointers
 DataArray(SONIC_INPUT, input_dataG, 0x3B0E7A0, 8); // NormalizedAnalogs
 DataArray(PDS_PERIPHERAL, perG, 0x3B0E7F0, 8); // Controllers
+DataArray(Sint32, SWDATAE, 0X3B0E354, 2);
 
 // Lighting
 DataArray(LE_PALIGHT_ENV, le_plyrPal, 0x903E88, 255); // Character lights
@@ -243,6 +254,8 @@ DataPointer(OBJECT_ITEMBOX_AIR_DATA*, itembox_air_data, 0x3C5A9D4); // Additiona
 DataArray(unsigned int, levelup_texture, 0x009BF1D8, 8);            // 1-up textures
 DataArray(CUSTOM_OBJ, panel_model, 0x00981A78, 2);                  // Item box (air) model+function
 DataPointer(int, item_kind, 0x03C5C888);                            // Current item box item
+DataPointer(_OBJ_EDITENTRY*, ___objEditEntry, 0x3C4E45C);
+DataPointer(Uint32*, pNumEditEntry, 0x3C4E458);
 
 // Object lists
 
@@ -296,6 +309,7 @@ DataPointer(task*, RaceManageTask_p, 0x3C5D554); // Pointer to race manager task
 DataPointer(BOOL, CartGoalFlag, 0x3D08E00);
 DataPointer(ENEMY_CART_DATA*, cart_data, 0x3D08E0C); // Pointer to player's cart data
 DataArray(strCamCartData, camCartData, 0x91B670, 3); // Camera path for Twinkle Circuit intro camera
+DataPointer(task*, taskOfPlayerOn, 0x3D08E08); // Cart's task when being driven
 
 // Boss
 
@@ -330,6 +344,7 @@ DataPointer(_OBJ_ADJUSTPARAM*, pObjAdjustParam, 0x7DFF98);            // Pointer
 DataPointer(Sint32, default_camera_mode, 0x3B2CBAC);                  // Default camera mode (no camera active, or when returning from event camera)
 DataPointer(Sint32, default_camera_adjust, 0x3B2CAC4);                // Default adjust mode (no camera active, or when returning from event camera)
 DataPointer(Sint32, start_camera_mode, 0x3B2CAA8);                    // The camera mode set when the camera is initialized
+DataPointer(_OBJ_CAMERAMODETABLE, CameraModeTable, 0x9759C0);		  // List of camera modes
 DataArray(freeboxdat, fbd6660, 0x9150AC, 2);
 DataArray(freeboxdat, fbd7429, 0x9150DC, 1);
 DataArray(freeboxdat, fbd8448, 0x9150F4, 1);
@@ -589,11 +604,20 @@ DataPointer(NJS_TEXLIST, texlist_adv_EC32, 0x027C6B04); // Hedgehog Hammer (mini
 
 DataPointer(NJS_TEXLIST, texlist_score, 0x00912DFC);
 DataPointer(NJS_TEXLIST, texlist_sonic, 0x0091CB58);
+DataPointer(NJS_TEXLIST, texlist_miles, 0x091A9C8);
 DataPointer(NJS_TEXLIST, texlist_knuckles, 0x0091BD20);
 DataPointer(NJS_TEXLIST, texlist_knu_eff, 0x0091BD28);
+DataPointer(NJS_TEXLIST, texlist_eggman, 0x0892A20);
+DataPointer(NJS_TEXLIST, texlist_tikal, 0x08CB470);
+DataPointer(NJS_TEXLIST, texlist_amy, 0x91C800);
+DataPointer(NJS_TEXLIST, texlist_big, 0x91C910);
 DataPointer(NJS_TEXLIST, texlist_e102, 0x0091C560);
 DataPointer(NJS_TEXLIST, texlist_chaos_surface, 0x038E1FF0);
 DataPointer(NJS_TEXLIST, texlist_metalsonic, 0x0091CBC0);
+
+DataPointer(NJS_TEXLIST, texlist_mp_10000_POLICE, 0x3375ED4);
+DataPointer(NJS_TEXLIST, texlist_ev_tr1_with_sonic, 0x324C518);
+DataPointer(NJS_TEXLIST, texlist_tr2b_s_tru2_body, 0x32D6548);
 
 DataPointer(NJS_TEXLIST, texlist_ava_title_cmn_small, 0x010D7C50);
 DataPointer(NJS_TEXLIST, texlist_ava_gtitle0, 0x010D7C48);

@@ -77,6 +77,7 @@ FunctionPointer(int, CheckCollisionP, (NJS_POINT3* vp, float d), 0x441840); // C
 FunctionPointer(int, CheckCollisionCylinderP, (NJS_POINT3* vp, float r, float h), 0x4418D0); // Check if a player is in a cylinder, returns 0 or player id + 1
 FunctionPointer(void, AddSetStage, (char Gap), 0x46BF70); // Release objects and request act change
 FunctionPointer(BOOL, GetZxShadowOnFDPolygon, (zxsdwstr* carry, NJS_OBJECT* object), 0x456510); // Get vertical intersectio(s) of a point with a model, used for deathzones
+FunctionPointer(Bool, GetZxShadowOnPolygon, (zxsdwstr* carry, NJS_OBJECT* object, Uint32 ulattr), 0x0455DE0);
 FunctionPointer(void, SetChangeGameMode, (__int16 mode), 0x413C90);
 FunctionPointer(void, SetPlayerNumber, (Uint16 pno), 0x4144D0);
 FunctionPointer(void, SetStageNumber, (Sint8 level, Sint8 act), 0x414570);
@@ -144,8 +145,10 @@ FunctionPointer(void, njPrintColor, (int color), 0x007808E0); // Sets debug font
 FunctionPointer(void, njPrintC, (signed int position, const char* text), 0x7808F0); // Prints a string
 FunctionPointer(void, njPrintD, (signed int position, int value, signed int numdigits), 0x780970); // Prints a decimal number
 FunctionPointer(void, njPrintF, (int position, float value, signed int precision), 0x780AC0); // Prints a float
+FunctionPointer(void, njPrintH, (int position, int value, int numdigits), 0x780A50); // Attempts to print a hexadecimal number but is broken in this version, 
 FunctionPointer(void, njPrint, (signed int position, const char* text, ...), 0x780B30); // Prints a formatted string
 FunctionPointer(void, njPrintSize, (unsigned __int16 size), 0x7808C0); // Sets debug font size
+FunctionPointer(Bool, OnEdit, (task* tp), 0x4F88A0); // Originally used to check if an object was highlighted in the editor but only returns 0 now.
 
 // Saves
 FunctionPointer(Uint8, CountSaveNum, (), 0x00505050); // Builds save list
@@ -230,6 +233,8 @@ FunctionPointer(BOOL, CheckPadReadModeP, (unsigned __int8 pno), 0x40EFD0); // Is
 FunctionPointer(void, input_padUpdate, (), 0x0040F460); // Poll input
 FunctionPointer(void, GetSwitchData, (), 0x0040FDC0); // Control
 FunctionPointer(int, KeyCtrlGetOn, (), 0x0040EF30); // Get pressed state of system key
+FunctionPointer(Bool, KeyGetOn, (Sint32 keycode), 0x40EF20); // Check if key is held
+FunctionPointer(Bool, KeyGetPress, (Sint32 keycode), 0x40EF10); // Check if key is pressed
 
 // Player
 FunctionPointer(void, LoadPlayerMotionData, (int curChar), 0x422680);
@@ -298,9 +303,12 @@ FunctionPointer(int, PResetAccelerationAir, (taskwk* a1, motionwk2* a2, playerwk
 FunctionPointer(void, PGetAccelerationFly, (taskwk* a1, motionwk2* a2, playerwk* a3), 0x447E70);
 FunctionPointer(void, PGetAccelerationGlik, (taskwk* a1, motionwk2* a2, playerwk* a3), 0x448000);
 FunctionPointer(void, PGetSpeedGlik, (taskwk* a1, motionwk2* a2, playerwk* a3), 0x0444580);
+FunctionPointer(void, PFaceChange, (Sint32 pno, Sint32 face), 0x440740);
+FunctionPointer(void, PFaceCancel, (Sint32 pno), 0x440770);
 
 // Characters
 TaskFunc(SonicTheHedgehog, 0x49A9B0);
+TaskFunc(SonicDirectAhead, 0x493C70);
 TaskFunc(SonicDisplay, 0x4948C0);
 TaskFunc(SonicDestruct, 0x494860);
 TaskFunc(MilesTalesPrower, 0x461700);
@@ -642,6 +650,10 @@ TaskFunc(DrawInWater, 0x004D6990); // Draws the underwater item box
 TaskFunc(Draw_Break, 0x004D6B20); // Draws the destroyed item box
 TaskFunc(Dead_ItemBox, 0x004D6BA0); // Deletes the item box
 TaskFunc(ObjectSkydeck_wings_End, 0x004FB290);
+FunctionPointer(void, DispSphere, (NJS_POINT3* pos, Float scale), 0x4BCF40); // Draws a sphere.
+VoidFunc(ProcessStatusTable, 0x46BCE0);
+VoidFunc(ProcessStatusTable1P, 0X46BA40);
+VoidFunc(ProcessStatusTable2P, 0x46B7B0);
 
 // Object task functions
 TaskFunc(CameraDisplay, 0x4370F0);
@@ -866,6 +878,7 @@ VoidFunc(dsSoundServer, 0x4250D0);
 // Camera
 FunctionPointer(void, CameraSetEventCameraFunc, (CamFuncPtr func, Sint8 ucAdjustType, Sint8 scCameraDirect), 0x437D20); // Creates an event camera with custom script, see CDM enum for direct mode
 FunctionPointer(void, CameraSetEventCamera, (Sint16 ssCameraMode, Sint8 ucAdjustType), 0x437BF0); // Creates an event camera, see CAMMD and CAMADJ enums
+FunctionPointer(void, CameraSetNormalCamera, (Sint16 ssCameraMode, Sint8 ucAdjustType), 0x436040); // Creates a normal camera, see CAMMD and CAMADJ enums
 FunctionPointer(Bool, IsEventCamera, (), 0x436520); // If the current active camera is an event camera
 FunctionPointer(Bool, IsCompulsionCamera, (), 0x436530); // If the current active camera is a compulsion camera
 VoidFunc(CameraReleaseEventCamera, 0x436140); // Release active event camera
@@ -883,6 +896,7 @@ FunctionPointer(Sint32, CameraAdditionalPlane, (NJS_POINT3* src, NJS_POINT3* pos
 FunctionPointer(void, CameraPositionSmooth, (NJS_POINT3* last, NJS_POINT3* pos), 0x436C60); // Intended to be a smooth lerp, but broken
 FunctionPointer(void, SetStartCameraMode, (Sint8 mode), 0x436C60); // Set the starting camera mode (when the camera is initialized)
 FunctionPointer(void, SetDefaultNormalCameraMode, (Sint8 mode, Sint8 adjust), 0x4345D0); // Set the default camera mode (no camera? or after an event camera release)
+FunctionPointer(void, CameraCancelCamera, (), 0x435F50);
 FunctionPointer(void, ResetCameraTimer, (), 0x436550);
 CamFunc(CameraFollow, 0x462E90);
 CamFunc(CameraKnuckle, 0x469590);
@@ -1256,7 +1270,8 @@ FunctionPointer(void, EV_Load2, (int no), 0x42FA30); //Event Library: Load an ev
 FunctionPointer(void, DisplayFade, (task* a1), 0x00412F70); // Event fade display function
 FunctionPointer(void, SeqTaskFadeIn, (task* a1), 0x00412FE0); // Event fade-in main function
 FunctionPointer(void, SeqTaskFadeOut, (task* a1), 0x00413060); // Event fade-out main function
-FunctionPointer(BOOL, EV_CheckCansel, (), 0x42FB00); //Event Library: Check if any event is running. Uncommon: Only used in Chaos 0's level and for the Casinopolis doors in Tails' story.
+FunctionPointer(Bool, EV_Check, (), 0x42FAE0);  //Event Library: Check if any event is running. Uncommon: Only used in Chaos 0's level and for the Casinopolis doors in Tails' story.
+FunctionPointer(BOOL, EV_CheckCansel, (), 0x42FB00); //Event Library: Check if event conditions are active. This is the main way the game checks if an event is playing.
 FunctionPointer(void, EV_Wait, (int time), 0x4314D0); //Event Library: Wait X Frames.
 FunctionPointer(void, EV_CreateObject, (task** tp, float px, float py, float pz, int ax, int ay, int az), 0x431670); //Event Library: Create a generic object.
 FunctionPointer(void, EV_CreateObjectFunc, (task** tp, task* (*func)(void), float x, float y, float z, int rx, int ry, int rz), 0x4316C0); //Event Library: Create an object that has its own main/display functions.

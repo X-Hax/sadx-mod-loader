@@ -641,6 +641,14 @@ struct _OBJ_CAMERAENTRYTABLE
 	_OBJ_CAMERAENTRY* pObjCameraEntry;
 };
 
+struct _OBJ_CAMERAMODETABLE
+{
+	Sint16 ssModeCount;
+	Sint16 ssAdjustCount;
+	_OBJ_CAMERAMODE* pObjCameraMode;
+	_OBJ_CAMERAADJUST* pObjCameraAdjust;
+};
+
 struct _CameraSystemWork
 {
 	int G_boolSwitched;
@@ -1383,6 +1391,44 @@ struct LE_PALIGHT_ENV
 	NJS_RGB co2;
 	float spow2;
 	NJS_RGB spe2;
+};
+
+union phewp_org
+{
+	Angle3 ang;
+	NJS_POINT3 pos;
+};
+
+struct pheadeyewk
+{
+	Angle angy_head;
+	Angle angz_head;
+	Angle angy_ahead;
+	Angle angz_ahead;
+	Angle angy_eye;
+	Angle angz_eye;
+	Angle angy_leye;
+	Angle angz_leye;
+	Angle angy_reye;
+	Angle angz_reye;
+	Angle angy_head_max;
+	Angle angy_head_min;
+	Angle angz_head_max;
+	Angle angz_head_min;
+	Angle angy_leye_max;
+	Angle angy_leye_min;
+	Angle angz_leye_max;
+	Angle angz_leye_min;
+	Angle angy_reye_max;
+	Angle angy_reye_min;
+	Angle angz_reye_max;
+	Angle angz_reye_min;
+	NJS_OBJECT* headobjptr;
+	NJS_OBJECT* leyeobjptr;
+	NJS_OBJECT* reyeobjptr;
+	phewp_org orghead;
+	phewp_org orgleye;
+	phewp_org orgreye;
 };
 
 struct player_parameter
