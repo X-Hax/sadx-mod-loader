@@ -127,6 +127,7 @@ static const unordered_map<intptr_t, string> crashes_addresses_map =
 	{ 0x644EB1, "Write file error: The game crashed trying to write a save file."},
 	{ 0x78CDC9, "stApplyPalette error: The game crashed trying to set a texture.\nThis can happen when there are multiple mods replacing the same character model, or when a mod doesn't load textures properly."},
 	{ 0x792A97, "PVM seek error: The game crashed trying to read a texture from an archive.\nThis can happen when mod or game files are corrupted, or when there are mod conflicts."},
+	{ 0x78368A, "Polybuff function error: The game crashed trying to read a model's normals.\nThis can happen with character model mods that supply invalid model data."},
 	{ 0x43937A, weldCrashMsg}
 };
 
