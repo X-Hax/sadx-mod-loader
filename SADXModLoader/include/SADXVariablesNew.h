@@ -81,6 +81,7 @@ DataPointer(Uint8, FirstCreateFlag, 0x03B291B3);
 DataArray(Uint32, MIPMAP_LEVEL_TBL, 0x389D4F8, 22);
 DataPointer(Bool, boolStageAdvanced, 0x3C52460);
 DataPointer(Bool, boolOneShot_0, 0x3C52464);
+DataArray(NJS_OBJECT, object_shadow, 0x8BF3A0, 1); // Shadow object
 
 // Debug
 DataPointer(Bool, ssEditorStatus, 0x3B29D08); // Flag for debug editor being active. Never set in this version but still functions.
@@ -94,6 +95,14 @@ DataPointer(taskwk*, pTaskWorkEditor, 0x3B2CAA0); // Taskwk targeted by CameraMo
 DataPointer(EVINFO2, evInfo, 0x03B2C568); // Current cutscene struct
 DataPointer(int, current_event, 0x00914788); // Current cutscene ID (-1 if not in a cutscene)
 DataPointer(EV_CAMERA_W, evCameraW, 0x03B2C490); // Cutscene camera
+DataPointer(task*, p_WaterPillarTask, 0x3C84D60); // Pointer for part of Chaos water pillar object
+DataPointer(task*, p_PillarTask, 0x3C84D5C); // Pointer for part of Chaos water pillar object
+DataPointer(task*, p_SplashTask, 0x3C84D58); // Pointer for part of Chaos water pillar object
+DataPointer(task*, p_CrushLightTask, 0x3C847F4); // Pointer for flashing lights in events
+DataPointer(task*, e101Factory_tp, 0x3C850EC); // Pointer for by e101's room on the Egg Carrier. 
+DataPointer(NJS_TEXLIST, ev_effect_list19, 0x2C49740); //Chaos Emerald glow effect textures
+DataPointer(NJS_TEXLIST, texlist_ICM001_3, 0x2DC02A0); //Sonic's intro prerendered background
+DataPointer(NJS_ACTION, action_m_em_blue, 0x2CBE0F4); //Blue Chaos Emerald
 
 // Player
 DataPointer(Uint8, flgPlayingSuperSonic, 0x3B18DB4); // Super Sonic flag
@@ -256,6 +265,7 @@ DataArray(CUSTOM_OBJ, panel_model, 0x00981A78, 2);                  // Item box 
 DataPointer(int, item_kind, 0x03C5C888);                            // Current item box item
 DataPointer(_OBJ_EDITENTRY*, ___objEditEntry, 0x3C4E45C);
 DataPointer(Uint32*, pNumEditEntry, 0x3C4E458);
+DataArray(_OBJ_EDITTABLE*, gpvSetData, 0x3ABDF40, 6);				// Set files
 
 // Object lists
 

@@ -60,6 +60,14 @@ struct _OBJ_EDITENTRY
 	float zscl;
 };
 
+struct _OBJ_EDITTABLE
+{
+	Sint16 ssCount;
+	Sint16 ssAttribute;
+	_OBJ_EDITENTRY* pObjEditEntry;
+	task* pTask;
+};
+
 struct OBJ_CONDITION
 {
 	char scCount;

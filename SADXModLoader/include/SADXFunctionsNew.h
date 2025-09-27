@@ -620,6 +620,8 @@ TaskFunc(ObjectScaleDisplay, 0x49D220); // Same as ObjectNormalDisplay with diff
 TaskFunc(ObjectNormalDisplay_LE, 0x49D24B); // Same as ObjectNormalDisplay with different D3D Z Func
 TaskFunc(ObjectNormalDisplay, 0x49DDF0); // Display task that draws an object in twp->counter using regular pos/ang values
 TaskFunc(ObjectNormalExit, 0x49D050); // Red Mountain and other level objects delete function
+FunctionPointer(Float, Shadow, (taskwk* twp, Float scl), 0x49EE30); // Create Shadow object
+FunctionPointer(void, _DrawShadow, (Angle3* ang, NJS_POINT3* pos, Float scl), 0x49EF30); // Draw shadow
 FunctionPointer(float, GetShadowPos, (float x, float y, float z, Angle3* ang), 0x49E920); // Get Y position and angle of ground below
 FunctionPointer(float, GetShadowPosOnWalter, (float x, float y, float z, Angle3* ang), 0x49EAD0); // Get Y position and angle of ground and water below
 FunctionPointer(BOOL, GetShadowPosXYZ, (xyyzzxsdwstr* answer), 0x49F450);
@@ -634,6 +636,12 @@ FunctionPointer(void, CreateSmoke, (NJS_POINT3* pos, NJS_POINT3* velo, Float scl
 FunctionPointer(void, CreateSmoke2, (particle_info* effect), 0x4B98E0); // Create smoke effect with custom data
 FunctionPointer(void, CreateSnow, (NJS_POINT3* pos, NJS_POINT3* velo, Float scl), 0x4B9B10);
 FunctionPointer(void, CreateBomb, (NJS_POINT3* pos, Float scl), 0x4CACF0); // Create bomb effect
+FunctionPointer(void, CreateKiranR, (NJS_POINT3* pos, NJS_POINT3* velo, Float scl, Angle ang), 0x4BAD80); // Create star effect
+FunctionPointer(void, CreateWater, (NJS_POINT3* pos, NJS_POINT3* velo, Float scl), 0x4B9540); // Create water effect
+FunctionPointer(void, CreateSpark, (NJS_POINT3* pos, NJS_POINT3* velo), 0x4CEA00); // Create spark effect
+FunctionPointer(void, CreateHitmark, (NJS_POINT3* pos, Float scl), 0x4CAB40); // Create hitmark effect
+FunctionPointer(void, CreateLightning, (NJS_POINT3* pos, Float scl), 0x4C9160); // Create lightning/electricity effect
+FunctionPointer(void, CreateLensFlare, (NJS_POINT3* pos), 0x4DA740); // Create lens flare
 FunctionPointer(void, ef_speed, (taskwk* twp), 0x4D6BF0);
 FunctionPointer(void, ef_5ring, (taskwk* twp), 0x4D6C50);
 FunctionPointer(void, ef_10ring, (taskwk* twp), 0x4D6C90);
@@ -854,6 +862,7 @@ FunctionPointer(void, dsPlay_Dolby_time, (int tone, int id, int pri, int volofs,
 FunctionPointer(void, dsPlay_Dolby_timer_vq, (int tone, int id, int pri, int volofs, int timer, float rad, taskwk* pTaskwk), 0x4249E0);
 FunctionPointer(int, dsPlay_oneshot_v, (int tone, int id, int pri, int volofs, float x, float y, float z), 0x424FC0);
 VoidFunc(voicevolresume, 0x40CD10);
+FunctionPointer(void, Serif_Play, (Sint32 no), 0x425710); // Play voice
 FunctionPointer(void, SetBankDir, (signed int soundlist), 0x4238E0);
 VoidFunc(BGM_Stop, 0x4256B0); //Stop BGM
 FunctionPointer(MDHANDLE*, MDHeaderOpen, (const char* fname, Sint32 flag), 0x4B4D10); // Open sound bank
@@ -877,8 +886,10 @@ VoidFunc(dsSoundServer, 0x4250D0);
 
 // Camera
 FunctionPointer(void, CameraSetEventCameraFunc, (CamFuncPtr func, Sint8 ucAdjustType, Sint8 scCameraDirect), 0x437D20); // Creates an event camera with custom script, see CDM enum for direct mode
-FunctionPointer(void, CameraSetEventCamera, (Sint16 ssCameraMode, Sint8 ucAdjustType), 0x437BF0); // Creates an event camera, see CAMMD and CAMADJ enums
+FunctionPointer(void, CameraSetEventCamera, (Sint16 ssCameraMode, Sint8 ucAdjustType), 0x437BF0); // Creates an event camera (Level 3), see CAMMD and CAMADJ enums
 FunctionPointer(void, CameraSetNormalCamera, (Sint16 ssCameraMode, Sint8 ucAdjustType), 0x436040); // Creates a normal camera, see CAMMD and CAMADJ enums
+FunctionPointer(void, CameraSetCollisionCamera, (Sint16 ssCameraMode, Uint8 ucAdjustType), 0x436300); // Creates a collision camera (Level 4)
+FunctionPointer(char, CameraSetCollisionCameraFunc, (void(__cdecl* fnCamera)(_OBJ_CAMERAPARAM*), Uint8 ucAdjustType, char scCameraDirect), 0x00436210);
 FunctionPointer(Bool, IsEventCamera, (), 0x436520); // If the current active camera is an event camera
 FunctionPointer(Bool, IsCompulsionCamera, (), 0x436530); // If the current active camera is a compulsion camera
 VoidFunc(CameraReleaseEventCamera, 0x436140); // Release active event camera
@@ -1237,6 +1248,9 @@ FunctionPointer(void, NH_MSG_Open, (MSGC* msgc, __int16 x, __int16 y, int width,
 FunctionPointer(void, NH_MSG_Close, (MSGC* msgc), 0x40E2C0);
 FunctionPointer(void, MSG_Open, (MSGC* msgc, int x, int y, int width, int height, unsigned int globalindex), 0x40E430);
 FunctionPointer(void, MSG_Puts, (MSGC* msgc, const char* str), 0x40E570);
+FunctionPointer(void, HintMainMessages, (const char** message), 0x4B79A0);
+FunctionPointer(void, HintMainMessagesTime, (const char** message, int time), 0x4B79C0); // DisplayHintText
+
 FunctionPointer(void, EV_Msg, (const char* str), 0x42FB20); //Event Library: Open a textbox. Note: Doubles as EV_Wait(20).
 VoidFunc(EV_MsgClose, 0x42FBB0); //Event Library: Close a textbox.  Note: Doubles as EV_Wait(20).
 VoidFunc(EV_MsgCls, 0x42FC20); //Event Library: Close text but don't close the textbox.
@@ -1655,7 +1669,6 @@ FunctionPointer(void, AL_LoadTex, (const char* filename, NJS_TEXLIST* pTexlist, 
 FunctionPointer(void, AL_SetChaoMenuTexInfo, (NJS_TEXLIST* pTexlist, unsigned int WindowTexNum, unsigned int ParamTexNum, unsigned int PortTexNum), 0x0072CC00);
 FunctionPointer(int, AL_LoadAnotherGardenInfoStart, (), 0x00717160);
 FunctionPointer(void, ALCAM_CreateCameraManager, (), 0x72A750);
-FunctionPointer(char, CameraSetCollisionCameraFunc, (void(__cdecl* fnCamera)(_OBJ_CAMERAPARAM*), unsigned __int8 ucAdjustType, char scCameraDirect), 0x00436210);
 FunctionPointer(_camcontwk**, AL_EntCameraFunc, (), 0x0072CCF0);
 FunctionPointer(void, ALO_OdekakeMachineCreate, (NJS_POINT3* pPos, int angy), 0x00729F40);
 FunctionPointer(void, ALO_WarpCreate, (task* parent_tp, int aim, float posx, float posy, float posz, int roty), 0x00729550);
