@@ -81,7 +81,6 @@ DataPointer(Uint8, FirstCreateFlag, 0x03B291B3);
 DataArray(Uint32, MIPMAP_LEVEL_TBL, 0x389D4F8, 22);
 DataPointer(Bool, boolStageAdvanced, 0x3C52460);
 DataPointer(Bool, boolOneShot_0, 0x3C52464);
-DataArray(NJS_OBJECT, object_shadow, 0x8BF3A0, 1); // Shadow object
 
 // Debug
 DataPointer(Bool, ssEditorStatus, 0x3B29D08); // Flag for debug editor being active. Never set in this version but still functions.
