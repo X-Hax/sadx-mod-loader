@@ -1061,6 +1061,10 @@ static void __cdecl InitMods()
 			if (!modinfo->hasKey(key2))
 				break;
 			auto dep = split(modinfo->getString(key2), '|');
+
+			while (dep.size() < 4)
+				dep.push_back("");
+
 			moddeps.push_back({ strdup(dep[0].c_str()), strdup(dep[1].c_str()), strdup(dep[2].c_str()), strdup(dep[3].c_str()) });
 		}
 
