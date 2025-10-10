@@ -4,14 +4,16 @@ If you need any help, check the [SADX Modding wiki.](https://github.com/X-Hax/SA
 
 ## System Requirements
 
-To use SADX Mod Loader, you must have:
-* Sonic Adventure DX PC, 2004 version (US release)
-* Windows 7 or later
-* [Visual C++ 2022 runtime (x86)](https://aka.ms/vs/17/release/vc_redist.x86.exe)
+> [!NOTE]
+> To use SADX Mod Loader, you must have:
+> * Sonic Adventure DX PC, 2004 version (US release)
+> * Windows 7 or later
+> * [Visual C++ 2022 runtime (x86)](https://aka.ms/vs/17/release/vc_redist.x86.exe)
 
-To manage mods and edit settings, you also need the following:
-* [SA Mod Manager](https://github.com/X-Hax/SA-Mod-Manager)
-* [.NET 8.0 Desktop runtime](https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe) (for SA Mod Manager)
+> [!IMPORTANT]
+> To manage mods and edit settings, you also need the following:
+> * [SA Mod Manager](https://github.com/X-Hax/SA-Mod-Manager)
+> * [.NET Desktop Runtime 8.0](https://dotnet.microsoft.com/fr-fr/download/dotnet/thank-you/runtime-desktop-8.0.10-windows-x64-installer)
 
 ## License
 
