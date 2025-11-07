@@ -25,6 +25,7 @@ DataPointer(__int16, ssGameModeChange, 0x03B22E1C);
 DataPointer(unsigned int, ulGlobalMode, 0x3ABDC7C); // Game Mode (njUserMain mode, enum MD_GameMode)
 DataPointer(int, loop_count, 0x3B1117C); // MissedFrames
 DataPointer(int, loop_const, 0x3B11178); // Frame increment
+DataPointer(Uint32, vsync_const, 0x3B11188); // FrameMultiplier
 DataPointer(Uint32, ulGlobalTimer, 0x3B0F13C); // FrameCounter
 DataPointer(Uint32, g_CurrentFrame, 0x389D7DC); // Framerate setting (1 is 60 FPS, 2 is 30 FPS)
 DataPointer(Uint32, gu32GameCnt, 0x3ABDF58); // FrameCounter2
