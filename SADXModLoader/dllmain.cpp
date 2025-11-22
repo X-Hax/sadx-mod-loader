@@ -1271,7 +1271,6 @@ static void __cdecl InitMods()
 		CodepageGerman = modinfo->getInt("CodepageGerman", 1252);
 		CodepageSpanish = modinfo->getInt("CodepageSpanish", 1252);
 
-
 		HandleModIniContent(ini_mod.get(), modinfo, mod_dir, mod_dirA);
 
 		if (modinfo->hasKeyNonEmpty("WindowTitle"))
