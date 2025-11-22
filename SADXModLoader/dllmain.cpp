@@ -829,9 +829,16 @@ static void HandleRedirectSave()
 	}
 }
 
-static void ProcessModIncludeDir(IniFile* ini, const int dirCount, const IniGroup* modinfo, const int index, const string mod_dirA, const wstring mod_dir)
+static void ProcessModIncludeDir(IniFile* mod, const IniGroup* modinfo, int index, const string modDir, const wstring modDirW, const string incDirectory, const wstring incDirectoryW)
 {
-	
+	const string modIncDir = modDir + "\\" + incDirectory;
+	const wstring modIncDirW = modDirW + L"\\" + incDirectoryW;
+	if (DirectoryExists(modIncDir))
+	{
+		PrintDebug("Mod Config: use path: '%s'\n", modIncDir.c_str());
+		Mod_CheckAndReplaceFiles(modIncDir, index);
+		HandleModIniContent(mod, modinfo, modIncDirW, modIncDir);
+	}
 }
 
 std::vector<Mod> modlist;
@@ -1303,14 +1310,7 @@ static void __cdecl InitMods()
 							}
 						}
 
-						const string modIncDir = mod_dirA + "\\" + incDirPath;
-						const wstring modIncDirW = mod_dir + L"\\" + incDirPathW;
-						if (DirectoryExists(modIncDir))
-						{
-							PrintDebug("Mod Config: use path: '%s'\n", modIncDir.c_str());
-							Mod_CheckAndReplaceFiles(modIncDir, i);
-							HandleModIniContent(ini_mod.get(), modinfo, modIncDirW, modIncDir);
-						}
+						ProcessModIncludeDir(ini_mod.get(), modinfo, i, mod_dirA, mod_dir, incDirPath, incDirPathW);
 					}
 				}
 				else
@@ -1318,15 +1318,10 @@ static void __cdecl InitMods()
 					// Legacy processing if no config.ini is found.
 					for (uint16_t md = 0; md < dirCount; md++)
 					{
-						auto incDirPath = ini_mod->getString("Config", "IncludeDir" + std::to_string(md));
-						const string modIncDir = mod_dirA + "\\" + incDirPath;
-						const wstring modIncDirW = mod_dir + L"\\" + ini_mod->getWString("Config", "IncludeDir" + std::to_string(md));
-						if (DirectoryExists(modIncDir))
-						{
-							PrintDebug("Mod Config: use path: '%s'\n", modIncDir.c_str());
-							Mod_CheckAndReplaceFiles(modIncDir, i);
-							HandleModIniContent(ini_mod.get(), modinfo, modIncDirW, modIncDir);
-						}
+						string dirStr = "IncludeDir" + std::to_string(md);
+						string incDirPath = ini_mod->getString("Config", dirStr);
+						wstring incDirPathW = ini_mod->getWString("Config", dirStr);
+						ProcessModIncludeDir(ini_mod.get(), modinfo, i, mod_dirA, mod_dir, incDirPath, incDirPathW);
 					}
 				}
 			}
