@@ -1306,6 +1306,7 @@ static void __cdecl InitMods()
 							{
 								incDirPath = group->second->getString(dirStr);
 								incDirPathW = group->second->getWString(dirStr);
+								break;
 							}
 						}
 
