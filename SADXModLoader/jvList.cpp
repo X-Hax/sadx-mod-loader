@@ -4,6 +4,7 @@
 
 using std::string;
 using std::vector;
+using std::unordered_map;
 
 vector<PL_JOIN_VERTEX> so_jvlist;
 vector<PL_JOIN_VERTEX> egg_jvlist;
@@ -22,6 +23,23 @@ NJS_OBJECT* tikal_objects[23];
 static UsercallFuncVoid(Knuckles_Upgrades_t, (playerwk* a1), (a1), 0x4726A0, rEAX);
 static vector<uint16_t> Knux_HandIndices;
 static vector<uint16_t> Knux_ShovelClawIndices;
+static vector<uint16_t> Knux_FightingGlovesIndices;
+
+// These are all part of processing Knuckles upgrades a bit easier.
+static unordered_map<string, int> Knuckles_Hands;
+static unordered_map<string, vector<uint16_t>> Knuckles_Indices;
+string hr = "hand_right";
+string hl = "hand_left";
+string bhr = "base" + hr;
+string bhl = "base" + hl;
+string fhr = "flight" + hr;
+string fhl = "flight" + hl;
+string scr = "shovelclaw_right";
+string scl = "shovelclaw_left";
+string fgr = "fightinggloves_right";
+string fgl = "fightinggloves_left";
+string fgscr = "fightingshovelclaw_right";
+string fgscl = "fightingshovelclaw_left";
 
 void FreeJVListIndices()
 {
@@ -168,6 +186,101 @@ static int GetIntData(const string id, IniFile* ini, const string st)
 	return isWhiteSpace(s) ? 0 : stoi(s); //return number if it exists
 }
 
+void ProcessKnucklesUpgrades(const IniFile* ini)
+{
+	// Because Knuckles has weird handling for his upgrades, we get to do some annoying work arounds to resolve it without being overly intrusive.
+	string group = "Upgrades";
+	if (ini->hasGroup(group))
+	{
+		// If the keys exist and have content, we can go ahead and get the indices.
+		if (ini->hasKeyNonEmpty(group, bhr) &&
+			ini->hasKeyNonEmpty(group, bhl) &&
+			ini->hasKeyNonEmpty(group, fhr) &&
+			ini->hasKeyNonEmpty(group, fhl))
+		{
+			// These indices are the hand entries in the JVList that will be updated later.
+			int bhr_idx = ini->getInt(group, bhr);
+			int bhl_idx = ini->getInt(group, bhl);
+			int fhr_idx = ini->getInt(group, fhr);
+			int fhl_idx = ini->getInt(group, fhl);
+
+			// We check to see if the right and left indices are the same for the base and flight models. If they are, we don't do any further processing.
+			// This could lead to potential errors and/or crashes, so it's best to require these indices be different.
+			if (bhr_idx != bhl_idx || fhr_idx != fhl_idx)
+			{
+				Knuckles_Hands.insert_or_assign(bhr, bhr_idx);
+				Knuckles_Hands.insert_or_assign(bhl, bhl_idx);
+				Knuckles_Hands.insert_or_assign(fhr, fhr_idx);
+				Knuckles_Hands.insert_or_assign(fhl, fhl_idx);
+
+				// We then process the indices for the hands (as fallbacks) and for each upgrade.
+				vector<uint16_t> hr_vec;
+				vector<uint16_t> hl_vec;
+				vector<uint16_t> scr_vec;
+				vector<uint16_t> scl_vec;
+				vector<uint16_t> fgr_vec;
+				vector<uint16_t> fgl_vec;
+				vector<uint16_t> fgscr_vec;
+				vector<uint16_t> fgscl_vec;
+
+				string right = std::to_string(bhr_idx);
+				string left = std::to_string(bhl_idx);
+				string right_indices = ini->getString(right, "VertIndexes");
+				string left_indices = ini->getString(left, "VertIndexes");
+				SetIndices(right_indices, hr_vec);
+				SetIndices(left_indices, hl_vec);
+				Knuckles_Indices.insert_or_assign(hr, hr_vec);
+				Knuckles_Indices.insert_or_assign(hl, hl_vec);
+
+				// Running a check if the key exists is done to prevent unecessary attempts at processing potentially empty data.
+				if (ini->hasKey(group, scr))
+				{
+					string scr_indices = ini->getString(group, scr);
+					SetIndices(scr_indices, scr_vec);
+				}
+
+				if (ini->hasKey(group, scl))
+				{
+					string scl_indices = ini->getString(group, scl);
+					SetIndices(scl_indices, scl_vec);
+				}
+
+				if (ini->hasKey(group, fgr))
+				{
+					string fgr_indices = ini->getString(group, fgr);
+					SetIndices(fgr_indices, fgr_vec);
+				}
+
+				if (ini->hasKey(group, fgl))
+				{
+					string fgl_indices = ini->getString(group, fgl);
+					SetIndices(fgl_indices, fgl_vec);
+				}
+
+				if (ini->hasKey(group, fgscr))
+				{
+					string fgscr_indices = ini->getString(group, fgscr);
+					SetIndices(fgscr_indices, fgscr_vec);
+				}
+
+				if (ini->hasKey(group, fgscl))
+				{
+					string fgscl_indices = ini->getString(group, fgscl);
+					SetIndices(fgscl_indices, fgscl_vec);
+				}
+
+				// Regardless of if the data is populated or is 0, we insert all of them into the map for use.
+				Knuckles_Indices.insert_or_assign(scr, scr_vec);
+				Knuckles_Indices.insert_or_assign(scl, scl_vec);
+				Knuckles_Indices.insert_or_assign(fgr, fgr_vec);
+				Knuckles_Indices.insert_or_assign(fgl, fgl_vec);
+				Knuckles_Indices.insert_or_assign(fgscr, fgscr_vec);
+				Knuckles_Indices.insert_or_assign(fgscl, fgscl_vec);
+			}
+		}
+	}
+}
+
 void CreateJVList(NJS_OBJECT* arr[], IniFile* ini, vector<PL_JOIN_VERTEX>& jvlist, bool isKnux = false)
 {
 	int i = 0;
@@ -203,6 +316,9 @@ void CreateJVList(NJS_OBJECT* arr[], IniFile* ini, vector<PL_JOIN_VERTEX>& jvlis
 	}
 
 	jvlist.push_back({ 0 });
+
+	if (isKnux)
+		ProcessKnucklesUpgrades(ini);
 
 	delete ini;
 }
@@ -289,37 +405,97 @@ void Knuckles_Upgrades_r(playerwk* pwp)
 {
 	Knuckles_Upgrades_t.Original(pwp);
 
-	uint16_t* indice = Knux_HandIndices.data();
-
-	if (!indice)
-		return;
-
-	switch (pwp->equipment & (Upgrades_ShovelClaw | Upgrades_FightingGloves))
+	// If the Hands and Upgrades maps have data, we process them the new way, otherwise we default to the old method.
+	if (Knuckles_Hands.size() > 0 && Knuckles_Indices.size() > 0)
 	{
-	case Upgrades_ShovelClaw:
-	case Upgrades_ShovelClaw | Upgrades_FightingGloves:
+		uint16_t* right_indices = Knuckles_Indices[hr].data();
+		int right_count = Knuckles_Indices[hr].size() / 2;
+		uint16_t* left_indices = Knuckles_Indices[hl].data();
+		int left_count = Knuckles_Indices[hl].size() / 2;
 
-		if (Knux_ShovelClawIndices.size() > 0)
+		switch (pwp->equipment & (Upgrades_ShovelClaw | Upgrades_FightingGloves))
 		{
-			indice = Knux_ShovelClawIndices.data();
-		}
-		else
-		{
-			indice = (uint16_t*)&Knuckles_ShovelClawIndices;
+		case Upgrades_ShovelClaw:
+			right_indices = Knuckles_Indices[scr].data();
+			right_count = Knuckles_Indices[scr].size() / 2;
+			left_indices = Knuckles_Indices[scl].data();
+			left_count = Knuckles_Indices[scl].size() / 2;
+			break;
+		case Upgrades_FightingGloves:
+			right_indices = Knuckles_Indices[fgr].data();
+			right_count = Knuckles_Indices[fgr].size() / 2;
+			left_indices = Knuckles_Indices[fgl].data();
+			left_count = Knuckles_Indices[fgl].size() / 2;
+			break;
+		case Upgrades_ShovelClaw | Upgrades_FightingGloves:
+			right_indices = Knuckles_Indices[fgscr].data();
+			right_count = Knuckles_Indices[fgscr].size() / 2;
+			left_indices = Knuckles_Indices[fgscl].data();
+			left_count = Knuckles_Indices[fgscl].size() / 2;
+			break;
 		}
 
-		break;
+		// If either of the indices is an invalid pointer, we abort assignment to the jvlist for safety.
+		if (!right_indices || !left_indices)
+			return;
+
+		int baseright = Knuckles_Hands[bhr];
+		int baseleft = Knuckles_Hands[bhr];
+		int flightright = Knuckles_Hands[fhr];
+		int flightleft = Knuckles_Hands[fhl];
+
+		knux_jvlist[baseright].pnum = right_indices;
+		knux_jvlist[baseleft].numVertex = right_count;
+		knux_jvlist[baseright].pnum = left_indices;
+		knux_jvlist[baseleft].numVertex = left_count;
+		knux_jvlist[flightright].pnum = right_indices;
+		knux_jvlist[flightright].numVertex = right_count;
+		knux_jvlist[flightleft].pnum = left_indices;
+		knux_jvlist[flightleft].numVertex = left_count;
+
+		NPCKnucklesWeldInfo[baseright].VertIndexes = right_indices;
+		NPCKnucklesWeldInfo[baseright].VertexPairCount = right_count;
+		NPCKnucklesWeldInfo[baseleft].VertIndexes = left_indices;
+		NPCKnucklesWeldInfo[baseleft].VertexPairCount = left_count;
+		NPCKnucklesWeldInfo[flightright].VertIndexes = right_indices;
+		NPCKnucklesWeldInfo[flightright].VertexPairCount = right_count;
+		NPCKnucklesWeldInfo[flightleft].VertIndexes = left_indices;
+		NPCKnucklesWeldInfo[flightleft].VertexPairCount = left_count;
 	}
+	else
+	{
+		uint16_t* indice = Knux_HandIndices.data();
 
-	knux_jvlist.at(23).pnum = indice;
-	knux_jvlist.at(22).pnum = indice;
-	knux_jvlist.at(11).pnum = indice;
-	knux_jvlist.at(10).pnum = indice;
+		if (!indice)
+			return;
 
-	NPCKnucklesWeldInfo[23].VertIndexes = indice;
-	NPCKnucklesWeldInfo[22].VertIndexes = indice;
-	NPCKnucklesWeldInfo[11].VertIndexes = indice;
-	NPCKnucklesWeldInfo[10].VertIndexes = indice;
+		switch (pwp->equipment & (Upgrades_ShovelClaw | Upgrades_FightingGloves))
+		{
+		case Upgrades_ShovelClaw:
+		case Upgrades_ShovelClaw | Upgrades_FightingGloves:
+
+			if (Knux_ShovelClawIndices.size() > 0)
+			{
+				indice = Knux_ShovelClawIndices.data();
+			}
+			else
+			{
+				indice = (uint16_t*)&Knuckles_ShovelClawIndices;
+			}
+
+			break;
+		}
+
+		knux_jvlist.at(23).pnum = indice;
+		knux_jvlist.at(22).pnum = indice;
+		knux_jvlist.at(11).pnum = indice;
+		knux_jvlist.at(10).pnum = indice;
+
+		NPCKnucklesWeldInfo[23].VertIndexes = indice;
+		NPCKnucklesWeldInfo[22].VertIndexes = indice;
+		NPCKnucklesWeldInfo[11].VertIndexes = indice;
+		NPCKnucklesWeldInfo[10].VertIndexes = indice;
+	}
 }
 
 void SetKnucklesNewWelds(IniFile* file)
