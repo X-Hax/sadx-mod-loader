@@ -3461,12 +3461,12 @@ static inline void InitMenuStruct(ObjectMaster *a1)
 
 // int __usercall@<ecx>(_DWORD@<eax>)
 static const void *const SetScreenTextureUVsPtr = (void*)0x433060;
-static inline int SetScreenTextureUVs(_DWORD)
+static inline int SetScreenTextureUVs(_DWORD a1)
 {
 	int result;
 	__asm
 	{
-		mov eax, [_DWORD]
+		mov eax, [a1]
 		call SetScreenTextureUVsPtr
 		mov result, ecx
 	}
