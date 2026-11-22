@@ -482,3 +482,10 @@ write8 00441F67 0xC3
 Author Hyper
 Description Disables the music that plays when acquiring the invincibility power-up.
 Category Audio
+
+Patch "Extend Jingle On 1up"
+write32 425B72 71
+write32 425B77 0xFFFFFCE5
+Author Ham★
+Category Audio
+Description Collecting a life plays the unused Extend jingle, rather than the Chaos Emerald sound effect.
