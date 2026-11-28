@@ -146,7 +146,7 @@ static uint8_t* AllocateCode(int sz)
 }
 
 template<typename T, typename... TArgs>
-constexpr T const GenerateUsercallWrapper(int ret, intptr_t address, TArgs... args)
+T const GenerateUsercallWrapper(int ret, intptr_t address, TArgs... args)
 {
 	const size_t argc = sizeof...(TArgs);
 	int argarray[] = { args... };
@@ -480,7 +480,7 @@ constexpr T const GenerateUsercallWrapper(int ret, intptr_t address, TArgs... ar
 }
 
 template<typename T, typename... TArgs>
-constexpr void const GenerateUsercallHook(T func, int ret, intptr_t address, TArgs... args)
+void const GenerateUsercallHook(T func, int ret, intptr_t address, TArgs... args)
 {
 	const size_t argc = sizeof...(TArgs);
 	int argarray[] = { args... };
@@ -748,7 +748,7 @@ constexpr void const GenerateUsercallHook(T func, int ret, intptr_t address, TAr
 }
 
 template<typename T, typename... TArgs>
-constexpr T const GenerateUserpurgeWrapper(int ret, intptr_t address, TArgs... args)
+T const GenerateUserpurgeWrapper(int ret, intptr_t address, TArgs... args)
 {
 	const size_t argc = sizeof...(TArgs);
 	int argarray[] = { args... };
@@ -1078,7 +1078,7 @@ constexpr T const GenerateUserpurgeWrapper(int ret, intptr_t address, TArgs... a
 }
 
 template<typename T, typename... TArgs>
-constexpr void const GenerateUserpurgeHook(T func, int ret, intptr_t address, TArgs... args)
+void const GenerateUserpurgeHook(T func, int ret, intptr_t address, TArgs... args)
 {
 	const size_t argc = sizeof...(TArgs);
 	int argarray[] = { args... };
@@ -1356,7 +1356,7 @@ public: \
  \
 	RETURN_TYPE operator()ARGS \
 	{ \
-		return wrapper##ARGNAMES; \
+		return wrapper ARGNAMES; \
 	} \
  \
 	PointerType operator&() \
@@ -1378,19 +1378,19 @@ public: \
 		ishooked = true; \
 	} \
  \
-	RETURN_TYPE Original##ARGS \
+	RETURN_TYPE Original ARGS \
 	{ \
 		if (ishooked) \
 		{ \
 			uint8_t hookdata[5]; \
 			memcpy(hookdata, getptr(), 5); \
 			memcpy(getptr(), origdata, 5); \
-			RETURN_TYPE retval = wrapper##ARGNAMES; \
+			RETURN_TYPE retval = wrapper ARGNAMES; \
 			memcpy(getptr(), hookdata, 5); \
 			return retval; \
 		} \
 		else \
-			return wrapper##ARGNAMES; \
+			return wrapper ARGNAMES; \
 	} \
  \
 private: \
@@ -1398,7 +1398,7 @@ private: \
 	uint8_t origdata[5]{}; \
 	const PointerType wrapper = GenerateUsercallWrapper<PointerType>(RETURN_LOC, ADDRESS, __VA_ARGS__); \
  \
-	constexpr PointerType getptr() \
+	PointerType getptr() \
 	{ \
 		return reinterpret_cast<PointerType>(ADDRESS); \
 	} \
@@ -1413,7 +1413,7 @@ public: \
  \
 	void operator()ARGS \
 	{ \
-		wrapper##ARGNAMES; \
+		wrapper ARGNAMES; \
 	} \
  \
 	PointerType operator&() \
@@ -1435,18 +1435,18 @@ public: \
 		ishooked = true; \
 	} \
  \
-	void Original##ARGS \
+	void Original ARGS \
 	{ \
 		if (ishooked) \
 		{ \
 			uint8_t hookdata[5]; \
 			memcpy(hookdata, getptr(), 5); \
 			memcpy(getptr(), origdata, 5); \
-			wrapper##ARGNAMES; \
+			wrapper ARGNAMES; \
 			memcpy(getptr(), hookdata, 5); \
 		} \
 		else \
-			wrapper##ARGNAMES; \
+			wrapper ARGNAMES; \
 	} \
  \
 private: \
@@ -1454,7 +1454,7 @@ private: \
 	uint8_t origdata[5]{}; \
 	const PointerType wrapper = GenerateUsercallWrapper<PointerType>(noret, ADDRESS, __VA_ARGS__); \
  \
-	constexpr PointerType getptr() \
+	PointerType getptr() \
 	{ \
 		return reinterpret_cast<PointerType>(ADDRESS); \
 	} \
@@ -1469,7 +1469,7 @@ public: \
  \
 	RETURN_TYPE operator()ARGS \
 	{ \
-		return wrapper##ARGNAMES; \
+		return wrapper ARGNAMES; \
 	} \
  \
 	PointerType operator&() \
@@ -1491,19 +1491,19 @@ public: \
 		ishooked = true; \
 	} \
  \
-	RETURN_TYPE Original##ARGS \
+	RETURN_TYPE Original ARGS \
 	{ \
 		if (ishooked) \
 		{ \
 			uint8_t hookdata[5]; \
 			memcpy(hookdata, getptr(), 5); \
 			memcpy(getptr(), origdata, 5); \
-			RETURN_TYPE retval = wrapper##ARGNAMES; \
+			RETURN_TYPE retval = wrapper ARGNAMES; \
 			memcpy(getptr(), hookdata, 5); \
 			return retval; \
 		} \
 		else \
-			return wrapper##ARGNAMES; \
+			return wrapper ARGNAMES; \
 	} \
  \
 private: \
@@ -1511,7 +1511,7 @@ private: \
 	uint8_t origdata[5]{}; \
 	const PointerType wrapper = GenerateUserpurgeWrapper<PointerType>(RETURN_LOC, ADDRESS, __VA_ARGS__); \
  \
-	constexpr PointerType getptr() \
+	PointerType getptr() \
 	{ \
 		return reinterpret_cast<PointerType>(ADDRESS); \
 	} \
@@ -1526,7 +1526,7 @@ public: \
  \
 	void operator()ARGS \
 	{ \
-		wrapper##ARGNAMES; \
+		wrapper ARGNAMES; \
 	} \
  \
 	PointerType operator&() \
@@ -1548,18 +1548,18 @@ public: \
 		ishooked = true; \
 	} \
  \
-	void Original##ARGS \
+	void Original ARGS \
 	{ \
 		if (ishooked) \
 		{ \
 			uint8_t hookdata[5]; \
 			memcpy(hookdata, getptr(), 5); \
 			memcpy(getptr(), origdata, 5); \
-			wrapper##ARGNAMES; \
+			wrapper ARGNAMES; \
 			memcpy(getptr(), hookdata, 5); \
 		} \
 		else \
-			wrapper##ARGNAMES; \
+			wrapper ARGNAMES; \
 	} \
  \
 private: \
@@ -1567,7 +1567,7 @@ private: \
 	uint8_t origdata[5]{}; \
 	const PointerType wrapper = GenerateUserpurgeWrapper<PointerType>(noret, ADDRESS, __VA_ARGS__); \
  \
-	constexpr PointerType getptr() \
+	PointerType getptr() \
 	{ \
 		return reinterpret_cast<PointerType>(ADDRESS); \
 	} \
